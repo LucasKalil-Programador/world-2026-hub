@@ -1,0 +1,154 @@
+# Project Map — World Cup 2026 Hub
+
+Navigation map of the codebase. Use this to find which file owns a concern before reading code.
+
+> **Status 2026-06-12 (steps 1–10 + 12 done):** everything works — all views, bracket interactions, simulation, responsive/a11y pass, favorites, time toggle, challenge, share link, `.ics` export. Remaining: step 11 (full README + acceptance checklist). Spec source of truth: `world-cup-2026-hub-spec-en.md` + `complement-spec-worldcup2026-en.md` (complement **wins on conflict**).
+
+---
+
+## File tree
+
+```
+worldcup2026/
+├── .agents/                              ← Internal documentation for AI agents
+│   ├── project-map.md                    This file
+│   ├── project-memory.md                 Context, decisions, gotchas
+│   └── TODO.md                           12-step build checklist
+│
+├── index.html                            ★ SPA shell — header, nav tabs (Home, Matches,
+│                                           Groups, Knockout, Stadiums), hero, dashboard,
+│                                           modal container; loads app.js as ES module
+│
+├── assets/
+│   ├── css/
+│   │   ├── style.css                     ★ Palette variables, glassmorphism base, layout,
+│   │   │                                   components — mobile-first
+│   │   ├── bracket.css                   Bracket columns, connectors, highlight states
+│   │   └── animations.css                Entry (fade-in, slide-up/left) + interaction
+│   │                                       (hover-scale/glow, pulse, line-draw)
+│   ├── js/
+│   │   ├── app.js                        ★ Entry point: loadData() (Promise.all over data/),
+│   │   │                                   tab routing + lastTab, formatMatchTime(), hero,
+│   │   │                                   dashboard, countdown
+│   │   ├── schedule.js                   Match list, filters, search, sort, "My Matches"
+│   │   ├── groups.js                     Standings computation (3/1/0, GD, GF) + group tables
+│   │   ├── stadiums.js                   Stadium cards + "view matches" cross-link
+│   │   ├── bracket.js                    ★ Bracket tree resolution, resolveBracketTeams(),
+│   │   │                                   simulation, challenge score, share prediction
+│   │   ├── modal.js                      Match detail modal (ARIA dialog)
+│   │   ├── storage.js                    localStorage wrapper — wc2026_* keys, auto-JSON
+│   │   ├── i18n.js                       EN/PT-BR dicts + t(key), lang toggle
+│   │   └── calendar.js                   .ics export (RFC 5545, CRLF, Blob download)
+│   └── images/                           Team flag SVGs, stadium placeholders
+│
+├── data/                                 All content — the only thing edited for real data
+│   ├── teams.json                        48 teams: { id, name, flag }
+│   ├── groups.json                       { "A": [4 team ids], ... } × 12 (A–L)
+│   ├── matches.json                      104 matches; UTC times; knockout uses bracketRef
+│   ├── results.json                      { matchId, homeScore, awayScore, penalties?, status }
+│   ├── stadiums.json                     ~30 stadiums: { id, name, city, capacity, image, timezone }
+│   └── bracket-config.json               ★ 16 R32 slot definitions + thirdPlaceAssignment —
+│                                           the ONLY file to edit once real 3rd places are known
+│
+├── README.md                             Setup, GitHub Pages deploy, JSON maintenance guide
+├── how-update.md                         Real-data migration runbook (mock → real WC2026 data/*.json)
+├── world-cup-2026-hub-spec-en.md         Main spec
+└── complement-spec-worldcup2026-en.md    Complement spec (precedence on conflict)
+```
+
+★ = critical files. Most changes touch one of them.
+
+---
+
+## Key flows
+
+### 1. Data load → render
+
+```
+index.html (type="module")
+  └─ app.js: loadData() ── Promise.all ──> data/*.json
+       ├─ hero + dashboard (app.js)
+       ├─ schedule.js  ──┐
+       ├─ groups.js      ├── render into tab panels
+       ├─ bracket.js   ──┘
+       └─ modal.js (on match click, from any view)
+```
+
+### 2. Bracket resolution
+
+```
+groups.json + results.json
+  └─ groups.js: standings (pts 3/1/0 → GD → GF)
+       └─ bracket.js: R32 from bracket-config.json
+            ├─ type:"group" → standings[ref][pos-1]
+            ├─ type:"third" → standings[thirdPlaceAssignment[slot]][2]  (null → placeholder)
+            └─ R16…FINAL: sequential pairing of winners (0-1→0, 2-3→1, …)
+                 └─ wc2026_simulation overlays user picks (never mutates JSON)
+```
+
+### 3. Time display
+
+```
+matches.json time (UTC) ── formatMatchTime(match, stadium, mode)
+  ├─ mode "local"   → Intl.DateTimeFormat()            (browser tz)
+  └─ mode "stadium" → Intl.DateTimeFormat({ timeZone: stadium.timezone })
+```
+
+---
+
+## Conventions
+
+### Imports
+- ES Modules only (`type="module"`), relative paths, no bundler/CDN.
+
+### Naming
+- Team ids: 3-letter uppercase (`MEX`, `BRA`). Knockout match ids: `R32-1`…`R32-16`, `R16-1`…, `QF-1`…, `SF-1`/`SF-2`, `THIRD-PLACE`, `FINAL`.
+- localStorage keys prefixed `wc2026_`, accessed only through `storage.js`.
+
+### Content / i18n
+- All user-facing strings go through `i18n.js` `t(key)` — never hardcode UI text in HTML/JS.
+- Data values (team names, stadium names, cities) come from JSON and are not translated.
+
+---
+
+## Where is each thing?
+
+| Question | Answer |
+|---|---|
+| Where do I update scores / match status? | `data/results.json` |
+| Where do I set the 8 best third-place teams? | `data/bracket-config.json` → `thirdPlaceAssignment` |
+| Where do I add/translate a UI label? | `assets/js/i18n.js` (both EN and PT dicts) |
+| Where is the standings math? | `assets/js/groups.js` |
+| Where are knockout teams resolved (placeholders, TBD)? | `assets/js/bracket.js` → `resolveBracketTeams()` |
+| Where is simulation state stored/cleared? | `localStorage` key `wc2026_simulation`, via `assets/js/storage.js` |
+| Where do I change colors/theme? | CSS variables at the top of `assets/css/style.css` |
+| Where do I add a stadium? | `data/stadiums.json` + image in `assets/images/` |
+| How do I replace mock data with real WC2026 data? | `how-update.md` (root) — schemas, order of operations, integrity checklist |
+
+---
+
+## Main functions
+
+(Planned signatures from the complement spec — confirmed/updated as each step is implemented.)
+
+| Function | File | Parameters | Returns | Description |
+|---|---|---|---|---|
+| `loadData` | `assets/js/app.js` | `()` | `Promise<AppData>` | Fetches all `data/*.json` in parallel, caches in memory |
+| `formatMatchTime` | `assets/js/app.js` | `(match, stadium, mode)` | `string` | UTC → display time; `mode` is `"local"` or `"stadium"` |
+| `get` / `set` | `assets/js/storage.js` | `(key, fallback)` / `(key, value)` | `any` / `void` | localStorage wrapper, auto JSON parse/stringify |
+| `t` | `assets/js/i18n.js` | `(key)` | `string` | Translated UI string for current lang |
+| `resolveBracketTeams` | `assets/js/bracket.js` | `(matchOrRef)` | `{ home, away }` of `{ team, label }` | Display slots for any match (group or knockout); reused by schedule/modal/filters |
+| `getBracketTree` | `assets/js/bracket.js` | `()` | `{ rounds, third, nodesByRef, champion }` | Cached resolved bracket tree |
+| `invalidateBracket` | `assets/js/bracket.js` | `()` | `void` | Drop the cached tree (simulation overlay, step 9) |
+| `calculateChallengeScore` | `assets/js/bracket.js` | `(simulation, results, bracketTree)` | `{ correct, total, byPhase }` | Compares user picks vs finished results |
+| `getShareableLink` | `assets/js/bracket.js` | `()` | `string` | Current URL + `?prediction=base64(simulation)` |
+| `loadPredictionFromURL` | `assets/js/bracket.js` | `()` | `void` | Decodes, validates, confirms before overwriting local simulation |
+| `toggleFavorite` | `assets/js/storage.js` | `(teamId)` | `void` | Add/remove team in `wc2026_favorites` |
+| `computeStandings` | `assets/js/groups.js` | `()` | `{ [letter]: Row[] }` | Sorted standings per group, finished matches only |
+| `isGroupFinished` | `assets/js/groups.js` | `(letter)` | `boolean` | All 6 group matches have status finished |
+| `navigateTo` | `assets/js/app.js` | `(tab)` | `void` | Programmatic tab switch (cross-view links) |
+| `setStadiumFilter` | `assets/js/schedule.js` | `(stadiumName)` | `void` | Reset filters + show one stadium's matches |
+| `getFavoriteMatches` | `assets/js/bracket.js` | `(matches, favorites)` | `Match[]` | Matches involving favorited teams (resolved slots); used by schedule |
+| `calculateChallengeScore` | `assets/js/bracket.js` | `(simulation, results, bracketTree)` | `{ correct, total, byPhase }` | Picks vs real finished knockout results |
+| `getShareableLink` / `loadPredictionFromURL` | `assets/js/bracket.js` | `()` | `string` / `void` | base64 `?prediction=` export/import with validation + confirm |
+| `exportMatchToICS` | `assets/js/calendar.js` | `(match, stadium)` | `void` | RFC 5545 VEVENT (UTC, 2h, CRLF, escaped TEXT), Blob download |
