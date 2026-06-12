@@ -1,0 +1,242 @@
+[
+  {
+    "id": 1,
+    "name": "Estadio Azteca",
+    "city": "Mexico City",
+    "capacity": 87000,
+    "image": "stadiums/azteca.svg",
+    "timezone": "America/Mexico_City"
+  },
+  {
+    "id": 2,
+    "name": "Estadio Akron",
+    "city": "Guadalajara",
+    "capacity": 49850,
+    "image": "stadiums/akron.svg",
+    "timezone": "America/Mexico_City"
+  },
+  {
+    "id": 3,
+    "name": "Estadio BBVA",
+    "city": "Monterrey",
+    "capacity": 53500,
+    "image": "stadiums/bbva.svg",
+    "timezone": "America/Monterrey"
+  },
+  {
+    "id": 4,
+    "name": "Estadio Cuauhtemoc",
+    "city": "Puebla",
+    "capacity": 51726,
+    "image": "stadiums/cuauhtemoc.svg",
+    "timezone": "America/Mexico_City"
+  },
+  {
+    "id": 5,
+    "name": "Estadio Universitario",
+    "city": "Monterrey",
+    "capacity": 42000,
+    "image": "stadiums/universitario.svg",
+    "timezone": "America/Monterrey"
+  },
+  {
+    "id": 6,
+    "name": "Estadio Jalisco",
+    "city": "Guadalajara",
+    "capacity": 55020,
+    "image": "stadiums/jalisco.svg",
+    "timezone": "America/Mexico_City"
+  },
+  {
+    "id": 7,
+    "name": "SoFi Stadium",
+    "city": "Los Angeles",
+    "capacity": 70240,
+    "image": "stadiums/sofi.svg",
+    "timezone": "America/Los_Angeles"
+  },
+  {
+    "id": 8,
+    "name": "Levi's Stadium",
+    "city": "San Francisco",
+    "capacity": 68500,
+    "image": "stadiums/levis.svg",
+    "timezone": "America/Los_Angeles"
+  },
+  {
+    "id": 9,
+    "name": "Lumen Field",
+    "city": "Seattle",
+    "capacity": 69000,
+    "image": "stadiums/lumen.svg",
+    "timezone": "America/Los_Angeles"
+  },
+  {
+    "id": 10,
+    "name": "Rose Bowl",
+    "city": "Pasadena",
+    "capacity": 89702,
+    "image": "stadiums/rosebowl.svg",
+    "timezone": "America/Los_Angeles"
+  },
+  {
+    "id": 11,
+    "name": "Allegiant Stadium",
+    "city": "Las Vegas",
+    "capacity": 65000,
+    "image": "stadiums/allegiant.svg",
+    "timezone": "America/Los_Angeles"
+  },
+  {
+    "id": 12,
+    "name": "State Farm Stadium",
+    "city": "Phoenix",
+    "capacity": 63400,
+    "image": "stadiums/statefarm.svg",
+    "timezone": "America/Phoenix"
+  },
+  {
+    "id": 13,
+    "name": "Empower Field",
+    "city": "Denver",
+    "capacity": 76125,
+    "image": "stadiums/empower.svg",
+    "timezone": "America/Denver"
+  },
+  {
+    "id": 14,
+    "name": "AT&T Stadium",
+    "city": "Dallas",
+    "capacity": 80000,
+    "image": "stadiums/att.svg",
+    "timezone": "America/Chicago"
+  },
+  {
+    "id": 15,
+    "name": "NRG Stadium",
+    "city": "Houston",
+    "capacity": 72220,
+    "image": "stadiums/nrg.svg",
+    "timezone": "America/Chicago"
+  },
+  {
+    "id": 16,
+    "name": "Arrowhead Stadium",
+    "city": "Kansas City",
+    "capacity": 76416,
+    "image": "stadiums/arrowhead.svg",
+    "timezone": "America/Chicago"
+  },
+  {
+    "id": 17,
+    "name": "Soldier Field",
+    "city": "Chicago",
+    "capacity": 61500,
+    "image": "stadiums/soldier.svg",
+    "timezone": "America/Chicago"
+  },
+  {
+    "id": 18,
+    "name": "Caesars Superdome",
+    "city": "New Orleans",
+    "capacity": 73208,
+    "image": "stadiums/superdome.svg",
+    "timezone": "America/Chicago"
+  },
+  {
+    "id": 19,
+    "name": "Mercedes-Benz Stadium",
+    "city": "Atlanta",
+    "capacity": 71000,
+    "image": "stadiums/mercedesbenz.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 20,
+    "name": "Hard Rock Stadium",
+    "city": "Miami",
+    "capacity": 64767,
+    "image": "stadiums/hardrock.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 21,
+    "name": "Camping World Stadium",
+    "city": "Orlando",
+    "capacity": 60219,
+    "image": "stadiums/campingworld.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 22,
+    "name": "Raymond James Stadium",
+    "city": "Tampa",
+    "capacity": 65890,
+    "image": "stadiums/raymondjames.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 23,
+    "name": "MetLife Stadium",
+    "city": "New York",
+    "capacity": 82500,
+    "image": "stadiums/metlife.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 24,
+    "name": "Lincoln Financial Field",
+    "city": "Philadelphia",
+    "capacity": 69796,
+    "image": "stadiums/lincoln.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 25,
+    "name": "Gillette Stadium",
+    "city": "Boston",
+    "capacity": 65878,
+    "image": "stadiums/gillette.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 26,
+    "name": "M&T Bank Stadium",
+    "city": "Baltimore",
+    "capacity": 71008,
+    "image": "stadiums/mtbank.svg",
+    "timezone": "America/New_York"
+  },
+  {
+    "id": 27,
+    "name": "BMO Field",
+    "city": "Toronto",
+    "capacity": 45736,
+    "image": "stadiums/bmo.svg",
+    "timezone": "America/Toronto"
+  },
+  {
+    "id": 28,
+    "name": "Olympic Stadium",
+    "city": "Montreal",
+    "capacity": 56040,
+    "image": "stadiums/olympic.svg",
+    "timezone": "America/Toronto"
+  },
+  {
+    "id": 29,
+    "name": "BC Place",
+    "city": "Vancouver",
+    "capacity": 54500,
+    "image": "stadiums/bcplace.svg",
+    "timezone": "America/Vancouver"
+  },
+  {
+    "id": 30,
+    "name": "Commonwealth Stadium",
+    "city": "Edmonton",
+    "capacity": 56302,
+    "image": "stadiums/commonwealth.svg",
+    "timezone": "America/Edmonton"
+  }
+]
