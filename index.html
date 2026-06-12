@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="World Cup 2026 Hub — schedule, groups, interactive knockout bracket and stadiums.">
+  <title>World Cup 2026 Hub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/bracket.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="a11y.skip">Skip to content</a>
+
+  <header class="site-header">
+    <div class="header-inner container">
+      <a class="logo" href="#home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7.5 16 10.4l-1.5 4.7h-5L8 10.4z"/>
+          <path d="M12 3v4.5M19 6l-3 4.4M21 12.5l-4.5-2.1M5 18.4l4.5-3.3M14.5 15.1l3 4.3"/>
+        </svg>
+        <span>World Cup <strong>2026</strong></span>
+      </a>
+
+      <nav class="tabs" role="tablist" data-i18n-aria="a11y.mainNav">
+        <button class="tab-btn" data-tab="home" role="tab" aria-selected="false" aria-controls="panel-home" data-i18n="nav.home">Home</button>
+        <button class="tab-btn" data-tab="matches" role="tab" aria-selected="false" aria-controls="panel-matches" data-i18n="nav.matches">Matches</button>
+        <button class="tab-btn" data-tab="groups" role="tab" aria-selected="false" aria-controls="panel-groups" data-i18n="nav.groups">Groups</button>
+        <button class="tab-btn" data-tab="bracket" role="tab" aria-selected="false" aria-controls="panel-bracket" data-i18n="nav.bracket">Knockout</button>
+        <button class="tab-btn" data-tab="stadiums" role="tab" aria-selected="false" aria-controls="panel-stadiums" data-i18n="nav.stadiums">Stadiums</button>
+      </nav>
+
+      <div class="header-controls">
+        <button id="time-toggle" class="control-btn" type="button" data-i18n-aria="time.toggleAria"></button>
+        <div class="lang-switch" role="group" data-i18n-aria="a11y.langSwitch">
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="pt">PT</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="container">
+    <section id="panel-home" class="panel" role="tabpanel" hidden>
+      <section class="hero glass slide-up">
+        <div id="hero-content">
+          <p class="hero-label" data-i18n="app.loading">Loading data…</p>
+        </div>
+      </section>
+      <h2 class="section-title" data-i18n="dash.title">Tournament overview</h2>
+      <section class="dashboard" id="dashboard"></section>
+    </section>
+
+    <section id="panel-matches" class="panel" role="tabpanel" hidden>
+      <h2 class="section-title" data-i18n="nav.matches">Matches</h2>
+      <div id="schedule-root"><p class="placeholder glass" data-i18n="app.comingSoon"></p></div>
+    </section>
+
+    <section id="panel-groups" class="panel" role="tabpanel" hidden>
+      <h2 class="section-title" data-i18n="nav.groups">Groups</h2>
+      <div id="groups-root"><p class="placeholder glass" data-i18n="app.comingSoon"></p></div>
+    </section>
+
+    <section id="panel-bracket" class="panel" role="tabpanel" hidden>
+      <h2 class="section-title" data-i18n="nav.bracket">Knockout</h2>
+      <div id="bracket-root"><p class="placeholder glass" data-i18n="app.comingSoon"></p></div>
+    </section>
+
+    <section id="panel-stadiums" class="panel" role="tabpanel" hidden>
+      <h2 class="section-title" data-i18n="nav.stadiums">Stadiums</h2>
+      <div id="stadiums-root"><p class="placeholder glass" data-i18n="app.comingSoon"></p></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p data-i18n="footer.note"></p>
+  </footer>
+
+  <div id="modal-root"></div>
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

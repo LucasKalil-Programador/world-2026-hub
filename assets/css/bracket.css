@@ -1,0 +1,483 @@
+/* bracket.css — knockout bracket: horizontal round columns, CSS connectors,
+   match nodes, champion box. Geometry note: every column has the same height
+   and slots are flex:1, so a pair's children sit at 25% / 75% of the pair and
+   the next round's node at its 50% — connector lines meet exactly.
+   Interactions (hover path, zoom, drag) land in step 8. */
+
+.bracket-toolbar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.bracket-tools-left,
+.bracket-tools-right {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.sim-toggle {
+  font-size: 0.8rem;
+}
+
+.sim-toggle.active {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+#sim-reset {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.sim-note {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--accent-blue);
+}
+
+.zoom-btn {
+  min-width: 34px;
+  height: 34px;
+  padding-inline: 0.5rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 20, 33, 0.6);
+  color: var(--text-primary);
+  font-weight: 700;
+  transition: border-color 0.2s;
+}
+
+.zoom-btn:hover {
+  border-color: var(--accent-gold);
+}
+
+.zoom-reset {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.bracket-wrap {
+  overflow: auto;
+  max-height: min(78vh, 900px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: rgba(8, 20, 33, 0.45);
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  touch-action: none; /* we implement pan + pinch ourselves via pointer events */
+}
+
+.bracket-wrap.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.bracket-zoom {
+  position: relative;
+  width: max-content;
+}
+
+.bracket {
+  transform-origin: 0 0;
+}
+
+.bracket {
+  --node-w: 200px;
+  --line: rgba(255, 255, 255, 0.18);
+  display: flex;
+  gap: 44px;
+  width: max-content;
+  min-height: 1150px;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  width: var(--node-w);
+}
+
+.bracket-round-title {
+  margin: 0 0 0.75rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+}
+
+.bracket-matches {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.bracket-pair {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.bracket-slot {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* ----------------------------------------------------------- connectors */
+
+/* out of a node toward the next column (half the 44px gap) */
+.bracket-round:not(.bracket-final-col) .bracket-slot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -22px;
+  width: 22px;
+  height: 2px;
+  background: var(--line);
+}
+
+/* vertical join between a pair's two out-stubs */
+.bracket-pair::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  right: -22px;
+  width: 2px;
+  height: 50%;
+  background: var(--line);
+}
+
+/* into a node from the previous column */
+.bracket-round:not(:first-child) .bracket-slot::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -22px;
+  width: 22px;
+  height: 2px;
+  background: var(--line);
+}
+
+.bracket-champion-slot::before,
+.bracket-third-slot::before {
+  display: none;
+}
+
+/* --------------------------------------------------------- match nodes */
+
+.bracket-match {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  overflow: hidden;
+  background: rgba(16, 36, 59, 0.85);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bracket-match:hover {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.18);
+}
+
+.bracket-match.is-live {
+  border-color: rgba(255, 77, 90, 0.6);
+}
+
+.bracket-team {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.bracket-team + .bracket-team {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.bracket-team .flag {
+  flex: none;
+}
+
+.bt-flag-ph {
+  flex: none;
+  width: 20px;
+  height: 14px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bt-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.bracket-team.tbd .bt-name {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.bracket-team.winner {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.bracket-team.winner .bt-name {
+  color: var(--accent-gold);
+}
+
+.bt-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bt-score small {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------- final column extras */
+
+.champion-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.9rem 0.6rem;
+  text-align: center;
+  border: 1px dashed rgba(212, 175, 55, 0.5);
+  border-radius: var(--radius-sm);
+}
+
+.champion-box.has-champion {
+  border-style: solid;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.25);
+}
+
+.champion-trophy {
+  font-size: 1.4rem;
+}
+
+.champion-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.champion-name {
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.third-place-block {
+  width: 100%;
+}
+
+.third-place-block h4 {
+  margin: 0 0 0.4rem;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+/* mobile: narrower nodes and gap — connector stubs must stay at gap/2 */
+@media (max-width: 767px) {
+  .bracket {
+    --node-w: 168px;
+    gap: 36px;
+    min-height: 1000px;
+    padding: 1rem 1rem 1.25rem;
+  }
+
+  .bracket-round:not(.bracket-final-col) .bracket-slot::after {
+    right: -18px;
+    width: 18px;
+  }
+
+  .bracket-pair::after {
+    right: -18px;
+  }
+
+  .bracket-round:not(:first-child) .bracket-slot::before {
+    left: -18px;
+    width: 18px;
+  }
+
+  .bracket-wrap {
+    max-height: 72vh;
+  }
+}
+
+/* ----------------------------------------------------- challenge card */
+
+.challenge-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 0.75rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(16, 36, 59, 0.55);
+}
+
+.challenge-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+}
+
+.challenge-score {
+  font-weight: 700;
+}
+
+.challenge-phase {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* favorite team involved → gold edge, mirrors the schedule cards */
+.bracket-match.has-fav {
+  border-left: 3px solid var(--accent-gold);
+}
+
+/* ------------------------------------------------------- simulation */
+
+.sim-on .bracket-match.simulatable {
+  border-style: dashed;
+  border-color: rgba(30, 136, 229, 0.65);
+}
+
+.sim-on .bracket-match.simulatable:hover {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 14px rgba(30, 136, 229, 0.3);
+}
+
+.sim-chip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0 0 0 6px;
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.bt-score.sim {
+  color: var(--accent-blue);
+}
+
+.sim-modal .sim-hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.sim-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.sim-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.8rem 0.5rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 600;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.sim-team:hover {
+  border-color: rgba(30, 136, 229, 0.6);
+}
+
+.sim-team.active {
+  border-color: var(--accent-gold);
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.sim-scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+
+.sim-scores label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.sim-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* -------------------------------------------------- path highlight */
+
+.bracket-match,
+.bracket-slot::before,
+.bracket-slot::after,
+.bracket-pair::after {
+  transition: opacity 0.25s ease, background-color 0.25s ease,
+    border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.bracket.has-path .bracket-match:not(.path-on) {
+  opacity: 0.3;
+}
+
+.bracket-match.path-on {
+  border-color: rgba(212, 175, 55, 0.75);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.28);
+}
+
+.bracket-slot.path-on::before,
+.bracket-slot.path-on::after,
+.bracket-pair.path-on::after {
+  background: var(--accent-gold);
+}

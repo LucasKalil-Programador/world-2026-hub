@@ -1,0 +1,135 @@
+/* animations.css — entry (fade-in, slide-up, slide-left) and interaction
+   (hover-scale, hover-glow, pulse) animations. Bracket-specific set
+   (line-draw, winner/path-highlight) lands in step 8. */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-left {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+.slide-up {
+  animation: slide-up 0.55s ease both;
+}
+
+.slide-left {
+  animation: slide-left 0.55s ease both;
+}
+
+.pulse {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.hover-scale {
+  transition: transform 0.25s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+.hover-glow {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.hover-glow:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 0 22px rgba(212, 175, 55, 0.25);
+}
+
+/* ------------------------------------------------------ entry set */
+
+/* every tab switch animates the incoming panel */
+.panel:not([hidden]) {
+  animation: fade-in 0.35s ease;
+}
+
+/* card grids slide up with a small stagger on the first rows */
+.match-grid > *,
+.groups-grid > *,
+.stadiums-grid > * {
+  animation: slide-up 0.4s ease both;
+}
+
+.match-grid > :nth-child(2), .groups-grid > :nth-child(2), .stadiums-grid > :nth-child(2) { animation-delay: 45ms; }
+.match-grid > :nth-child(3), .groups-grid > :nth-child(3), .stadiums-grid > :nth-child(3) { animation-delay: 90ms; }
+.match-grid > :nth-child(4), .groups-grid > :nth-child(4), .stadiums-grid > :nth-child(4) { animation-delay: 135ms; }
+.match-grid > :nth-child(5), .groups-grid > :nth-child(5), .stadiums-grid > :nth-child(5) { animation-delay: 180ms; }
+.match-grid > :nth-child(6), .groups-grid > :nth-child(6), .stadiums-grid > :nth-child(6) { animation-delay: 225ms; }
+.match-grid > :nth-child(n+7), .groups-grid > :nth-child(n+7), .stadiums-grid > :nth-child(n+7) { animation-delay: 260ms; }
+
+/* ------------------------------------------------------ bracket set */
+
+@keyframes line-draw-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes line-draw-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes winner-glow {
+  from { box-shadow: inset 0 0 0 rgba(212, 175, 55, 0); }
+  50% { box-shadow: inset 0 0 18px rgba(212, 175, 55, 0.35); }
+  to { box-shadow: inset 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+.bracket .bracket-match {
+  animation: fade-in 0.45s ease both;
+}
+
+.bracket-round:nth-child(2) .bracket-match { animation-delay: 0.09s; }
+.bracket-round:nth-child(3) .bracket-match { animation-delay: 0.18s; }
+.bracket-round:nth-child(4) .bracket-match { animation-delay: 0.27s; }
+.bracket-round:nth-child(5) .bracket-match { animation-delay: 0.36s; }
+
+.bracket-slot::before,
+.bracket-slot::after {
+  transform-origin: left center;
+  animation: line-draw-x 0.5s ease 0.25s both;
+}
+
+.bracket-pair::after {
+  transform-origin: center top;
+  animation: line-draw-y 0.5s ease 0.35s both;
+}
+
+.bracket-team.winner {
+  animation: winner-glow 1.6s ease 0.5s 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in,
+  .slide-up,
+  .slide-left,
+  .pulse {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
