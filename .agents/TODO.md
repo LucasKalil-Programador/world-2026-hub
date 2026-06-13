@@ -60,9 +60,10 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 ## 6. Post-launch (real data)
 
 ### 🟡 IMPORTANT
-- [ ] Replace mock `data/*.json` with real World Cup 2026 data
-- [ ] Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage
-- [ ] Real stadium photos + team flag SVGs in `assets/images/`
+- [x] ~~Replace mock `data/*.json` with real World Cup 2026 data~~ (2026-06-12 — full migration + smoke test; see project-memory)
+- [ ] Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage ends (~2026-06-27; slot → allowed-groups table in project-memory)
+- [ ] Update `results.json` as the tournament progresses (USA–PAR kicked off 2026-06-13 01:00 UTC, still `scheduled` in data)
+- [ ] Real stadium photos + team flag SVGs in `assets/images/` (10 new-team flags created 2026-06-12 in placeholder style)
 
 ---
 

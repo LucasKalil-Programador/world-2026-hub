@@ -170,17 +170,40 @@ Static web app showing the FIFA World Cup 2026 (Mexico/USA/Canada, 48 teams) —
 **Symptom if forgotten:** works locally, 404s on GitHub Pages
 **Solution:** use relative paths (`data/matches.json`, `assets/...`) everywhere
 
+### 8. Claude Preview: resize beyond the native window breaks clicks/screenshots
+**Where:** Claude Preview panel, `preview_resize` wider than the native window (~791 CSS px)
+**Why:** viewport emulation desyncs the capture/click surface from the page (screenshots show the page squeezed in the left half; `preview_click` lands on wrong coordinates and silently does nothing)
+**Symptom if forgotten:** "clicks don't work" / half-black screenshots at desktop widths, wasted debugging — the app itself is fine (`preview_eval` geometry confirms)
+**Solution:** at emulated widths > native, navigate via `preview_eval` + exported `navigateTo()` and verify geometry via eval/inspect; trust screenshots only at widths ≤ native. `preview_resize preset: desktop` resets to native and fixes clicks.
+
 ---
 
 ## Patterns for future changes
 
 ### How to update real-world data (scores, schedule)
-1. Edit `data/results.json` (scores/status) or `data/matches.json` (schedule).
+Follow `how-refresh-data.md` (project root). In short:
+1. Edit `data/results.json` (scores/status) or `data/matches.json` (schedule, rare).
 2. Once group stage ends: fill `data/bracket-config.json` → `thirdPlaceAssignment` (slot → group letter). Nothing else changes.
 
 ### Real-data migration (2026-06-12)
 - `how-update.md` (project root) is the full runbook for replacing mock `data/*.json` with real World Cup 2026 data: file-by-file schemas, order of operations (stadiums → teams → groups → bracket-config.round32 → matches → results → thirdPlaceAssignment), and a cross-file integrity checklist (group membership, id ranges, bracketRef uniqueness, stadium name/city matches).
 - Flags one open decision: `stadiums.json` has 30 entries (original bid shortlist) vs. the 16 venues actually used by the real tournament — confirm with user whether to trim before/while editing `matches.json`.
+
+### Real-data migration DONE (2026-06-12)
+- **All 6 `data/*.json` files now hold real WC2026 data.** Sources: Wikipedia per-group + knockout-stage articles (primary; local kickoff times with explicit UTC offsets), cross-checked vs ESPN/NBC/FOX/olympics.com/lumenfield.com. Full smoke test + desktop/mobile layout pass, console clean.
+- **Stadiums trimmed 30 → 16** (user decision). Cities use FIFA host-city names ("New York/New Jersey", "San Francisco Bay Area", "Boston"), not suburb names (East Rutherford, Santa Clara, Foxborough) — `matches.json` and `stadiums.json` must keep matching exactly.
+- **Match ids:** group matches 1–72 are *chronological by UTC kickoff* (≠ 6-per-group blocks); knockout ids 73–104 are FIFA's official match numbers.
+- **bracket-config app-order ↔ FIFA mapping:** R32-1..16 = FIFA matches 74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87 (ordering chosen so the app's sequential pairing reproduces the official R16/QF/SF progression).
+- **Third-place slots → allowed groups** (for filling `thirdPlaceAssignment` after the group stage, per official draw): slot 1 (M74) A/B/C/D/F · slot 2 (M77) C/D/F/G/H · slot 3 (M81) B/E/F/I/J · slot 4 (M82) A/E/H/I/J · slot 5 (M79) C/E/F/H/I · slot 6 (M80) E/H/I/J/K · slot 7 (M85) E/F/G/I/J · slot 8 (M87) D/E/I/J/L. Each group letter may appear in only one slot.
+- **Results as of 2026-06-12:** ids 1–3 finished (MEX 2–0 RSA, KOR 2–1 CZE, CAN 1–1 BIH); USA–PAR (id 4) kicked off 01:00 UTC Jun 13 — first thing to update next session.
+- **Single-source caveat:** R16 match 94 (Jul 6, Lumen Field) time 17:00 PDT per Wikipedia; one ESPN summary implied 14:00 PDT. Re-verify when R16 nears.
+- **New-team flags** created in the house placeholder style: RSA, CZE, BIH, HAI, CUW, SWE, CPV, NOR, IRQ, COD; 24 unreferenced mock SVGs deleted (10 flags + 14 stadiums). Exactly 48 flags + 16 stadium images remain.
+- **Tiebreak note:** with all tiebreakers equal the app falls back to team-id alphabetical (e.g. BIH above CAN on 1 pt) — may differ from FIFA's published order (fair-play points / drawing of lots), acceptable by design.
+- Mock-data sections above (“Mock data design”, hero live-match note for match 61) are now historical.
+
+### Daily refresh runbook (2026-06-12)
+- **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
+- `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.
 
 ### How to add a UI label
 1. Add the key to both `en` and `pt` dicts in `assets/js/i18n.js`.

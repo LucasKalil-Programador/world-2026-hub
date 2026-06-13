@@ -2,7 +2,7 @@
 
 Navigation map of the codebase. Use this to find which file owns a concern before reading code.
 
-> **Status 2026-06-12 (steps 1–10 + 12 done):** everything works — all views, bracket interactions, simulation, responsive/a11y pass, favorites, time toggle, challenge, share link, `.ics` export. Remaining: step 11 (full README + acceptance checklist). Spec source of truth: `world-cup-2026-hub-spec-en.md` + `complement-spec-worldcup2026-en.md` (complement **wins on conflict**).
+> **Status 2026-06-12 (all 12 steps + real-data migration done):** everything works with **real World Cup 2026 data** — all views, bracket interactions, simulation, responsive/a11y pass, favorites, time toggle, challenge, share link, `.ics` export. Remaining: keep `results.json` current, fill `thirdPlaceAssignment` after the group stage (~Jun 27), Lighthouse run + GitHub Pages deploy. Spec source of truth: `world-cup-2026-hub-spec-en.md` + `complement-spec-worldcup2026-en.md` (complement **wins on conflict**).
 
 ---
 
@@ -41,17 +41,23 @@ worldcup2026/
 │   │   └── calendar.js                   .ics export (RFC 5545, CRLF, Blob download)
 │   └── images/                           Team flag SVGs, stadium placeholders
 │
-├── data/                                 All content — the only thing edited for real data
-│   ├── teams.json                        48 teams: { id, name, flag }
-│   ├── groups.json                       { "A": [4 team ids], ... } × 12 (A–L)
-│   ├── matches.json                      104 matches; UTC times; knockout uses bracketRef
-│   ├── results.json                      { matchId, homeScore, awayScore, penalties?, status }
-│   ├── stadiums.json                     ~30 stadiums: { id, name, city, capacity, image, timezone }
-│   └── bracket-config.json               ★ 16 R32 slot definitions + thirdPlaceAssignment —
+├── data/                                 All content — REAL WC2026 data since 2026-06-12
+│   ├── teams.json                        48 real qualifiers: { id, name, flag } (FIFA codes)
+│   ├── groups.json                       Official draw { "A": [4 team ids], ... } × 12 (A–L)
+│   ├── matches.json                      104 real fixtures; UTC times; ids 1–72 chronological
+│   │                                       group games, 73–104 = FIFA match numbers (bracketRef)
+│   ├── results.json                      { matchId, homeScore, awayScore, penalties?, status } —
+│   │                                       update as the tournament progresses
+│   ├── stadiums.json                     16 real venues: { id, name, city, capacity, image, timezone }
+│   └── bracket-config.json               ★ official R32 structure + thirdPlaceAssignment (all null) —
 │                                           the ONLY file to edit once real 3rd places are known
+│                                           (slot → allowed-groups table in project-memory.md)
 │
 ├── README.md                             Setup, GitHub Pages deploy, JSON maintenance guide
-├── how-update.md                         Real-data migration runbook (mock → real WC2026 data/*.json)
+├── how-update.md                         Real-data migration runbook (mock → real — DONE 2026-06-12)
+├── how-refresh-data.md                   ★ Daily refresh runbook during the tournament:
+│                                           results.json scores/status + one-time
+│                                           thirdPlaceAssignment; everything else frozen
 ├── world-cup-2026-hub-spec-en.md         Main spec
 └── complement-spec-worldcup2026-en.md    Complement spec (precedence on conflict)
 ```
@@ -123,7 +129,8 @@ matches.json time (UTC) ── formatMatchTime(match, stadium, mode)
 | Where is simulation state stored/cleared? | `localStorage` key `wc2026_simulation`, via `assets/js/storage.js` |
 | Where do I change colors/theme? | CSS variables at the top of `assets/css/style.css` |
 | Where do I add a stadium? | `data/stadiums.json` + image in `assets/images/` |
-| How do I replace mock data with real WC2026 data? | `how-update.md` (root) — schemas, order of operations, integrity checklist |
+| How do I replace mock data with real WC2026 data? | `how-update.md` (root) — done 2026-06-12; kept as schema reference |
+| How do I update scores during the tournament? | `how-refresh-data.md` (root) — daily results.json routine + thirdPlaceAssignment how-to |
 
 ---
 
