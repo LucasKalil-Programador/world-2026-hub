@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" role="img" aria-label="Algeria flag">
-  <rect width="60" height="40" rx="4" fill="#006233"/>
-  <path d="M0 20h60v16a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4z" fill="#f5f5f5"/>
-  <text x="30" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff" stroke="#081421" stroke-width="0.8" paint-order="stroke" text-anchor="middle">ALG</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><path fill="#fff" d="M0 0h900v600H0z"/><path fill="#063" d="M0 0h450v600H0z"/><path fill="#d21034" d="M579.903811 225a150 150 0 1 0 0 150 120 120 0 1 1 0-150M585.676275 300 450 255.916106 533.852549 371.329239v-142.658277L450 344.083894z"/></svg>

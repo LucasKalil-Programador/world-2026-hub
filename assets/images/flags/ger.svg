@@ -1,5 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" role="img" aria-label="Germany flag">
-  <rect width="60" height="40" rx="4" fill="#dd0000"/>
-  <path d="M0 20h60v16a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4z" fill="#ffce00"/>
-  <text x="30" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff" stroke="#081421" stroke-width="0.8" paint-order="stroke" text-anchor="middle">GER</text>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+	"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 5 3">
+	<desc>Flag of Germany</desc>
+	<rect id="black_stripe" width="5" height="3" y="0" x="0" fill="#000"/>
+	<rect id="red_stripe" width="5" height="2" y="1" x="0" fill="#D00"/>
+	<rect id="gold_stripe" width="5" height="1" y="2" x="0" fill="#FFCE00"/>
 </svg>

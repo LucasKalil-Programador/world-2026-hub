@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" role="img" aria-label="Jordan flag">
-  <rect width="60" height="40" rx="4" fill="#007a3d"/>
-  <path d="M0 20h60v16a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4z" fill="#ce1126"/>
-  <text x="30" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff" stroke="#081421" stroke-width="0.8" paint-order="stroke" text-anchor="middle">JOR</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 10080 5040">
+	<title>Flag of Jordan</title>
+	<path fill="#fff" d="m0 0h10080v5040H0z"/>
+	<path d="m0 0h10080v1680H0z"/>
+	<path fill="#007a3d" d="m0 3360h10080v1680H0z"/>
+	<path fill="#ce1126" d="m5040 2520L0 5040V0m1557 2160-78 198-203-62 106 184-176 120 211 32-16 212 156-144 157 144-16-212 210-32-175-120 106-184-203 62z"/>
 </svg>

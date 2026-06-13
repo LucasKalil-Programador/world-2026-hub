@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" role="img" aria-label="Ghana flag">
-  <rect width="60" height="40" rx="4" fill="#006b3f"/>
-  <path d="M0 20h60v16a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4z" fill="#fcd116"/>
-  <text x="30" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff" stroke="#081421" stroke-width="0.8" paint-order="stroke" text-anchor="middle">GHA</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><path fill="#006b3f" d="m0 0h900v600H0"/><path fill="#fcd116" d="m0 0h900v400H0"/><path fill="#ce1126" d="m0 0h900v200H0"/><path d="m450 200 64.98 200-170.13-123.61h210.3L385.02 400"/></svg>
