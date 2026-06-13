@@ -642,7 +642,7 @@ button {
 .groups-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
 }
 
 .group-card {
@@ -708,7 +708,10 @@ button {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  white-space: nowrap;
+}
+
+.standings-table td.col-team span {
+  min-width: 0;
 }
 
 .standings-table tbody tr {
