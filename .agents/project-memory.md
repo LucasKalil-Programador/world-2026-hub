@@ -196,6 +196,10 @@ Follow `how-refresh-data.md` (project root). In short:
 - **bracket-config app-order ↔ FIFA mapping:** R32-1..16 = FIFA matches 74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87 (ordering chosen so the app's sequential pairing reproduces the official R16/QF/SF progression).
 - **Third-place slots → allowed groups** (for filling `thirdPlaceAssignment` after the group stage, per official draw): slot 1 (M74) A/B/C/D/F · slot 2 (M77) C/D/F/G/H · slot 3 (M81) B/E/F/I/J · slot 4 (M82) A/E/H/I/J · slot 5 (M79) C/E/F/H/I · slot 6 (M80) E/H/I/J/K · slot 7 (M85) E/F/G/I/J · slot 8 (M87) D/E/I/J/L. Each group letter may appear in only one slot.
 - **Results as of 2026-06-12:** ids 1–3 finished (MEX 2–0 RSA, KOR 2–1 CZE, CAN 1–1 BIH); USA–PAR (id 4) kicked off 01:00 UTC Jun 13 — first thing to update next session.
+
+### Daily refresh (2026-06-13)
+- **Results updated through match id 4**: USA 4–1 PAR (Group D), confirmed via FIFA match centre + Yahoo/ESPN. Group D standings now show USA 1st (+3 GD), PAR 4th (-3 GD) — verified in Groups view.
+- ids 5 (QAT–SUI, Jun 13 19:00 UTC) and 6 (BRA–MAR, Jun 13 22:00 UTC) not yet played as of this update — still `scheduled`. Next session: check these plus continue daily routine per `how-refresh-data.md`.
 - **Single-source caveat:** R16 match 94 (Jul 6, Lumen Field) time 17:00 PDT per Wikipedia; one ESPN summary implied 14:00 PDT. Re-verify when R16 nears.
 - **New-team flags** created in the house placeholder style: RSA, CZE, BIH, HAI, CUW, SWE, CPV, NOR, IRQ, COD; 24 unreferenced mock SVGs deleted (10 flags + 14 stadiums). Exactly 48 flags + 16 stadium images remain.
 - **Tiebreak note:** with all tiebreakers equal the app falls back to team-id alphabetical (e.g. BIH above CAN on 1 pt) — may differ from FIFA's published order (fair-play points / drawing of lots), acceptable by design.
