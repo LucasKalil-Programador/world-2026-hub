@@ -1,369 +1,369 @@
 [
   {
     "matchId": 1,
-    "homeScore": 1,
-    "awayScore": 1,
+    "homeScore": 2,
+    "awayScore": 0,
     "status": "finished"
   },
   {
     "matchId": 2,
-    "homeScore": 1,
-    "awayScore": 0,
+    "homeScore": 2,
+    "awayScore": 1,
     "status": "finished"
   },
   {
     "matchId": 3,
-    "homeScore": 3,
-    "awayScore": 3,
+    "homeScore": 1,
+    "awayScore": 1,
     "status": "finished"
   },
   {
     "matchId": 4,
-    "homeScore": 4,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 5,
-    "homeScore": 4,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 6,
-    "homeScore": 0,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 7,
-    "homeScore": 1,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 8,
-    "homeScore": 2,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 9,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 10,
-    "homeScore": 0,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 11,
-    "homeScore": 4,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 12,
-    "homeScore": 2,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 13,
-    "homeScore": 3,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 14,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 15,
-    "homeScore": 3,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 16,
-    "homeScore": 1,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 17,
-    "homeScore": 2,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 18,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 19,
-    "homeScore": 4,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 20,
-    "homeScore": 2,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 21,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 22,
-    "homeScore": 4,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 23,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 24,
-    "homeScore": 4,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 25,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 26,
-    "homeScore": 4,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 27,
-    "homeScore": 2,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 28,
-    "homeScore": 3,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 29,
-    "homeScore": 4,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 30,
-    "homeScore": 0,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 31,
-    "homeScore": 2,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 32,
-    "homeScore": 1,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 33,
-    "homeScore": 0,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 34,
-    "homeScore": 1,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 35,
-    "homeScore": 3,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 36,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 37,
-    "homeScore": 2,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 38,
-    "homeScore": 1,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 39,
-    "homeScore": 4,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 40,
-    "homeScore": 4,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 41,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 42,
-    "homeScore": 3,
-    "awayScore": 2,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 43,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 44,
-    "homeScore": 4,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 45,
-    "homeScore": 3,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 46,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 47,
-    "homeScore": 2,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 48,
-    "homeScore": 0,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 49,
-    "homeScore": 4,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 50,
-    "homeScore": 4,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 51,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 52,
-    "homeScore": 4,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 53,
-    "homeScore": 4,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 54,
-    "homeScore": 3,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 55,
-    "homeScore": 0,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 56,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 57,
-    "homeScore": 4,
-    "awayScore": 3,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 58,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 59,
-    "homeScore": 2,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 60,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 61,
-    "homeScore": 1,
-    "awayScore": 0,
-    "status": "live"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 62,
@@ -439,13 +439,9 @@
   },
   {
     "matchId": 74,
-    "homeScore": 1,
-    "awayScore": 1,
-    "status": "finished",
-    "penalties": {
-      "home": 4,
-      "away": 3
-    }
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 75,
@@ -455,9 +451,9 @@
   },
   {
     "matchId": 76,
-    "homeScore": 2,
-    "awayScore": 0,
-    "status": "finished"
+    "homeScore": null,
+    "awayScore": null,
+    "status": "scheduled"
   },
   {
     "matchId": 77,

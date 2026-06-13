@@ -4,7 +4,7 @@
       "id": "R32-1",
       "home": {
         "type": "group",
-        "ref": "A",
+        "ref": "E",
         "pos": 1
       },
       "away": {
@@ -16,20 +16,7 @@
       "id": "R32-2",
       "home": {
         "type": "group",
-        "ref": "C",
-        "pos": 1
-      },
-      "away": {
-        "type": "group",
-        "ref": "F",
-        "pos": 2
-      }
-    },
-    {
-      "id": "R32-3",
-      "home": {
-        "type": "group",
-        "ref": "B",
+        "ref": "I",
         "pos": 1
       },
       "away": {
@@ -38,120 +25,7 @@
       }
     },
     {
-      "id": "R32-4",
-      "home": {
-        "type": "group",
-        "ref": "D",
-        "pos": 1
-      },
-      "away": {
-        "type": "group",
-        "ref": "E",
-        "pos": 2
-      }
-    },
-    {
-      "id": "R32-5",
-      "home": {
-        "type": "group",
-        "ref": "E",
-        "pos": 1
-      },
-      "away": {
-        "type": "third",
-        "slot": 3
-      }
-    },
-    {
-      "id": "R32-6",
-      "home": {
-        "type": "group",
-        "ref": "F",
-        "pos": 1
-      },
-      "away": {
-        "type": "group",
-        "ref": "C",
-        "pos": 2
-      }
-    },
-    {
-      "id": "R32-7",
-      "home": {
-        "type": "group",
-        "ref": "G",
-        "pos": 1
-      },
-      "away": {
-        "type": "third",
-        "slot": 4
-      }
-    },
-    {
-      "id": "R32-8",
-      "home": {
-        "type": "group",
-        "ref": "H",
-        "pos": 1
-      },
-      "away": {
-        "type": "group",
-        "ref": "J",
-        "pos": 2
-      }
-    },
-    {
-      "id": "R32-9",
-      "home": {
-        "type": "group",
-        "ref": "I",
-        "pos": 1
-      },
-      "away": {
-        "type": "third",
-        "slot": 5
-      }
-    },
-    {
-      "id": "R32-10",
-      "home": {
-        "type": "group",
-        "ref": "J",
-        "pos": 1
-      },
-      "away": {
-        "type": "group",
-        "ref": "H",
-        "pos": 2
-      }
-    },
-    {
-      "id": "R32-11",
-      "home": {
-        "type": "group",
-        "ref": "K",
-        "pos": 1
-      },
-      "away": {
-        "type": "third",
-        "slot": 6
-      }
-    },
-    {
-      "id": "R32-12",
-      "home": {
-        "type": "group",
-        "ref": "L",
-        "pos": 1
-      },
-      "away": {
-        "type": "group",
-        "ref": "K",
-        "pos": 2
-      }
-    },
-    {
-      "id": "R32-13",
+      "id": "R32-3",
       "home": {
         "type": "group",
         "ref": "A",
@@ -164,22 +38,86 @@
       }
     },
     {
-      "id": "R32-14",
+      "id": "R32-4",
       "home": {
         "type": "group",
-        "ref": "D",
-        "pos": 2
+        "ref": "F",
+        "pos": 1
       },
       "away": {
-        "type": "third",
-        "slot": 7
+        "type": "group",
+        "ref": "C",
+        "pos": 2
       }
     },
     {
-      "id": "R32-15",
+      "id": "R32-5",
+      "home": {
+        "type": "group",
+        "ref": "K",
+        "pos": 2
+      },
+      "away": {
+        "type": "group",
+        "ref": "L",
+        "pos": 2
+      }
+    },
+    {
+      "id": "R32-6",
+      "home": {
+        "type": "group",
+        "ref": "H",
+        "pos": 1
+      },
+      "away": {
+        "type": "group",
+        "ref": "J",
+        "pos": 2
+      }
+    },
+    {
+      "id": "R32-7",
+      "home": {
+        "type": "group",
+        "ref": "D",
+        "pos": 1
+      },
+      "away": {
+        "type": "third",
+        "slot": 3
+      }
+    },
+    {
+      "id": "R32-8",
       "home": {
         "type": "group",
         "ref": "G",
+        "pos": 1
+      },
+      "away": {
+        "type": "third",
+        "slot": 4
+      }
+    },
+    {
+      "id": "R32-9",
+      "home": {
+        "type": "group",
+        "ref": "C",
+        "pos": 1
+      },
+      "away": {
+        "type": "group",
+        "ref": "F",
+        "pos": 2
+      }
+    },
+    {
+      "id": "R32-10",
+      "home": {
+        "type": "group",
+        "ref": "E",
         "pos": 2
       },
       "away": {
@@ -189,11 +127,73 @@
       }
     },
     {
-      "id": "R32-16",
+      "id": "R32-11",
+      "home": {
+        "type": "group",
+        "ref": "A",
+        "pos": 1
+      },
+      "away": {
+        "type": "third",
+        "slot": 5
+      }
+    },
+    {
+      "id": "R32-12",
       "home": {
         "type": "group",
         "ref": "L",
+        "pos": 1
+      },
+      "away": {
+        "type": "third",
+        "slot": 6
+      }
+    },
+    {
+      "id": "R32-13",
+      "home": {
+        "type": "group",
+        "ref": "J",
+        "pos": 1
+      },
+      "away": {
+        "type": "group",
+        "ref": "H",
         "pos": 2
+      }
+    },
+    {
+      "id": "R32-14",
+      "home": {
+        "type": "group",
+        "ref": "D",
+        "pos": 2
+      },
+      "away": {
+        "type": "group",
+        "ref": "G",
+        "pos": 2
+      }
+    },
+    {
+      "id": "R32-15",
+      "home": {
+        "type": "group",
+        "ref": "B",
+        "pos": 1
+      },
+      "away": {
+        "type": "third",
+        "slot": 7
+      }
+    },
+    {
+      "id": "R32-16",
+      "home": {
+        "type": "group",
+        "ref": "K",
+        "pos": 1
       },
       "away": {
         "type": "third",
