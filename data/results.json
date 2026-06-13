@@ -19,9 +19,9 @@
   },
   {
     "matchId": 4,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 4,
+    "awayScore": 1,
+    "status": "finished"
   },
   {
     "matchId": 5,
