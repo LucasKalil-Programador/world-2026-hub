@@ -65,6 +65,14 @@ Rules:
 > ⚠️ First pending item: **match id 4 (USA vs Paraguay)** kicked off 2026-06-13
 > 01:00 UTC and is still `scheduled` in the data.
 
+### 4. Bump the cache-busting version
+
+Any time `data/*.json` changes, update `DATA_VERSION` in `assets/js/app.js`
+(top of `loadData()`) to today's date, e.g. `'2026-06-14-rev1'`. This is
+appended as `?v=...` to every data fetch — without bumping it, visitors on
+Hostinger may keep getting yesterday's cached `results.json`. If you edit
+data more than once in the same day, increment the `revN` suffix.
+
 ---
 
 ## One-time: `thirdPlaceAssignment` (after ~Jun 27–28)
@@ -130,4 +138,5 @@ single-source (Wikipedia 17:00 PDT vs one ESPN summary implying 14:00 PDT).
 
 Per project convention, append a short dated line to `.agents/project-memory.md`
 ("results updated through match id N on YYYY-MM-DD") and tick anything completed
-in `.agents/TODO.md` §6.
+in `.agents/TODO.md` §6. Confirm `DATA_VERSION` in `assets/js/app.js` was bumped
+to today's date (step 4 above) before committing.

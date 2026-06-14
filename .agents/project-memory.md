@@ -242,6 +242,10 @@ Follow `how-refresh-data.md` (project root). In short:
 - **Sync incremental:** a action mantém `.ftp-deploy-sync-state.json` no servidor; só reenvia arquivos alterados. Não comitar esse arquivo (vive só no servidor).
 - **Gotcha:** se a Hostinger não aceitar FTPS explícito, trocar `protocol` para `ftp`. Se o site ficar em subpasta, lembrar do gotcha #7 (paths relativos) — já está OK no projeto.
 
+### Data cache-busting via DATA_VERSION (2026-06-14)
+- **`assets/js/app.js` `loadData()` appends `?v=${DATA_VERSION}`** to every `data/*.json` fetch (`DATA_VERSION` constant near the top of the file, currently `'2026-06-13-rev1'`). Fixes production browsers/Hostinger caching stale `results.json` after a daily refresh — `cache: 'reload'` only helps the developer's own browser, not real visitors.
+- **Must be bumped on every data refresh** — added as step 4 of the daily routine in `how-refresh-data.md`. Format `YYYY-MM-DD-revN`; increment `revN` for same-day re-edits.
+
 ### How to add a UI label
 1. Add the key to both `en` and `pt` dicts in `assets/js/i18n.js`.
 2. Use `t("key")` at the render site — never hardcode the string.

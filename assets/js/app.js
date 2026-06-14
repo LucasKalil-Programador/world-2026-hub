@@ -14,12 +14,14 @@ import { initBracket } from './bracket.js';
 
 let data = null;
 
+const DATA_VERSION = '2026-06-13-rev1';
+
 export async function loadData() {
   if (data) return data;
   const files = ['teams', 'groups', 'matches', 'results', 'stadiums', 'bracket-config'];
   const [teams, groups, matches, results, stadiums, bracketConfig] = await Promise.all(
     files.map(async (name) => {
-      const res = await fetch(`data/${name}.json`);
+      const res = await fetch(`data/${name}.json?v=${DATA_VERSION}`);
       if (!res.ok) throw new Error(`data/${name}.json — HTTP ${res.status}`);
       return res.json();
     }),
