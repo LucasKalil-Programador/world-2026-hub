@@ -30,10 +30,9 @@ jobs:
           port: 21
           # Pasta de origem no repositório (raiz do projeto).
           local-dir: ./
-          # Pasta de destino na Hostinger. Domínio principal = public_html/.
-          # Para subdomínio/addon use o caminho correspondente, p.ex.
-          # public_html/world-2026/  — sempre terminando com "/".
-          server-dir: public_html/
+          # Pasta de destino na Hostinger (subpasta do domínio principal).
+          # Sempre terminando com "/".
+          server-dir: public_html/worldcup2026/
           # Não enviar arquivos de desenvolvimento/documentação para o site.
           exclude: |
             **/.git*
