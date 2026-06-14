@@ -30,9 +30,11 @@ jobs:
           port: 21
           # Pasta de origem no repositório (raiz do projeto).
           local-dir: ./
-          # Pasta de destino na Hostinger (subpasta do domínio principal).
-          # Sempre terminando com "/".
-          server-dir: public_html/worldcup2026/
+          # Pasta de destino na Hostinger. ATENÇÃO: a conta FTP da Hostinger
+          # já faz login DENTRO de public_html, então o caminho é relativo a
+          # ele — NÃO repetir "public_html/" aqui (senão cria public_html
+          # dentro de public_html). Sempre terminando com "/".
+          server-dir: worldcup2026/
           # Não enviar arquivos de desenvolvimento/documentação para o site.
           exclude: |
             **/.git*
