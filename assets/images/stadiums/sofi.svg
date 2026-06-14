@@ -1,15 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225" role="img" aria-label="SoFi Stadium">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="32 132 236 184" role="img" aria-label="SoFi Stadium, Los Angeles, USA">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#10243b"/>
-      <stop offset="1" stop-color="#081421"/>
-    </linearGradient>
+    <style>
+    .struct{fill:none;stroke:#1E2A38;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+    .thin{fill:none;stroke:#1E2A38;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+    .hair{fill:none;stroke:#1E2A38;stroke-width:1;stroke-linecap:round;opacity:.55}
+    .concrete{fill:#E7EBF0}
+    .stands{fill:#CDD6E0}
+    .canopy{fill:#EDF0F4}
+    .void{fill:#FFFFFF}
+    .pitch{fill:#3D9A6A}
+    .pline{fill:none;stroke:#FFFFFF;stroke-width:1.5;opacity:.9}
+    .acc{fill:#E1593A}
+    .accs{fill:none;stroke:#E1593A;stroke-width:2}
+    .green{fill:#6FB98F}
+    .ribs{fill:none;stroke:#B7C0CC;stroke-width:16;stroke-dasharray:3 9}
+    .louver{fill:none;stroke:#B7C0CC;stroke-width:13;stroke-dasharray:2 5}
+</style>
+    <pattern id="frit" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.9" fill="#C7D0DA"/>
+    </pattern>
   </defs>
-  <rect width="400" height="225" fill="url(#bg)"/>
-  <ellipse cx="200" cy="100" rx="155" ry="68" fill="#0e3a24" stroke="#d4af37" stroke-width="2"/>
-  <rect x="135" y="62" width="130" height="76" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
-  <line x1="200" y1="62" x2="200" y2="138" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
-  <circle cx="200" cy="100" r="16" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
-  <text x="200" y="192" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">SoFi Stadium</text>
-  <text x="200" y="211" font-family="Arial, sans-serif" font-size="12" fill="#cfd8dc" text-anchor="middle">Los Angeles</text>
+  <g>
+    <ellipse cx="150" cy="224" rx="108" ry="82" class="canopy"/>
+    <ellipse cx="150" cy="224" rx="108" ry="82" fill="url(#frit)"/>
+    <ellipse cx="150" cy="224" rx="108" ry="82" class="struct"/>
+    <ellipse cx="150" cy="226" rx="74" ry="54" class="void"/>
+    <ellipse cx="150" cy="226" rx="74" ry="54" class="thin"/>
+    <rect x="110" y="206" width="80" height="40" rx="8" class="pitch"/>
+    <line x1="150" y1="206" x2="150" y2="246" class="pline"/>
+    <circle cx="150" cy="226" r="9" class="accs"/>
+    <ellipse cx="150" cy="226" rx="30" ry="19" class="accs"/>
+    <ellipse cx="150" cy="226" rx="22" ry="12" class="thin"/>
+  </g>
 </svg>

@@ -1,15 +1,91 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225" role="img" aria-label="BC Place">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="32 128 236 188" role="img" aria-label="BC Place, Vancouver, Canada">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#10243b"/>
-      <stop offset="1" stop-color="#081421"/>
-    </linearGradient>
+    <style>
+    .struct{fill:none;stroke:#1E2A38;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+    .thin{fill:none;stroke:#1E2A38;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+    .hair{fill:none;stroke:#1E2A38;stroke-width:1;stroke-linecap:round;opacity:.55}
+    .concrete{fill:#E7EBF0}
+    .stands{fill:#CDD6E0}
+    .canopy{fill:#EDF0F4}
+    .void{fill:#FFFFFF}
+    .pitch{fill:#3D9A6A}
+    .pline{fill:none;stroke:#FFFFFF;stroke-width:1.5;opacity:.9}
+    .acc{fill:#E1593A}
+    .accs{fill:none;stroke:#E1593A;stroke-width:2}
+    .green{fill:#6FB98F}
+    .ribs{fill:none;stroke:#B7C0CC;stroke-width:16;stroke-dasharray:3 9}
+    .louver{fill:none;stroke:#B7C0CC;stroke-width:13;stroke-dasharray:2 5}
+</style>
+    <pattern id="frit" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.9" fill="#C7D0DA"/>
+    </pattern>
   </defs>
-  <rect width="400" height="225" fill="url(#bg)"/>
-  <ellipse cx="200" cy="100" rx="155" ry="68" fill="#0e3a24" stroke="#d4af37" stroke-width="2"/>
-  <rect x="135" y="62" width="130" height="76" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
-  <line x1="200" y1="62" x2="200" y2="138" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
-  <circle cx="200" cy="100" r="16" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
-  <text x="200" y="192" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">BC Place</text>
-  <text x="200" y="211" font-family="Arial, sans-serif" font-size="12" fill="#cfd8dc" text-anchor="middle">Vancouver</text>
+  <g>
+    <ellipse cx="150" cy="222" rx="104" ry="80" class="canopy"/>
+    <ellipse cx="150" cy="222" rx="104" ry="80" class="struct"/>
+    <line x1="251.0" y1="222.0" x2="210.0" y2="222.0" class="hair"/>
+    <line x1="248.8" y1="238.0" x2="208.7" y2="231.6" class="hair"/>
+    <line x1="242.3" y1="253.3" x2="204.8" y2="240.7" class="hair"/>
+    <line x1="231.7" y1="267.3" x2="198.5" y2="249.0" class="hair"/>
+    <line x1="217.6" y1="279.2" x2="190.1" y2="256.2" class="hair"/>
+    <line x1="200.5" y1="288.7" x2="180.0" y2="261.8" class="hair"/>
+    <line x1="181.2" y1="295.2" x2="168.5" y2="265.7" class="hair"/>
+    <line x1="160.6" y1="298.6" x2="156.3" y2="267.7" class="hair"/>
+    <line x1="139.4" y1="298.6" x2="143.7" y2="267.7" class="hair"/>
+    <line x1="118.8" y1="295.2" x2="131.5" y2="265.7" class="hair"/>
+    <line x1="99.5" y1="288.7" x2="120.0" y2="261.8" class="hair"/>
+    <line x1="82.4" y1="279.2" x2="109.9" y2="256.2" class="hair"/>
+    <line x1="68.3" y1="267.3" x2="101.5" y2="249.0" class="hair"/>
+    <line x1="57.7" y1="253.3" x2="95.2" y2="240.7" class="hair"/>
+    <line x1="51.2" y1="238.0" x2="91.3" y2="231.6" class="hair"/>
+    <line x1="49.0" y1="222.0" x2="90.0" y2="222.0" class="hair"/>
+    <line x1="51.2" y1="206.0" x2="91.3" y2="212.4" class="hair"/>
+    <line x1="57.7" y1="190.7" x2="95.2" y2="203.3" class="hair"/>
+    <line x1="68.3" y1="176.7" x2="101.5" y2="195.0" class="hair"/>
+    <line x1="82.4" y1="164.8" x2="109.9" y2="187.8" class="hair"/>
+    <line x1="99.5" y1="155.3" x2="120.0" y2="182.2" class="hair"/>
+    <line x1="118.8" y1="148.8" x2="131.5" y2="178.3" class="hair"/>
+    <line x1="139.4" y1="145.4" x2="143.7" y2="176.3" class="hair"/>
+    <line x1="160.6" y1="145.4" x2="156.3" y2="176.3" class="hair"/>
+    <line x1="181.2" y1="148.8" x2="168.5" y2="178.3" class="hair"/>
+    <line x1="200.5" y1="155.3" x2="180.0" y2="182.2" class="hair"/>
+    <line x1="217.6" y1="164.8" x2="190.1" y2="187.8" class="hair"/>
+    <line x1="231.7" y1="176.7" x2="198.5" y2="195.0" class="hair"/>
+    <line x1="242.3" y1="190.7" x2="204.8" y2="203.3" class="hair"/>
+    <line x1="248.8" y1="206.0" x2="208.7" y2="212.4" class="hair"/>
+    <circle cx="256.0" cy="222.0" r="1.6" class="acc"/>
+    <circle cx="253.7" cy="239.0" r="1.6" class="acc"/>
+    <circle cx="246.8" cy="255.4" r="1.6" class="acc"/>
+    <circle cx="235.8" cy="270.2" r="1.6" class="acc"/>
+    <circle cx="220.9" cy="282.9" r="1.6" class="acc"/>
+    <circle cx="203.0" cy="293.0" r="1.6" class="acc"/>
+    <circle cx="182.8" cy="300.0" r="1.6" class="acc"/>
+    <circle cx="161.1" cy="303.6" r="1.6" class="acc"/>
+    <circle cx="138.9" cy="303.6" r="1.6" class="acc"/>
+    <circle cx="117.2" cy="300.0" r="1.6" class="acc"/>
+    <circle cx="97.0" cy="293.0" r="1.6" class="acc"/>
+    <circle cx="79.1" cy="282.9" r="1.6" class="acc"/>
+    <circle cx="64.2" cy="270.2" r="1.6" class="acc"/>
+    <circle cx="53.2" cy="255.4" r="1.6" class="acc"/>
+    <circle cx="46.3" cy="239.0" r="1.6" class="acc"/>
+    <circle cx="44.0" cy="222.0" r="1.6" class="acc"/>
+    <circle cx="46.3" cy="205.0" r="1.6" class="acc"/>
+    <circle cx="53.2" cy="188.6" r="1.6" class="acc"/>
+    <circle cx="64.2" cy="173.8" r="1.6" class="acc"/>
+    <circle cx="79.1" cy="161.1" r="1.6" class="acc"/>
+    <circle cx="97.0" cy="151.0" r="1.6" class="acc"/>
+    <circle cx="117.2" cy="144.0" r="1.6" class="acc"/>
+    <circle cx="138.9" cy="140.4" r="1.6" class="acc"/>
+    <circle cx="161.1" cy="140.4" r="1.6" class="acc"/>
+    <circle cx="182.8" cy="144.0" r="1.6" class="acc"/>
+    <circle cx="203.0" cy="151.0" r="1.6" class="acc"/>
+    <circle cx="220.9" cy="161.1" r="1.6" class="acc"/>
+    <circle cx="235.8" cy="173.8" r="1.6" class="acc"/>
+    <circle cx="246.8" cy="188.6" r="1.6" class="acc"/>
+    <circle cx="253.7" cy="205.0" r="1.6" class="acc"/>
+    <rect x="110" y="198" width="80" height="48" rx="10" class="pitch"/>
+    <line x1="150" y1="198" x2="150" y2="246" class="pline"/>
+    <ellipse cx="150" cy="222" rx="17" ry="12" class="concrete"/>
+    <ellipse cx="150" cy="222" rx="17" ry="12" class="thin"/>
+  </g>
 </svg>
