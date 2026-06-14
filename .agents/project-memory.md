@@ -217,6 +217,19 @@ Follow `how-refresh-data.md` (project root). In short:
 - Verified standings in Groups view: Group C now shows Scotland 1W 3pts, Brazil/Morocco 1D 1pt each, Haiti 1L 0pts.
 - Next: matches 8+ scheduled Jun 14 (AUS–TUR onwards). Continue daily routine.
 
+### Daily refresh (2026-06-14 — stats backfill)
+- **Stats added to matches 1–7:**
+  - id 1 (MEX 2–0 RSA): possession 60/40, shots 16/2, cards 1/4 — sources: Yahoo Sports box score, ESPN
+  - id 2 (KOR 2–1 CZE): possession 62/38, shots 16/4, cards 1/0 — sources: ESPN, Opta Analyst
+  - id 3 (CAN 1–1 BIH): possession 61/39, shots 13/8, cards 1/3 — sources: ESPN, VAVEL USA
+  - id 4 (USA 4–1 PAR): possession 65/35, shots 16/9, cards 1/5 — sources: ESPN, Opta Analyst
+  - id 5 (QAT 1–1 SUI): possession 44/56, shots 8/11, cards 2/1 — sources: ESPN, Opta Analyst (possession adjusted to 100%)
+  - id 6 (BRA 1–1 MAR): already had stats from prior session (possession 51/49, shots 12/14, cards 2/0)
+  - id 7 (HAI 0–1 SCO): possession 48/52, shots 1/2, cards 1/0 — sources: ESPN, Sofascore
+- Verified in preview: all seven matches now display stats in modal (confirmed via preview_eval). Possession, shots, and card counts render correctly in both EN and PT.
+- No new match results to add (matches 8+ still scheduled).
+- Next: continue daily routine when matches 8+ complete.
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.

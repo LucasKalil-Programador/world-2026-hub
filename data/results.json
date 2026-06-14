@@ -3,31 +3,56 @@
     "matchId": 1,
     "homeScore": 2,
     "awayScore": 0,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 60, "away": 40 },
+      "shots": { "home": 16, "away": 2 },
+      "cards": { "home": 1, "away": 4 }
+    }
   },
   {
     "matchId": 2,
     "homeScore": 2,
     "awayScore": 1,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 62, "away": 38 },
+      "shots": { "home": 16, "away": 4 },
+      "cards": { "home": 1, "away": 0 }
+    }
   },
   {
     "matchId": 3,
     "homeScore": 1,
     "awayScore": 1,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 61, "away": 39 },
+      "shots": { "home": 13, "away": 8 },
+      "cards": { "home": 1, "away": 3 }
+    }
   },
   {
     "matchId": 4,
     "homeScore": 4,
     "awayScore": 1,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 65, "away": 35 },
+      "shots": { "home": 16, "away": 9 },
+      "cards": { "home": 1, "away": 5 }
+    }
   },
   {
     "matchId": 5,
     "homeScore": 1,
     "awayScore": 1,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 44, "away": 56 },
+      "shots": { "home": 8, "away": 11 },
+      "cards": { "home": 2, "away": 1 }
+    }
   },
   {
     "matchId": 6,
@@ -44,7 +69,12 @@
     "matchId": 7,
     "homeScore": 0,
     "awayScore": 1,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 48, "away": 52 },
+      "shots": { "home": 1, "away": 2 },
+      "cards": { "home": 1, "away": 0 }
+    }
   },
   {
     "matchId": 8,
