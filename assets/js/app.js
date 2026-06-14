@@ -14,7 +14,7 @@ import { initBracket } from './bracket.js';
 
 let data = null;
 
-const DATA_VERSION = '2026-06-14-rev1';
+const DATA_VERSION = '2026-06-14-rev2';
 
 export async function loadData() {
   if (data) return data;

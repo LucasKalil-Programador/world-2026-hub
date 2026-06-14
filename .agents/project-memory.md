@@ -238,6 +238,15 @@ Follow `how-refresh-data.md` (project root). In short:
 - Verified in preview: match 8 displays in Groups view with correct stats modal
 - Next: continue with remaining matches (9+) on Jun 14 schedule
 
+### Daily refresh (2026-06-14 — match 9)
+- **Results updated through match id 9** (GER–CUW):
+  - id 9: GER 7–1 CUW (Group E) — confirmed FIFA match centre + ESPN + FOX Sports (Nmecha 6', Schlotterbeck 38', Havertz 45'+5'p & 88', Musiala 47', N.Brown 68', Undav 78', Comenencia 21')
+  - Stats added: possession 65/35, shots 27/8, cards 0/0 — sources: ESPN match centre (clean match, no disciplinary action)
+- Germany dominant performance at NRG Stadium, Houston. Possession and shot dominance translated to decisive victory.
+- Verified in preview: match 9 displays with correct score and stats modal; Groups view updated
+- DATA_VERSION bumped to 2026-06-14-rev2
+- Next: continue with remaining matches (10+) on Jun 14 schedule
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.
