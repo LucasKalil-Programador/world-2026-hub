@@ -242,6 +242,15 @@ Follow `how-refresh-data.md` (project root). In short:
 - **Sync incremental:** a action mantém `.ftp-deploy-sync-state.json` no servidor; só reenvia arquivos alterados. Não comitar esse arquivo (vive só no servidor).
 - **Gotcha:** se a Hostinger não aceitar FTPS explícito, trocar `protocol` para `ftp`. Se o site ficar em subpasta, lembrar do gotcha #7 (paths relativos) — já está OK no projeto.
 
+### Stadium SVG cleanup (2026-06-14)
+- **All 16 `assets/images/stadiums/*.svg` stripped of the card chrome**: removed the `.card` background rect, top/bottom accent bars, `name`/`city`/`cap` `<text>` elements, divider `<line>`s, and the now-unused `.card`/`.name`/`.city`/`.cap`/`.div` style rules — `stadiums.js` already renders name/city/capacity as HTML, so the SVG no longer duplicates them.
+- **`viewBox` cropped to just the `<g>` illustration** (~10px padding) per file, and the fixed `width="300" height="400"` attrs removed so the SVG's intrinsic aspect ratio matches its `viewBox` — needed for `.stadium-img { aspect-ratio: ...; object-fit: cover }` to crop correctly instead of showing a letterboxed 3:4 image.
+- **White rectangular shapes still visible at the top of some cards (BBVA, Lumen, BMO) are intentional** — they're each stadium's press-box/scoreboard tower (`class="void"`, connected to the bowl by thin lines), not leftover text artifacts. Don't remove them.
+- If adding a new stadium SVG, follow this trimmed structure: `<svg viewBox="...">` (no width/height) → `<defs><style>` with only `struct/thin/hair/concrete/stands/canopy/void/pitch/pline/acc/accs/green/ribs/louver` classes + `frit` pattern → single `<g>` with the illustration, cropped tightly. Aim for a viewBox aspect ratio near 4:3 (~1.2-1.3), to match `.stadium-img`'s `aspect-ratio: 4/3`.
+
+### Stadium card image aspect ratio (2026-06-14)
+- **`.stadium-img` (in `assets/css/style.css`) uses `aspect-ratio: 4/3`**, not `16/9`. The 16 cropped stadium SVG viewBoxes have natural ratios ~1.07-1.32 (avg ~1.25), much closer to 4:3 (1.333) than 16:9 (1.778) — `16/9` forced `object-fit: cover` to crop ~28% of the image height, slicing through rounded-rect/curved illustration paths (visible as a "diagonal" cut on NRG). `4/3` shows each illustration nearly whole across all 16 cards, including the BBVA/Lumen/BMO press-box towers and the Mercedes-Benz pinwheel.
+
 ### Data cache-busting via DATA_VERSION (2026-06-14)
 - **`assets/js/app.js` `loadData()` appends `?v=${DATA_VERSION}`** to every `data/*.json` fetch (`DATA_VERSION` constant near the top of the file, currently `'2026-06-13-rev1'`). Fixes production browsers/Hostinger caching stale `results.json` after a daily refresh — `cache: 'reload'` only helps the developer's own browser, not real visitors.
 - **Must be bumped on every data refresh** — added as step 4 of the daily routine in `how-refresh-data.md`. Format `YYYY-MM-DD-revN`; increment `revN` for same-day re-edits.
