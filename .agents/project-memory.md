@@ -216,6 +216,14 @@ Follow `how-refresh-data.md` (project root). In short:
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.
 
+### CI/CD — deploy automático para Hostinger via FTP (2026-06-14)
+- **GitHub Actions** em `.github/workflows/deploy.yml`: a cada `push` em `master` (ou `workflow_dispatch` manual) envia o site pra Hostinger usando `SamKirkland/FTP-Deploy-Action@v4.3.5`.
+- **Remote GitHub:** `origin` = `https://github.com/LucasKalil-Programador/world-2026-hub.git` (branch `master`). Push via credential manager do Windows (gh CLI NÃO está instalado nesta máquina).
+- **Secrets necessários no repo** (Settings → Secrets and variables → Actions): `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` — vêm do hPanel da Hostinger (Files → FTP Accounts). Sem eles o workflow falha.
+- **Config do workflow:** `protocol: ftps`, `port: 21`, `local-dir: ./`, `server-dir: public_html/` (ajustar se for subdomínio/addon domain). `exclude` remove do deploy: `.git*`, `.github/`, `.agents/`, `README.md`, `how-*.md`, specs `*-en.md` — só `index.html` + `assets/` + `data/` chegam ao site.
+- **Sync incremental:** a action mantém `.ftp-deploy-sync-state.json` no servidor; só reenvia arquivos alterados. Não comitar esse arquivo (vive só no servidor).
+- **Gotcha:** se a Hostinger não aceitar FTPS explícito, trocar `protocol` para `ftp`. Se o site ficar em subpasta, lembrar do gotcha #7 (paths relativos) — já está OK no projeto.
+
 ### How to add a UI label
 1. Add the key to both `en` and `pt` dicts in `assets/js/i18n.js`.
 2. Use `t("key")` at the render site — never hardcode the string.

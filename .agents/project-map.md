@@ -15,6 +15,11 @@ worldcup2026/
 │   ├── project-memory.md                 Context, decisions, gotchas
 │   └── TODO.md                           12-step build checklist
 │
+├── .github/workflows/
+│   └── deploy.yml                        CI: FTP deploy to Hostinger on push to master
+│                                           (needs FTP_SERVER/USERNAME/PASSWORD secrets)
+│ .gitignore                              OS/editor junk
+│
 ├── index.html                            ★ SPA shell — header, nav tabs (Home, Matches,
 │                                           Groups, Knockout, Stadiums), hero, dashboard,
 │                                           modal container; loads app.js as ES module
