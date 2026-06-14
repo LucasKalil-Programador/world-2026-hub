@@ -198,12 +198,19 @@ Follow `how-refresh-data.md` (project root). In short:
 - **Results as of 2026-06-12:** ids 1–3 finished (MEX 2–0 RSA, KOR 2–1 CZE, CAN 1–1 BIH); USA–PAR (id 4) kicked off 01:00 UTC Jun 13 — first thing to update next session.
 
 ### Daily refresh (2026-06-13)
-- **Results updated through match id 4**: USA 4–1 PAR (Group D), confirmed via FIFA match centre + Yahoo/ESPN. Group D standings now show USA 1st (+3 GD), PAR 4th (-3 GD) — verified in Groups view.
-- ids 5 (QAT–SUI, Jun 13 19:00 UTC) and 6 (BRA–MAR, Jun 13 22:00 UTC) not yet played as of this update — still `scheduled`. Next session: check these plus continue daily routine per `how-refresh-data.md`.
+- **Results updated through match id 6** (matchday 1 complete):
+  - id 4: USA 4–1 PAR (Group D) — confirmed FIFA + Yahoo/ESPN
+  - id 5: QAT 1–1 SUI (Group B) — confirmed FOX Sports + ESPN (Khoukhi 94th-min header)
+  - id 6: BRA 1–1 MAR (Group C) — confirmed FOX Sports + NBC Sports (Saibari for MAR, Vinicius Jr. for BRA)
+- Verified standings in Groups view: Group B shows Qatar/Switzerland each 1 pt; Group C shows Brazil/Morocco each 1 pt; Group D confirms USA 3 pts (W 4-1), Paraguay 0 pts.
 - **Single-source caveat:** R16 match 94 (Jul 6, Lumen Field) time 17:00 PDT per Wikipedia; one ESPN summary implied 14:00 PDT. Re-verify when R16 nears.
-- **New-team flags** created in the house placeholder style: RSA, CZE, BIH, HAI, CUW, SWE, CPV, NOR, IRQ, COD; 24 unreferenced mock SVGs deleted (10 flags + 14 stadiums). Exactly 48 flags + 16 stadium images remain.
-- **Tiebreak note:** with all tiebreakers equal the app falls back to team-id alphabetical (e.g. BIH above CAN on 1 pt) — may differ from FIFA's published order (fair-play points / drawing of lots), acceptable by design.
-- Mock-data sections above (“Mock data design”, hero live-match note for match 61) are now historical.
+- Next: matches 7–8 scheduled Jun 14 (HAI–SCO, AUS–TUR, both Group stage). Continue daily routine per `how-refresh-data.md`.
+
+### Daily refresh (2026-06-14)
+- **Results updated through match id 7** (HAI–SCO):
+  - id 7: HAI 0–1 SCO (Group C) — confirmed Outlook India + VAVEL USA (McGinn 28')
+- Verified standings in Groups view: Group C now shows Scotland 1W 3pts, Brazil/Morocco 1D 1pt each, Haiti 1L 0pts.
+- Next: matches 8+ scheduled Jun 14 (AUS–TUR onwards). Continue daily routine.
 
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
