@@ -230,6 +230,14 @@ Follow `how-refresh-data.md` (project root). In short:
 - No new match results to add (matches 8+ still scheduled).
 - Next: continue daily routine when matches 8+ complete.
 
+### Daily refresh (2026-06-14 — match 8)
+- **Results updated through match id 8** (AUS–TUR):
+  - id 8: AUS 2–0 TUR (Group D) — confirmed VAVEL USA + FOX Sports (Irankunda 27', Metcalfe 75')
+  - Stats added: possession 28/72, shots 9/30, cards 0/1 — sources: ESPN, Outlook India, VAVEL USA
+- Match played at BC Place, Vancouver. Australia defended deep with 28% possession but converted two chances; Akgun (TUR) yellow card 86'
+- Verified in preview: match 8 displays in Groups view with correct stats modal
+- Next: continue with remaining matches (9+) on Jun 14 schedule
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.
