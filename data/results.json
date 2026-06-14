@@ -33,7 +33,12 @@
     "matchId": 6,
     "homeScore": 1,
     "awayScore": 1,
-    "status": "finished"
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 51, "away": 49 },
+      "shots": { "home": 12, "away": 14 },
+      "cards": { "home": 2, "away": 0 }
+    }
   },
   {
     "matchId": 7,

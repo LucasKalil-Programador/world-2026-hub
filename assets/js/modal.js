@@ -49,6 +49,7 @@ function renderContent(matchId) {
   if (!match) return;
   const result = resultByMatchId.get(matchId);
   const status = result?.status ?? 'scheduled';
+  const s = result?.stats;
   const stadium = stadiumByName.get(match.stadium);
   const slots = resolveBracketTeams(match);
   const numberFmt = new Intl.NumberFormat(getLocale());
@@ -87,10 +88,10 @@ function renderContent(matchId) {
       </dl>
       <section class="modal-stats" aria-label="${t('modal.stats')}">
         <h3>${t('modal.stats')}</h3>
-        ${statRow(t('modal.possession'))}
-        ${statRow(t('modal.shots'))}
-        ${statRow(t('modal.cards'))}
-        <p class="modal-stats-note">${t('modal.statsSoon')}</p>
+        ${statRow(s ? `${s.possession.home}%` : '—', t('modal.possession'), s ? `${s.possession.away}%` : '—')}
+        ${statRow(s ? s.shots.home : '—', t('modal.shots'), s ? s.shots.away : '—')}
+        ${statRow(s ? s.cards.home : '—', t('modal.cards'), s ? s.cards.away : '—')}
+        ${s ? '' : `<p class="modal-stats-note">${t('modal.statsSoon')}</p>`}
       </section>
       <div class="modal-actions">
         <button class="btn-primary" id="modal-ics">${t('modal.addCalendar')}</button>
@@ -115,12 +116,12 @@ function teamHTML(slot) {
     </div>`;
 }
 
-// placeholder row — real values will replace the dashes when stats data exists
-function statRow(label) {
+// stat row — shows real home/away values, or "—" when no stats data exists
+function statRow(home, label, away) {
   return `
     <div class="modal-stat-row">
-      <span>—</span>
+      <span>${home}</span>
       <span class="modal-stat-label">${label}</span>
-      <span>—</span>
+      <span>${away}</span>
     </div>`;
 }

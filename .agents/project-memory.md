@@ -180,6 +180,11 @@ Static web app showing the FIFA World Cup 2026 (Mexico/USA/Canada, 48 teams) —
 
 ## Patterns for future changes
 
+### Match stats no modal (2026-06-14)
+- **Campo opcional `stats` em `results.json`** por jogo: `{ possession: {home,away}, shots: {home,away}, cards: {home,away} }` (`home`/`away` seguem `homeTeam`/`awayTeam` de `matches.json`; valores = posse em %, finalizações totais, cartões amarelos). Primeiro preenchido no jogo 6 (BRA 1–1 MAR) como teste do deploy: posse 51/49, finalizações 12/14, cartões 2/0 (fontes ESPN/Opta/Sofascore).
+- **`modal.js` renderiza stats reais quando `result.stats` existe**; senão mantém o placeholder com `—` + nota `modal.statsSoon` (backward-compatível, verificado nos jogos 6 com stats e 4 sem). `statRow(home, label, away)` agora recebe valores; antes só o label.
+- Reusa as chaves i18n já existentes: `modal.possession` / `modal.shots` / `modal.cards`. Adicionar stats a mais jogos = só editar `results.json`, nenhum código muda.
+
 ### How to update real-world data (scores, schedule)
 Follow `how-refresh-data.md` (project root). In short:
 1. Edit `data/results.json` (scores/status) or `data/matches.json` (schedule, rare).
