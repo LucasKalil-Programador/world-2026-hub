@@ -36,7 +36,8 @@ worldcup2026/
 │   │                                       (hover-scale/glow, pulse, line-draw)
 │   ├── js/
 │   │   ├── app.js                        ★ Entry point: loadData() (Promise.all over data/),
-│   │   │                                   tab routing + lastTab, formatMatchTime(), dashboard,
+│   │   │                                   tab routing + lastTab (active-tab scroll-into-view +
+│   │   │                                   edge fades on the scrollable nav), formatMatchTime(), dashboard,
 │   │   │                                   clock-driven hero (matchState/findFeaturedMatches +
 │   │   │                                   1s heroTick: hybrid JSON+clock, 2h/3h window; stacks
 │   │   │                                   simultaneous group-final matches, one shared timer)

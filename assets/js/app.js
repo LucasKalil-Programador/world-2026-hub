@@ -73,6 +73,7 @@ function activateTab(id, { updateHash = true } = {}) {
   }
   setPref('lastTab', tab);
   if (updateHash) history.replaceState(null, '', `#${tab}`);
+  scrollActiveTabIntoView(true);
 }
 
 // programmatic navigation for cross-view links (e.g. stadium → its matches)
@@ -101,7 +102,46 @@ function initTabs() {
   });
   window.addEventListener('hashchange', () =>
     activateTab(location.hash.slice(1), { updateHash: false }));
+
+  // edge fades + keep the active tab visible while the nav scrolls horizontally
+  // (below the 1100px single-row breakpoint the tab strip is a scroll container)
+  const tabsEl = document.querySelector('.tabs');
+  tabsEl.addEventListener('scroll', updateTabFades, { passive: true });
+  let resizeRaf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => { scrollActiveTabIntoView(false); updateTabFades(); });
+  });
+  // language toggle changes label widths → re-measure overflow and recenter
+  document.addEventListener('langchange', () => { scrollActiveTabIntoView(false); updateTabFades(); });
+
   activateTab(location.hash.slice(1) || getPrefs().lastTab || 'home');
+  updateTabFades();
+}
+
+// Toggle edge-fade masks on the tab strip: a fade only shows on a side that has
+// more tabs to scroll toward, so the cut-off tab no longer looks like a bug.
+function updateTabFades() {
+  const tabs = document.querySelector('.tabs');
+  if (!tabs) return;
+  const overflowing = tabs.scrollWidth - tabs.clientWidth > 1;
+  const atStart = tabs.scrollLeft <= 1;
+  const atEnd = tabs.scrollLeft >= tabs.scrollWidth - tabs.clientWidth - 1;
+  tabs.classList.toggle('fade-left', overflowing && !atStart);
+  tabs.classList.toggle('fade-right', overflowing && !atEnd);
+}
+
+// Horizontally scroll the active tab to the center of the strip (no page jump).
+function scrollActiveTabIntoView(smooth) {
+  const tabs = document.querySelector('.tabs');
+  if (!tabs) return;
+  const active = tabs.querySelector('.tab-btn.active');
+  if (!active || tabs.scrollWidth <= tabs.clientWidth) { updateTabFades(); return; }
+  const tabsRect = tabs.getBoundingClientRect();
+  const aRect = active.getBoundingClientRect();
+  const target = tabs.scrollLeft + (aRect.left - tabsRect.left) - (tabs.clientWidth - aRect.width) / 2;
+  tabs.scrollTo({ left: Math.max(0, target), behavior: smooth ? 'smooth' : 'auto' });
+  requestAnimationFrame(updateTabFades);
 }
 
 // ---------------------------------------------------------------- hero
@@ -367,7 +407,10 @@ function initFavorites() {
 function syncTimeToggle() {
   const btn = document.getElementById('time-toggle');
   const mode = getPrefs().timeMode ?? 'local';
-  btn.textContent = `🕐 ${t(mode === 'local' ? 'time.local' : 'time.stadium')}`;
+  // icon + label split so the label can collapse on narrow screens (the
+  // accessible name comes from data-i18n-aria, so hiding the text is a11y-safe).
+  btn.innerHTML = `<span class="time-icon" aria-hidden="true">🕐</span>` +
+    `<span class="time-label">${t(mode === 'local' ? 'time.local' : 'time.stadium')}</span>`;
   btn.setAttribute('aria-pressed', String(mode === 'stadium'));
 }
 
