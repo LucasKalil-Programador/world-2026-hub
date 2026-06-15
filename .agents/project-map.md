@@ -39,7 +39,9 @@ worldcup2026/
 │   │   │                                   tab routing + lastTab, formatMatchTime(), dashboard,
 │   │   │                                   clock-driven hero (matchState/findFeaturedMatch +
 │   │   │                                   1s heroTick: hybrid JSON+clock, 2h/3h match window)
-│   │   ├── schedule.js                   Match list, filters, search, sort, "My Matches"
+│   │   ├── schedule.js                   Match list, filters (incl. occurrence toggle
+│   │   │                                   Played/Upcoming via hybrid matchState), search,
+│   │   │                                   sort, "My Matches"; 60s clock-tick re-render
 │   │   ├── groups.js                     Standings computation (3/1/0, GD, GF) + group tables
 │   │   ├── stadiums.js                   Stadium cards + "view matches" cross-link
 │   │   ├── bracket.js                    ★ Bracket tree resolution, resolveBracketTeams(),
@@ -154,6 +156,7 @@ matches.json time (UTC) ── formatMatchTime(match, stadium, mode)
 |---|---|---|---|---|
 | `loadData` | `assets/js/app.js` | `()` | `Promise<AppData>` | Fetches all `data/*.json` in parallel, caches in memory |
 | `formatMatchTime` | `assets/js/app.js` | `(match, stadium, mode)` | `string` | UTC → display time; `mode` is `"local"` or `"stadium"` |
+| `matchState` | `assets/js/app.js` | `(match, result, now)` | `'over' \| 'live' \| 'upcoming'` | Hybrid JSON+clock state (finished/live win; else clock advances at kickoff/kickoff+window). Used by the hero **and** the schedule occurrence filter / "Awaiting result" chip |
 | `get` / `set` | `assets/js/storage.js` | `(key, fallback)` / `(key, value)` | `any` / `void` | localStorage wrapper, auto JSON parse/stringify |
 | `t` | `assets/js/i18n.js` | `(key)` | `string` | Translated UI string for current lang |
 | `resolveBracketTeams` | `assets/js/bracket.js` | `(matchOrRef)` | `{ home, away }` of `{ team, label }` | Display slots for any match (group or knockout); reused by schedule/modal/filters |

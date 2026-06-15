@@ -2,7 +2,7 @@
 // team, stadium), diacritic-insensitive search, date sort.
 // Knockout team names show as TBD until resolveBracketTeams() lands (step 7).
 
-import { getData, formatMatchTime, matchDateUTC, flagSrc } from './app.js';
+import { getData, formatMatchTime, matchDateUTC, flagSrc, matchState } from './app.js';
 import { t, translatePhase } from './i18n.js';
 import { openMatchModal } from './modal.js';
 import { resolveBracketTeams, getFavoriteMatches } from './bracket.js';
@@ -10,11 +10,22 @@ import { getFavorites } from './storage.js';
 
 const KNOCKOUT_PHASES = ['Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Third Place', 'Final'];
 
-const state = { search: '', date: '', group: '', phase: '', team: '', stadium: '', sort: 'asc', favOnly: false };
+// `occurred`: '' (all) | 'occurred' (over by clock/JSON) | 'upcoming' (live + not started)
+const state = { search: '', date: '', group: '', phase: '', team: '', stadium: '', sort: 'asc', favOnly: false, occurred: '' };
+
+// Re-render driver for the clock crossing a match window while the list is open.
+// Signature = how many matches are "over" right now (monotonic), so a coarse 60s
+// tick re-renders only when something actually flipped — no per-second card repaint.
+const OCC_TICK_MS = 60 * 1000;
+let occTimer = null;
+let overSignature = -1;
+
+const OCC_CYCLE = ['', 'occurred', 'upcoming'];
 
 export function initSchedule() {
   renderToolbar();
   renderList();
+  startOccurrenceClock();
   document.addEventListener('langchange', () => {
     renderToolbar();
     renderList();
@@ -79,6 +90,8 @@ function renderToolbar() {
           <option value="">${t('schedule.allStadiums')}</option>${stadiumOptions}
         </select>
         <button id="sched-sort" class="filter-control sort-btn"></button>
+        <button id="sched-occ" class="filter-control occ-filter ${state.occurred ? 'active' : ''}"
+                aria-label="${occAriaLabel()}">${occButtonLabel()}</button>
         <button id="sched-fav" class="filter-control fav-filter ${state.favOnly ? 'active' : ''}"
                 aria-pressed="${state.favOnly}">★ ${t('schedule.myMatches')}</button>
       </div>
@@ -109,6 +122,14 @@ function renderToolbar() {
     syncSortLabel();
     renderList();
   });
+  byId('sched-occ').addEventListener('click', () => {
+    state.occurred = OCC_CYCLE[(OCC_CYCLE.indexOf(state.occurred) + 1) % OCC_CYCLE.length];
+    const btn = byId('sched-occ');
+    btn.classList.toggle('active', Boolean(state.occurred));
+    btn.textContent = occButtonLabel();
+    btn.setAttribute('aria-label', occAriaLabel());
+    renderList();
+  });
   byId('sched-fav').addEventListener('click', () => {
     state.favOnly = !state.favOnly;
     const btn = byId('sched-fav');
@@ -117,7 +138,7 @@ function renderToolbar() {
     renderList();
   });
   byId('sched-clear').addEventListener('click', () => {
-    Object.assign(state, { search: '', date: '', group: '', phase: '', team: '', stadium: '', sort: 'asc', favOnly: false });
+    Object.assign(state, { search: '', date: '', group: '', phase: '', team: '', stadium: '', sort: 'asc', favOnly: false, occurred: '' });
     renderToolbar();
     renderList();
   });
@@ -129,7 +150,7 @@ function byId(id) {
 
 // external entry point (stadiums page) — show only matches at one stadium
 export function setStadiumFilter(stadiumName) {
-  Object.assign(state, { search: '', date: '', group: '', phase: '', team: '', stadium: stadiumName, favOnly: false });
+  Object.assign(state, { search: '', date: '', group: '', phase: '', team: '', stadium: stadiumName, favOnly: false, occurred: '' });
   renderToolbar();
   renderList();
 }
@@ -143,13 +164,34 @@ function syncSortLabel() {
   byId('sched-sort').textContent = t(state.sort === 'asc' ? 'schedule.sortAsc' : 'schedule.sortDesc');
 }
 
+function occStateLabel() {
+  if (state.occurred === 'occurred') return t('schedule.occPlayed');
+  if (state.occurred === 'upcoming') return t('schedule.occUpcoming');
+  return t('schedule.occAll');
+}
+
+function occButtonLabel() {
+  return `◷ ${occStateLabel()}`;
+}
+
+function occAriaLabel() {
+  return `${t('schedule.occAria')}: ${occStateLabel()}`;
+}
+
 // ------------------------------------------------------------ filtering
 
 function normalize(text) {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-function matchesFilters(match) {
+function matchesFilters(match, now) {
+  if (state.occurred) {
+    // hybrid rule (same as the home hero): "over" = finished in JSON OR clock past
+    // kickoff + window. "upcoming" bucket keeps live + not-yet-started together.
+    const over = matchState(match, getData().resultByMatchId.get(match.id), now) === 'over';
+    if (state.occurred === 'occurred' && !over) return false;
+    if (state.occurred === 'upcoming' && over) return false;
+  }
   if (state.date && match.date !== state.date) return false;
   if (state.group && match.phase !== `Group ${state.group}`) return false;
   if (state.phase === 'groups' && !match.phase.startsWith('Group')) return false;
@@ -171,19 +213,41 @@ function matchesFilters(match) {
 
 function renderList() {
   const { matches } = getData();
+  const now = Date.now();
   const direction = state.sort === 'asc' ? 1 : -1;
   const favIds = state.favOnly
     ? new Set(getFavoriteMatches(matches, getFavorites()).map((m) => m.id))
     : null;
   const filtered = matches
-    .filter((m) => (!favIds || favIds.has(m.id)) && matchesFilters(m))
+    .filter((m) => (!favIds || favIds.has(m.id)) && matchesFilters(m, now))
     .sort((a, b) => direction * (matchDateUTC(a) - matchDateUTC(b) || a.id - b.id));
 
   byId('sched-count').textContent =
     `${filtered.length} ${filtered.length === 1 ? t('schedule.match') : t('schedule.matches')}`;
   byId('sched-list').innerHTML = filtered.length
-    ? filtered.map(matchCardHTML).join('')
+    ? filtered.map((m) => matchCardHTML(m, now)).join('')
     : `<p class="placeholder glass">${t('schedule.noResults')}</p>`;
+
+  // keep the clock-tick baseline in sync with whatever we just rendered
+  overSignature = countOverMatches(now);
+}
+
+// number of matches "over" at `now` — monotonic, so the 60s tick re-renders
+// only when the clock pushes another match past the end of its window.
+function countOverMatches(now) {
+  const { matches, resultByMatchId } = getData();
+  let n = 0;
+  for (const m of matches) {
+    if (matchState(m, resultByMatchId.get(m.id), now) === 'over') n++;
+  }
+  return n;
+}
+
+function startOccurrenceClock() {
+  if (occTimer) return;
+  occTimer = setInterval(() => {
+    if (countOverMatches(Date.now()) !== overSignature) renderList();
+  }, OCC_TICK_MS);
 }
 
 function teamColumnHTML(slot) {
@@ -199,15 +263,19 @@ function teamColumnHTML(slot) {
     </div>`;
 }
 
-function matchCardHTML(match) {
+function matchCardHTML(match, now = Date.now()) {
   const { resultByMatchId, stadiumByName } = getData();
   const result = resultByMatchId.get(match.id);
   const status = result?.status ?? 'scheduled';
   const stadium = stadiumByName.get(match.stadium);
+  // scheduled in JSON but the clock says its window already closed → the data
+  // just hasn't caught up. Flag it instead of silently showing a plain "vs".
+  const pending = status === 'scheduled' && matchState(match, result, now) === 'over';
 
   let statusChip = '';
   if (status === 'live') statusChip = `<span class="match-status live pulse">● ${t('hero.live')}</span>`;
   else if (status === 'finished') statusChip = `<span class="match-status finished">${t('status.finished')}</span>`;
+  else if (pending) statusChip = `<span class="match-status pending">${t('status.pending')}</span>`;
 
   let center;
   if (status === 'finished' || status === 'live') {

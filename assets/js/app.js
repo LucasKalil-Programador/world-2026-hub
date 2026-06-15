@@ -119,7 +119,8 @@ function matchWindowMs(match) {
 // Hybrid state of a match at instant `now`: the JSON wins when it says finished
 // or live; otherwise the clock advances the state so the hero flips at kickoff
 // and again at kickoff+window with no JSON edit. Pure function, easy to reason about.
-function matchState(match, result, now) {
+// Exported so schedule.js shares the exact same hybrid rule (occurrence filter + chip).
+export function matchState(match, result, now) {
   const status = result?.status ?? 'scheduled';
   const kickoff = matchDateUTC(match).getTime();
   if (status === 'finished' || now >= kickoff + matchWindowMs(match)) return 'over';

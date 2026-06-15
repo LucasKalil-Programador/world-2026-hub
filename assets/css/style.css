@@ -544,6 +544,11 @@ button {
   color: var(--text-secondary);
 }
 
+.match-status.pending {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
 .match-teams {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -972,6 +977,23 @@ dialog.match-modal::backdrop {
 }
 
 .fav-filter.active {
+  border-color: var(--accent-gold);
+  background: rgba(212, 175, 55, 0.16);
+  color: var(--accent-gold);
+}
+
+.occ-filter {
+  flex: 0 1 auto;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.occ-filter:hover {
+  border-color: var(--accent-gold);
+}
+
+.occ-filter.active {
   border-color: var(--accent-gold);
   background: rgba(212, 175, 55, 0.16);
   color: var(--accent-gold);
