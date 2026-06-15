@@ -100,15 +100,25 @@
   },
   {
     "matchId": 10,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 2,
+    "awayScore": 2,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 60, "away": 40 },
+      "shots": { "home": 10, "away": 10 },
+      "cards": { "home": 3, "away": 0 }
+    }
   },
   {
     "matchId": 11,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 1,
+    "awayScore": 0,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 48, "away": 52 },
+      "shots": { "home": 13, "away": 11 },
+      "cards": { "home": 3, "away": 1 }
+    }
   },
   {
     "matchId": 12,
