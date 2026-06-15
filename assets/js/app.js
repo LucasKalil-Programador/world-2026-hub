@@ -106,15 +106,40 @@ function initTabs() {
 
 // ---------------------------------------------------------------- hero
 
-let countdownTimer = null;
+// How long a match stays "in progress" after kickoff while results.json hasn't
+// caught up yet. Group games run ~90'+stoppage (~2h); knockout games can reach
+// extra time + penalties (~3h). JSON (finished/live) still overrides the clock.
+const GROUP_WINDOW_MS = 2 * 60 * 60 * 1000;
+const KO_WINDOW_MS = 3 * 60 * 60 * 1000;
 
-function findFeaturedMatch() {
+function matchWindowMs(match) {
+  return match.phase.startsWith('Group') ? GROUP_WINDOW_MS : KO_WINDOW_MS;
+}
+
+// Hybrid state of a match at instant `now`: the JSON wins when it says finished
+// or live; otherwise the clock advances the state so the hero flips at kickoff
+// and again at kickoff+window with no JSON edit. Pure function, easy to reason about.
+function matchState(match, result, now) {
+  const status = result?.status ?? 'scheduled';
+  const kickoff = matchDateUTC(match).getTime();
+  if (status === 'finished' || now >= kickoff + matchWindowMs(match)) return 'over';
+  if (status === 'live' || now >= kickoff) return 'live';
+  return 'upcoming';
+}
+
+// Featured match = the earliest match that isn't over yet (in progress or
+// upcoming); ties broken by id, matching schedule.js ordering.
+function findFeaturedMatch(now) {
   const { matches, resultByMatchId } = data;
-  const live = matches.find((m) => resultByMatchId.get(m.id)?.status === 'live');
-  if (live) return live;
   return matches
-    .filter((m) => (resultByMatchId.get(m.id)?.status ?? 'scheduled') === 'scheduled')
-    .sort((a, b) => matchDateUTC(a) - matchDateUTC(b))[0] ?? null;
+    .filter((m) => matchState(m, resultByMatchId.get(m.id), now) !== 'over')
+    .sort((a, b) => matchDateUTC(a) - matchDateUTC(b) || a.id - b.id)[0] ?? null;
+}
+
+// Compact signature of "what the hero should show now"; a change drives a rebuild.
+function heroSignature(match, now) {
+  if (!match) return '∅';
+  return `${match.id}:${matchState(match, data.resultByMatchId.get(match.id), now)}`;
 }
 
 function heroTeamHTML(teamId) {
@@ -127,25 +152,38 @@ function heroTeamHTML(teamId) {
     </div>`;
 }
 
+let heroTimer = null;
+let heroSig = null;
+let countdownTarget = null;
+let countdownEls = null;
+
 function renderHero() {
-  clearInterval(countdownTimer);
   const root = document.getElementById('hero-content');
-  const match = findFeaturedMatch();
+  const now = Date.now();
+  const match = findFeaturedMatch(now);
+  heroSig = heroSignature(match, now);
+  countdownTarget = null;
+  countdownEls = null;
+
   if (!match) {
     root.innerHTML = '';
+    startHeroClock();
     return;
   }
   const result = data.resultByMatchId.get(match.id);
   const stadium = data.stadiumByName.get(match.stadium);
-  const live = result?.status === 'live';
+  const live = matchState(match, result, now) === 'live';
+  const hasScore = result?.homeScore != null && result?.awayScore != null;
 
-  const center = live
+  // Live shows the JSON score only when it exists; a clock-driven in-progress
+  // match (JSON not updated yet) falls back to "vs", like an upcoming match.
+  const center = live && hasScore
     ? `<div class="hero-score">${result.homeScore}<span class="hero-score-sep">–</span>${result.awayScore}</div>`
     : `<div class="hero-vs">${t('hero.vs')}</div>`;
 
   root.innerHTML = `
     <p class="hero-label">
-      ${live ? `<span class="live-badge pulse">● ${t('hero.live')}</span>` : t('hero.nextMatch')}
+      ${live ? `<span class="live-badge pulse">● ${t('hero.inProgress')}</span>` : t('hero.nextMatch')}
       <span class="hero-phase">${translatePhase(match.phase)}</span>
     </p>
     <div class="hero-matchup">
@@ -156,10 +194,11 @@ function renderHero() {
     <p class="hero-meta">${formatMatchTime(match, stadium)} · ${match.stadium}, ${match.city}</p>
     ${live ? '' : `<div class="countdown" id="countdown" role="timer" aria-label="${t('hero.countdownLabel')}"></div>`}
   `;
-  if (!live) startCountdown(matchDateUTC(match));
+  if (!live) setupCountdown(matchDateUTC(match).getTime());
+  startHeroClock();
 }
 
-function startCountdown(target) {
+function setupCountdown(target) {
   const root = document.getElementById('countdown');
   const units = ['days', 'hours', 'minutes', 'seconds'];
   root.innerHTML = units.map((unit) => `
@@ -167,25 +206,35 @@ function startCountdown(target) {
       <span class="count-value" data-unit="${unit}">0</span>
       <span class="count-label">${t(`countdown.${unit}`)}</span>
     </div>`).join('');
-  const values = Object.fromEntries(
+  countdownTarget = target;
+  countdownEls = Object.fromEntries(
     units.map((unit) => [unit, root.querySelector(`[data-unit="${unit}"]`)]),
   );
+  updateCountdown();
+}
 
-  const tick = () => {
-    const diff = target - Date.now();
-    if (diff <= 0) {
-      clearInterval(countdownTimer);
-      root.innerHTML = `<p class="hero-kickoff">${t('hero.kickoff')}</p>`;
-      return;
-    }
-    const seconds = Math.floor(diff / 1000);
-    values.days.textContent = Math.floor(seconds / 86400);
-    values.hours.textContent = String(Math.floor((seconds % 86400) / 3600)).padStart(2, '0');
-    values.minutes.textContent = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-    values.seconds.textContent = String(seconds % 60).padStart(2, '0');
-  };
-  tick();
-  countdownTimer = setInterval(tick, 1000);
+function updateCountdown() {
+  if (!countdownEls) return;
+  const seconds = Math.floor(Math.max(0, countdownTarget - Date.now()) / 1000);
+  countdownEls.days.textContent = Math.floor(seconds / 86400);
+  countdownEls.hours.textContent = String(Math.floor((seconds % 86400) / 3600)).padStart(2, '0');
+  countdownEls.minutes.textContent = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  countdownEls.seconds.textContent = String(seconds % 60).padStart(2, '0');
+}
+
+// Single persistent 1s driver. Most ticks only refresh the countdown digits;
+// when the featured match or its state changes (kickoff, end-of-window, next
+// match), the signature flips and we rebuild the hero — no reload, no JSON edit.
+function startHeroClock() {
+  if (heroTimer) return;
+  heroTimer = setInterval(heroTick, 1000);
+}
+
+function heroTick() {
+  const now = Date.now();
+  const sig = heroSignature(findFeaturedMatch(now), now);
+  if (sig !== heroSig) renderHero();
+  else updateCountdown();
 }
 
 // ------------------------------------------------------------ dashboard

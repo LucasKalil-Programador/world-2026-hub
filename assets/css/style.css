@@ -332,13 +332,6 @@ button {
   font-size: 0.95rem;
 }
 
-.hero-kickoff {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--accent-gold);
-}
-
 /* --------------------------------------------------------- countdown */
 
 .countdown {
