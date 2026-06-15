@@ -1,0 +1,394 @@
+/* stats.css — "Stats" tab: tournament-to-date hero, overview cards and the
+   goals-by-stage chart. Reuses the global tokens and the .stat-card pattern.
+   Repeated tiles use a flat translucent fill (no backdrop-filter) per the
+   project's perf rule; blur is reserved for the few large .glass surfaces. */
+
+/* --------------------------------------------------------- hero "pulse" */
+
+.stats-hero {
+  padding: clamp(1.4rem, 4vw, 2.4rem);
+  text-align: center;
+}
+
+.stats-hero .hero-label {
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.stats-hero-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+.stats-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem 0.6rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+}
+
+.stats-tile-value {
+  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+  font-weight: 700;
+  color: var(--accent-gold-soft);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.stats-tile-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+/* ----------------------------------------------------------- overview */
+
+.stats-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.stats-overview-grid .stat-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.stat-sub {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------- goals-by-stage chart */
+
+.stats-chart {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem 1.4rem;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: clamp(86px, 22vw, 150px) 1fr auto;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.chart-bar-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.chart-track {
+  height: 14px;
+  background: var(--glass-bg-strong);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.chart-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-gold));
+  transform-origin: left center;
+  animation: stats-bar-grow 0.6s ease both;
+}
+
+@keyframes stats-bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.chart-bar-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5ch;
+  text-align: right;
+}
+
+/* ------------------------------------------------- team statistics */
+
+.stats-leaders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.leader-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 1rem;
+  text-align: center;
+}
+
+.leader-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.leader-team {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.leader-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.leader-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-gold-soft);
+}
+
+/* horizontal scroll on narrow screens; rank + team columns stay frozen */
+.stats-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  -webkit-overflow-scrolling: touch;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  background: var(--glass-bg);
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 0.6rem 0.7rem;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stats-table tbody tr {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stats-table tbody tr:hover {
+  background: var(--glass-bg-strong);
+}
+
+.col-rank {
+  text-align: center;
+  color: var(--text-secondary);
+  width: 2.5rem;
+}
+
+.col-team {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* freeze rank + team to the left while metric columns scroll under them */
+.stats-table .col-rank,
+.stats-table .col-team {
+  position: sticky;
+  background: var(--bg-secondary);
+  z-index: 1;
+}
+
+.stats-table .col-rank { left: 0; }
+.stats-table .col-team { left: 2.5rem; }
+
+.stats-table tbody .col-rank,
+.stats-table tbody .col-team {
+  background: var(--bg-primary);
+}
+
+.stats-table tbody tr:hover .col-rank,
+.stats-table tbody tr:hover .col-team {
+  background: var(--bg-secondary);
+}
+
+.col-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.col-sort:hover {
+  color: var(--text-primary);
+}
+
+.stats-table th.sorted,
+.stats-table td.sorted {
+  color: var(--accent-gold-soft);
+}
+
+.sort-arrow {
+  font-size: 0.7rem;
+}
+
+.row-idle td {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.stats-pagination {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.page-btn {
+  min-width: 2.2rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--accent-gold);
+}
+
+.page-btn.active {
+  color: var(--bg-primary);
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-soft));
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------- header tooltips + key */
+
+.has-tip { cursor: help; }
+.col-sort.has-tip { cursor: pointer; }
+
+.app-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 220px;
+  padding: 0.45rem 0.65rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: normal;
+  pointer-events: none;
+}
+
+.app-tooltip[hidden] { display: none; }
+
+/* abbreviation key — hidden on desktop (tooltips cover it), shown on mobile */
+.stats-legend { display: none; }
+
+.legend-pair b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .stats-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    margin: 0.9rem 0 0;
+    padding: 0.8rem 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+}
+
+/* --------------------------------------------------------------- misc */
+
+.stats-more {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.stats-link {
+  padding: 0.55rem 1.2rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.stats-link:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-gold);
+  background: var(--glass-bg-strong);
+}
+
+/* ---------------------------------------------------------- responsive */
+
+@media (max-width: 600px) {
+  .stats-hero-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-bar { animation: none; }
+}

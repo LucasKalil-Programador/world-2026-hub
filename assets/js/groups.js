@@ -69,13 +69,27 @@ function render() {
     </p>
     <div class="groups-grid">
       ${Object.entries(standings).map(([letter, rows]) => groupCardHTML(letter, rows)).join('')}
-    </div>`;
+    </div>
+    ${legendHTML()}`;
+}
+
+// Abbreviation key shown only on small screens (where the header hover tooltips
+// don't fire); reuses the shared .stats-legend styling.
+function legendHTML() {
+  const pairs = ['played', 'won', 'drawn', 'lost', 'gf', 'ga', 'gd', 'pts']
+    .map((key) => `<span class="legend-pair"><b>${t(`standings.${key}`)}</b> = ${t(`tip.${key}`)}</span>`)
+    .join('');
+  return `<p class="stats-legend">${pairs}</p>`;
 }
 
 function groupCardHTML(letter, rows) {
   const finished = isGroupFinished(letter);
   const headers = ['played', 'won', 'drawn', 'lost', 'gf', 'ga', 'gd', 'pts']
-    .map((key) => `<th class="${key === 'gf' || key === 'ga' ? 'col-goals' : ''}" scope="col">${t(`standings.${key}`)}</th>`)
+    .map((key) => {
+      const tip = t(`tip.${key}`);
+      const goals = key === 'gf' || key === 'ga' ? 'col-goals ' : '';
+      return `<th class="${goals}has-tip" scope="col" data-tip="${tip}" aria-label="${t(`standings.${key}`)} — ${tip}">${t(`standings.${key}`)}</th>`;
+    })
     .join('');
 
   return `

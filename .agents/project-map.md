@@ -13,6 +13,8 @@ worldcup2026/
 ├── .agents/                              ← Internal documentation for AI agents
 │   ├── project-map.md                    This file
 │   ├── project-memory.md                 Context, decisions, gotchas
+│   ├── stats-screen-plan.md              Plan for the post-tournament "final stats" screen
+│   │                                       (NOT implemented — planning only, 2026-06-14)
 │   └── TODO.md                           12-step build checklist
 │
 ├── .github/workflows/
@@ -21,7 +23,7 @@ worldcup2026/
 │ .gitignore                              OS/editor junk
 │
 ├── index.html                            ★ SPA shell — header, nav tabs (Home, Matches,
-│                                           Groups, Knockout, Stadiums), hero, dashboard,
+│                                           Groups, Knockout, Stadiums, Stats), hero, dashboard,
 │                                           modal container; loads app.js as ES module
 │
 ├── assets/
@@ -29,6 +31,7 @@ worldcup2026/
 │   │   ├── style.css                     ★ Palette variables, glassmorphism base, layout,
 │   │   │                                   components — mobile-first
 │   │   ├── bracket.css                   Bracket columns, connectors, highlight states
+│   │   ├── stats.css                     Stats tab: hero "pulse", overview cards, goals-by-stage chart
 │   │   └── animations.css                Entry (fade-in, slide-up/left) + interaction
 │   │                                       (hover-scale/glow, pulse, line-draw)
 │   ├── js/
@@ -43,6 +46,9 @@ worldcup2026/
 │   │   ├── modal.js                      Match detail modal (ARIA dialog)
 │   │   ├── storage.js                    localStorage wrapper — wc2026_* keys, auto-JSON
 │   │   ├── i18n.js                       EN/PT-BR dicts + t(key), lang toggle
+│   │   ├── stats.js                      ★ Stats tab: tournament-to-date aggregates (finished
+│   │   │                                   matches only), hero pulse + overview + goals-by-stage.
+│   │   │                                   PARTIAL (during-cup) — grows into the post-cup plan.
 │   │   └── calendar.js                   .ics export (RFC 5545, CRLF, Blob download)
 │   └── images/                           Team flag SVGs, stadium placeholders
 │

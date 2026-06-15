@@ -9,6 +9,7 @@ import { initGroups } from './groups.js';
 import { initStadiums } from './stadiums.js';
 import { initModal } from './modal.js';
 import { initBracket } from './bracket.js';
+import { initStats } from './stats.js';
 
 // ---------------------------------------------------------------- data
 
@@ -57,7 +58,7 @@ export function flagSrc(team) {
 
 // ---------------------------------------------------------------- tabs
 
-const TABS = ['home', 'matches', 'groups', 'bracket', 'stadiums'];
+const TABS = ['home', 'matches', 'groups', 'bracket', 'stadiums', 'stats'];
 
 function activateTab(id, { updateHash = true } = {}) {
   const tab = TABS.includes(id) ? id : 'home';
@@ -216,6 +217,53 @@ function renderDashboard() {
 
 // ---------------------------------------------------------------- init
 
+// shared tooltip for abbreviated table headers (Stats + Groups). A single
+// fixed-position bubble driven by event delegation, so it survives table
+// re-renders and is never clipped by a table's overflow/stacking context.
+// Hover + keyboard focus both trigger it; screen readers use the header's
+// aria-label, and small screens fall back to the visible legend.
+function initTooltips() {
+  const tip = document.createElement('div');
+  tip.className = 'app-tooltip';
+  tip.setAttribute('role', 'tooltip');
+  tip.hidden = true;
+  document.body.appendChild(tip);
+  let current = null;
+
+  const show = (el) => {
+    current = el;
+    tip.textContent = el.dataset.tip;
+    tip.style.left = '-9999px';
+    tip.style.top = '-9999px';
+    tip.hidden = false;
+    const rect = el.getBoundingClientRect();
+    const box = tip.getBoundingClientRect();
+    let left = Math.round(rect.left + rect.width / 2 - box.width / 2);
+    left = Math.max(8, Math.min(left, window.innerWidth - box.width - 8));
+    let top = Math.round(rect.top - box.height - 8);
+    if (top < 8) top = Math.round(rect.bottom + 8); // flip below if no room above
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+  };
+  const hide = (el) => {
+    if (!el || el === current) { tip.hidden = true; current = null; }
+  };
+
+  for (const event of ['mouseover', 'focusin']) {
+    document.addEventListener(event, (e) => {
+      const el = e.target.closest?.('.has-tip[data-tip]');
+      if (el) show(el);
+    });
+  }
+  for (const event of ['mouseout', 'focusout']) {
+    document.addEventListener(event, (e) => {
+      const el = e.target.closest?.('.has-tip[data-tip]');
+      if (el) hide(el);
+    });
+  }
+  document.addEventListener('scroll', () => hide(current), true);
+}
+
 // global star delegation — stars exist in schedule, groups, and modal
 function initFavorites() {
   document.addEventListener('click', (event) => {
@@ -278,6 +326,7 @@ async function init() {
   initLangSwitch();
   initTimeToggle();
   initFavorites();
+  initTooltips();
   document.addEventListener('langchange', renderHome);
   document.addEventListener('timemodechange', renderHero);
   try {
@@ -288,6 +337,7 @@ async function init() {
     initGroups();
     initBracket();
     initStadiums();
+    initStats();
   } catch (error) {
     showError(error);
   }
