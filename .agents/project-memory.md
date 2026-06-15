@@ -268,6 +268,15 @@ Follow `how-refresh-data.md` (project root). In short:
 - Match 12 (SWE–TUN, 2026-06-15 02:00 UTC) had not kicked off yet — left scheduled. `thirdPlaceAssignment` untouched (group stage not over).
 - Next: continue with matches 12+ on Jun 15 schedule.
 
+### Daily refresh (2026-06-15 — match 12)
+- **Results updated through match id 12** (SWE–TUN):
+  - id 12: SWE 5–1 TUN (Group F) — confirmed FIFA match centre + ESPN + Bolavip (Ayari 7' & 90'+6', Isak 30', Gyökeres 59', Svanberg 84' for SWE; Omar Rekik 43' for TUN). Played at Estadio BBVA, Monterrey.
+  - Stats added: possession 49/51, shots 17/5, cards 0/1 — sources: ESPN matchstats (possession + total shots 17/5; ESPN "shots on goal" 7/2 = on target, NOT used) + Sofascore/VAVEL (only booking = Rani Khedira yellow 54' for TUN → SWE 0, TUN 1).
+- Verified in preview: m12 modal shows 49%/17/0 vs 51%/5/1 (PT), console clean. Group F standings now Sweden 3pts (5-1, +4) leading; Japan & Netherlands 1pt each (2-2); Tunisia 0pts (1-5, -4).
+- DATA_VERSION bumped to **2026-06-15-rev1**.
+- This run rode together with the smart-hero feature commit (see "Hero cronômetro inteligente" entry) — both pending push/deploy at user's call.
+- Next: match 13 (ESP–CPV, Group H, 2026-06-15 16:00 UTC) and onwards still scheduled. `thirdPlaceAssignment` untouched (group stage not over).
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.
