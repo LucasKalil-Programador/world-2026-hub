@@ -301,6 +301,14 @@ Follow `how-refresh-data.md` (project root). In short:
 - This run rode together with the smart-hero feature commit (see "Hero cronômetro inteligente" entry) — both pending push/deploy at user's call.
 - Next: match 13 (ESP–CPV, Group H, 2026-06-15 16:00 UTC) and onwards still scheduled. `thirdPlaceAssignment` untouched (group stage not over).
 
+### Daily refresh (2026-06-15 — match 13)
+- **Results updated through match id 13** (ESP–CPV):
+  - id 13: ESP 0–0 CPV (Group H) — confirmed ESPN ("Spain 0-0 Cape Verde Final Score") + FOX Sports + FIFA match centre. Empate histórico: Cabo Verde (estreante na Copa) segura a Espanha; GK Vozinha (40 anos) com 8 defesas, trave em chute de F. Torres.
+  - Stats added: possession 74/26, shots 27/6, cards 1/1 — sources: posse 74% + chutes 27-6 (FIFA match centre + resumo final, 804 vs 304 passes); cartões 1/1 (FOX live blog: Pedri 90+3' ESP, Sidny Lopes Cabral 75' CPV; sem vermelhos).
+- Verified in preview: Group H agora Spain & Cape Verde 1pt cada (0-0), Saudi Arabia/Uruguay 0; modal do jogo 13 mostra 74%/27/1 vs 26%/6/1 (PT) com a nota "stats em breve" sumida; hero da home avançou pro jogo 14 (BEL–EGY, Group G) com countdown; console limpo.
+- **DATA_VERSION bumped to 2026-06-15-rev2** (segunda edição do mesmo dia, após o rev1 do match 12 + smart-hero).
+- Next: match 14 (BEL–EGY, Group G, 2026-06-15 19:00 UTC) e seguintes ainda `scheduled`. `thirdPlaceAssignment` intacto (13/72 jogos de grupo concluídos).
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.

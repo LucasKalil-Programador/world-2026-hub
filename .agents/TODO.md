@@ -62,7 +62,7 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 ### 🟡 IMPORTANT
 - [x] ~~Replace mock `data/*.json` with real World Cup 2026 data~~ (2026-06-12 — full migration + smoke test; see project-memory)
 - [ ] Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage ends (~2026-06-27; slot → allowed-groups table in project-memory)
-- [ ] Update `results.json` as the tournament progresses (results updated through match id 12 on 2026-06-15)
+- [ ] Update `results.json` as the tournament progresses (results updated through match id 13 on 2026-06-15)
 - [ ] Real stadium photos + team flag SVGs in `assets/images/` (10 new-team flags created 2026-06-12 in placeholder style)
 - [ ] **Pós-Copa: estado final da home.** Quando a Final encerrar, o hero fica vazio (por design atual). Criar um estado pós-torneio (campeão/epílogo) na home — ver entrada "Hero cronômetro inteligente (2026-06-15)" em project-memory; provavelmente converge com a aba Stats (`stats-screen-plan.md`).
 
