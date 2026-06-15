@@ -37,8 +37,9 @@ worldcup2026/
 │   ├── js/
 │   │   ├── app.js                        ★ Entry point: loadData() (Promise.all over data/),
 │   │   │                                   tab routing + lastTab, formatMatchTime(), dashboard,
-│   │   │                                   clock-driven hero (matchState/findFeaturedMatch +
-│   │   │                                   1s heroTick: hybrid JSON+clock, 2h/3h match window)
+│   │   │                                   clock-driven hero (matchState/findFeaturedMatches +
+│   │   │                                   1s heroTick: hybrid JSON+clock, 2h/3h window; stacks
+│   │   │                                   simultaneous group-final matches, one shared timer)
 │   │   ├── schedule.js                   Match list, filters (incl. occurrence toggle
 │   │   │                                   Played/Upcoming via hybrid matchState), search,
 │   │   │                                   sort, "My Matches"; 60s clock-tick re-render

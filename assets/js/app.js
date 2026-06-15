@@ -128,19 +128,28 @@ export function matchState(match, result, now) {
   return 'upcoming';
 }
 
-// Featured match = the earliest match that isn't over yet (in progress or
-// upcoming); ties broken by id, matching schedule.js ordering.
-function findFeaturedMatch(now) {
+// Featured = the earliest matches that aren't over yet, INCLUDING every match
+// sharing that exact kickoff. At the end of the group stage a group's last two
+// games kick off simultaneously, so the hero must show both (they share kickoff
+// + phase → same window → synced clock state). Returns [] when nothing is left.
+function findFeaturedMatches(now) {
   const { matches, resultByMatchId } = data;
-  return matches
+  const upNext = matches
     .filter((m) => matchState(m, resultByMatchId.get(m.id), now) !== 'over')
-    .sort((a, b) => matchDateUTC(a) - matchDateUTC(b) || a.id - b.id)[0] ?? null;
+    .sort((a, b) => matchDateUTC(a) - matchDateUTC(b) || a.id - b.id);
+  if (!upNext.length) return [];
+  const kickoff = matchDateUTC(upNext[0]).getTime();
+  return upNext.filter((m) => matchDateUTC(m).getTime() === kickoff);
 }
 
 // Compact signature of "what the hero should show now"; a change drives a rebuild.
-function heroSignature(match, now) {
-  if (!match) return '∅';
-  return `${match.id}:${matchState(match, data.resultByMatchId.get(match.id), now)}`;
+// Covers the whole featured set so adding/removing a simultaneous match (or any
+// of them flipping state) re-renders.
+function heroSignature(featured, now) {
+  if (!featured.length) return '∅';
+  return featured
+    .map((m) => `${m.id}:${matchState(m, data.resultByMatchId.get(m.id), now)}`)
+    .join('|');
 }
 
 function heroTeamHTML(teamId) {
@@ -158,19 +167,10 @@ let heroSig = null;
 let countdownTarget = null;
 let countdownEls = null;
 
-function renderHero() {
-  const root = document.getElementById('hero-content');
-  const now = Date.now();
-  const match = findFeaturedMatch(now);
-  heroSig = heroSignature(match, now);
-  countdownTarget = null;
-  countdownEls = null;
-
-  if (!match) {
-    root.innerHTML = '';
-    startHeroClock();
-    return;
-  }
+// One matchup row (teams + center) plus its meta line. `multi` drops the time
+// from the meta (shown once, shared) and keeps only the stadium; a single match
+// keeps the original "time · stadium, city" so the lone-match hero is unchanged.
+function heroMatchupHTML(match, now, multi) {
   const result = data.resultByMatchId.get(match.id);
   const stadium = data.stadiumByName.get(match.stadium);
   const live = matchState(match, result, now) === 'live';
@@ -181,21 +181,60 @@ function renderHero() {
   const center = live && hasScore
     ? `<div class="hero-score">${result.homeScore}<span class="hero-score-sep">–</span>${result.awayScore}</div>`
     : `<div class="hero-vs">${t('hero.vs')}</div>`;
+  const meta = multi
+    ? `${match.stadium}, ${match.city}`
+    : `${formatMatchTime(match, stadium)} · ${match.stadium}, ${match.city}`;
 
-  root.innerHTML = `
-    <p class="hero-label">
-      ${live ? `<span class="live-badge pulse">● ${t('hero.inProgress')}</span>` : t('hero.nextMatch')}
-      <span class="hero-phase">${translatePhase(match.phase)}</span>
-    </p>
+  return `
     <div class="hero-matchup">
       ${heroTeamHTML(match.homeTeam)}
       ${center}
       ${heroTeamHTML(match.awayTeam)}
     </div>
-    <p class="hero-meta">${formatMatchTime(match, stadium)} · ${match.stadium}, ${match.city}</p>
+    <p class="hero-meta">${meta}</p>`;
+}
+
+function renderHero() {
+  const root = document.getElementById('hero-content');
+  const now = Date.now();
+  const featured = findFeaturedMatches(now);
+  heroSig = heroSignature(featured, now);
+  countdownTarget = null;
+  countdownEls = null;
+
+  if (!featured.length) {
+    root.innerHTML = '';
+    startHeroClock();
+    return;
+  }
+
+  // Simultaneous matches share kickoff + phase, so one label, one shared time
+  // and one countdown cover the whole set; each matchup keeps its own score.
+  const multi = featured.length > 1;
+  const live = featured.some((m) => matchState(m, data.resultByMatchId.get(m.id), now) === 'live');
+  const phase = translatePhase(featured[0].phase);
+
+  const rows = featured
+    .map((m) => (multi ? `<div class="hero-match">${heroMatchupHTML(m, now, true)}</div>` : heroMatchupHTML(m, now, false)))
+    .join(multi ? '<div class="hero-divider" aria-hidden="true"></div>' : '');
+  const body = multi ? `<div class="hero-matchups">${rows}</div>` : rows;
+
+  // shared kickoff time, shown once. Real simultaneous pairs are same-timezone,
+  // so the first match's stadium gives the right time even in stadium-time mode.
+  const sharedTime = multi
+    ? `<p class="hero-meta hero-time">${formatMatchTime(featured[0], data.stadiumByName.get(featured[0].stadium))}</p>`
+    : '';
+
+  root.innerHTML = `
+    <p class="hero-label">
+      ${live ? `<span class="live-badge pulse">● ${t('hero.inProgress')}</span>` : t(multi ? 'hero.nextMatches' : 'hero.nextMatch')}
+      <span class="hero-phase">${phase}</span>
+    </p>
+    ${sharedTime}
+    ${body}
     ${live ? '' : `<div class="countdown" id="countdown" role="timer" aria-label="${t('hero.countdownLabel')}"></div>`}
   `;
-  if (!live) setupCountdown(matchDateUTC(match).getTime());
+  if (!live) setupCountdown(matchDateUTC(featured[0]).getTime());
   startHeroClock();
 }
 
@@ -233,7 +272,7 @@ function startHeroClock() {
 
 function heroTick() {
   const now = Date.now();
-  const sig = heroSignature(findFeaturedMatch(now), now);
+  const sig = heroSignature(findFeaturedMatches(now), now);
   if (sig !== heroSig) renderHero();
   else updateCountdown();
 }

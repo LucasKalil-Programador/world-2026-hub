@@ -332,6 +332,32 @@ button {
   font-size: 0.95rem;
 }
 
+/* two simultaneous matches (group-stage final round) stacked under one label */
+.hero-matchups {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 3.5vw, 1.75rem);
+}
+
+.hero-match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.hero-divider {
+  width: min(420px, 80%);
+  height: 1px;
+  margin: 0 auto;
+  background: var(--glass-border);
+}
+
+.hero-time {
+  margin-top: 0.25rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 /* --------------------------------------------------------- countdown */
 
 .countdown {
