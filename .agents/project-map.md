@@ -36,8 +36,9 @@ worldcup2026/
 │   │                                       (hover-scale/glow, pulse, line-draw)
 │   ├── js/
 │   │   ├── app.js                        ★ Entry point: loadData() (Promise.all over data/),
-│   │   │                                   tab routing + lastTab, formatMatchTime(), hero,
-│   │   │                                   dashboard, countdown
+│   │   │                                   tab routing + lastTab, formatMatchTime(), dashboard,
+│   │   │                                   clock-driven hero (matchState/findFeaturedMatch +
+│   │   │                                   1s heroTick: hybrid JSON+clock, 2h/3h match window)
 │   │   ├── schedule.js                   Match list, filters, search, sort, "My Matches"
 │   │   ├── groups.js                     Standings computation (3/1/0, GD, GF) + group tables
 │   │   ├── stadiums.js                   Stadium cards + "view matches" cross-link
