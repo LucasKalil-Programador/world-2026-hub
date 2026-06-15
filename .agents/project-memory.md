@@ -247,6 +247,15 @@ Follow `how-refresh-data.md` (project root). In short:
 - DATA_VERSION bumped to 2026-06-14-rev2
 - Next: continue with remaining matches (10+) on Jun 14 schedule
 
+### Daily refresh (2026-06-14 — matches 10–11)
+- **Results updated through match id 11:**
+  - id 10: NED 2–2 JPN (Group F) — confirmed ESPN + NBC/Yahoo + FIFA (Van Dijk & Summerville for NED; Nakamura & Kamada 89' for JPN). Stats: possession 60/40, shots 10/10, cards 3/0 (NED: Van de Ven 90+1', Summerville 61', Depay 83'; JPN none) — ESPN + Newsbytes/Sofascore + FOX boxscore.
+  - id 11: CIV 1–0 ECU (Group E) — confirmed ESPN + Outlook India/Yahoo (Amad Diallo 90', assist Singo). Stats: possession 48/52, shots 13/11, cards 3/1 (CIV: Kessie 38', Fofana 76', Doue 88'; ECU: Porozo 62') — ESPN + Yahoo + FOX boxscore.
+- Verified in preview: both modals show correct possession/shots/cards (EN/PT), console clean. Group E now Germany 3pts (7-1) + Ivory Coast 3pts (1-0); Group F Japan & Netherlands 1pt each (2-2).
+- DATA_VERSION bumped to 2026-06-14-rev3.
+- Match 12 (SWE–TUN, 2026-06-15 02:00 UTC) had not kicked off yet — left scheduled. `thirdPlaceAssignment` untouched (group stage not over).
+- Next: continue with matches 12+ on Jun 15 schedule.
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.

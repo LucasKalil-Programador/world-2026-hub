@@ -62,7 +62,7 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 ### 🟡 IMPORTANT
 - [x] ~~Replace mock `data/*.json` with real World Cup 2026 data~~ (2026-06-12 — full migration + smoke test; see project-memory)
 - [ ] Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage ends (~2026-06-27; slot → allowed-groups table in project-memory)
-- [ ] Update `results.json` as the tournament progresses (results updated through match id 7 on 2026-06-14)
+- [ ] Update `results.json` as the tournament progresses (results updated through match id 11 on 2026-06-14)
 - [ ] Real stadium photos + team flag SVGs in `assets/images/` (10 new-team flags created 2026-06-12 in placeholder style)
 
 ---
