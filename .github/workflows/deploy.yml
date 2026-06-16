@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           # Protocolo: use "ftps" (recomendado pela Hostinger). Se a sua
           # conta só aceitar FTP simples, troque para "ftp".
-          protocol: ftp
+          protocol: ftps
           port: 21
           # Pasta de origem no repositório (raiz do projeto).
           local-dir: ./
