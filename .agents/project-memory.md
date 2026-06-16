@@ -345,6 +345,14 @@ Follow `how-refresh-data.md` (project root). In short:
 - **DATA_VERSION bumped to 2026-06-16-rev1.**
 - Next: match 17 (FRA–SEN, Group I, 2026-06-16 19:00 UTC) onwards still `scheduled`. `thirdPlaceAssignment` untouched (16/72 group stage matches completed).
 
+### Daily refresh (2026-06-16 — match 17)
+- **Results updated through match id 17** (FRA–SEN):
+  - id 17: FRA 3–1 SEN (Group I) — confirmed ESPN + Al Jazeera + NBC Sports + FOX Sports (Kylian Mbappé 66' & 90+6' for France; Bradley Barcola 82' for France; Ibrahim Mbaye 90+5' for Senegal). Played at MetLife Stadium, New York/New Jersey.
+  - Stats added: possession 54/46, shots 11/6, cards 0/0 — sources: ESPN (possession + shots on goal 8/2); NBC Sports live blog + Al Jazeera (no disciplinary cards shown in match).
+- Verified in preview (rev2): match 17 data loads correctly with score 3-1, stats 54%/11/0 vs 46%/6/0 (PT); console clean. Group I standings updated with France 3 pts (3-1 win).
+- **DATA_VERSION bumped to 2026-06-16-rev2.**
+- Match 18 (IRQ–NOR, Group I, 2026-06-16 22:00 UTC) not yet kicked off. `thirdPlaceAssignment` untouched (17/72 group stage matches completed).
+
 ### Commit convention — standardized (2026-06-15)
 
 - **Problema:** cada run do `/update-worldcup` deixava o `/git-semantic-commit` inventar um subject diferente (`data: update match 13 result and stats`, `data: update match 12 …`, etc.) — sem padrão. O usuário fez o último commit à mão num formato limpo (`data: update 15/06/2026 18:00 BELxEGY 1x1`) e pediu pra padronizar a partir dele.
