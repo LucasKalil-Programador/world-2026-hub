@@ -6,11 +6,17 @@
 // sections gate on data so player/award/editorial blocks slot in later.
 
 import { getData, flagSrc, navigateTo } from './app.js';
+import { getBracketTree } from './bracket.js';
 import { t, translatePhase } from './i18n.js';
 
 // "Goals by stage" collapses all 12 groups into one bucket; knockout phases
 // keep their own. Order used to render the chart left-to-right.
 const STAGE_ORDER = ['Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Third Place', 'Final'];
+
+// "Goals by round" is finer: the group stage is split into its 3 matchdays
+// (derived per group), then each knockout round stands alone — a goals-over-time
+// view distinct from goals-by-stage (which lumps all group games together).
+const ROUND_ORDER = ['MD1', 'MD2', 'MD3', ...STAGE_ORDER];
 
 // Per-team table: all 48 teams, 8 per page (6 fixed pages). Sortable columns —
 // existing standings.* labels are reused for the abbreviations the user already
@@ -109,6 +115,8 @@ function buildStatsModel() {
   let decisive = 0;
   let biggestMargin = 0;
   const byStage = new Map();
+  const byRound = new Map();
+  const groupMatchday = computeGroupMatchdays(matches);
 
   for (const m of finished) {
     const r = resultByMatchId.get(m.id);
@@ -121,6 +129,12 @@ function buildStatsModel() {
     bucket.goals += total;
     bucket.count += 1;
     byStage.set(stage, bucket);
+    // finer round bucket: group → its matchday, knockout → the stage itself
+    const roundKey = m.phase.startsWith('Group ') ? `MD${groupMatchday.get(m.id)}` : stage;
+    const rb = byRound.get(roundKey) ?? { goals: 0, count: 0 };
+    rb.goals += total;
+    rb.count += 1;
+    byRound.set(roundKey, rb);
   }
 
   const agg = aggregateTeams(finished, resultByMatchId);
@@ -161,9 +175,49 @@ function buildStatsModel() {
     biggestMargin,
     cleanSheets,
     byStage,
+    byRound,
+    verdict: computeVerdict(),
     teamStats,
     leaders: computeLeaders(teamStats),
   };
+}
+
+// Matchday (1–3) for every group match, derived per group: a 4-team group plays
+// two games per matchday, so sorting a group's six fixtures by kickoff and
+// chunking into pairs reproduces the official matchdays (no stored field).
+function computeGroupMatchdays(matches) {
+  const byGroup = new Map();
+  for (const m of matches) {
+    if (!m.phase.startsWith('Group ')) continue;
+    if (!byGroup.has(m.phase)) byGroup.set(m.phase, []);
+    byGroup.get(m.phase).push(m);
+  }
+  const matchday = new Map();
+  for (const list of byGroup.values()) {
+    list.sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`) || a.id - b.id);
+    list.forEach((m, i) => matchday.set(m.id, Math.floor(i / 2) + 1));
+  }
+  return matchday;
+}
+
+// The tournament verdict — REAL results only. The bracket tree's champion can be
+// a user simulation; gate on the FINAL node carrying a real finished result
+// (decide() sets winner from real results first, so !simulated means it's real).
+// Third/fourth come from the third-place match the same way; each is independent
+// so the podium degrades gracefully if (somehow) only the final is in.
+function computeVerdict() {
+  const tree = getBracketTree();
+  const finalNode = tree.nodesByRef.get('FINAL');
+  if (!finalNode || finalNode.simulated || finalNode.result?.status !== 'finished' || !finalNode.winner) {
+    return null;
+  }
+  const verdict = { champion: finalNode.winner, runnerUp: finalNode.loser };
+  const third = tree.third;
+  if (third && !third.simulated && third.result?.status === 'finished' && third.winner) {
+    verdict.third = third.winner;
+    verdict.fourth = third.loser;
+  }
+  return verdict;
 }
 
 // Highlight leaders consider only teams that have played, so a 0-game team's
@@ -308,28 +362,69 @@ function installImageFallback() {
   }, true);
 }
 
+// The hero becomes the tournament's verdict (champion + podium) once the FINAL
+// has a real result; until then it falls back to the live "in progress"
+// aggregate hero, so the screen stays correct even if merged before the Cup ends.
 function heroHTML() {
+  return model.verdict ? verdictHeroHTML() : aggregateHeroHTML();
+}
+
+function aggregateHeroHTML() {
   const m = model;
   const progress = t('stats.heroProgress')
     .replace('{x}', String(m.finishedCount))
     .replace('{y}', String(m.totalMatches));
+  return `
+    <section class="stats-hero glass slide-up">
+      <p class="hero-label">${t('stats.heroTitle')}<span class="hero-phase">${progress}</span></p>
+      <div class="stats-hero-tiles">${heroTilesHTML()}</div>
+    </section>`;
+}
+
+function verdictHeroHTML() {
+  const v = model.verdict;
+  const team = (id) => getData().teamById.get(id);
+  const champion = team(v.champion);
+  const places = [
+    { label: t('stats.runnerUp'), rank: '2', id: v.runnerUp },
+    v.third ? { label: t('stats.thirdPlace'), rank: '3', id: v.third } : null,
+    v.fourth ? { label: t('stats.fourthPlace'), rank: '4', id: v.fourth } : null,
+  ].filter(Boolean);
+  return `
+    <section class="stats-hero stats-verdict glass slide-up">
+      <p class="hero-label">${t('stats.verdictTitle')}</p>
+      <div class="verdict-champion">
+        <span class="verdict-trophy" aria-hidden="true">🏆</span>
+        ${flagImg(champion, 92, 61, 'flag verdict-flag')}
+        <span class="verdict-name">${champion.name}</span>
+        <span class="verdict-crown">${t('bracket.champion')}</span>
+      </div>
+      <div class="verdict-podium">
+        ${places.map((p) => `
+          <div class="verdict-place">
+            <span class="verdict-rank" aria-hidden="true">${p.rank}</span>
+            ${flagImg(team(p.id), 36, 24)}
+            <span class="verdict-place-name">${team(p.id).name}</span>
+            <span class="verdict-place-label">${p.label}</span>
+          </div>`).join('')}
+      </div>
+      <div class="stats-hero-tiles">${heroTilesHTML()}</div>
+    </section>`;
+}
+
+function heroTilesHTML() {
+  const m = model;
   const tiles = [
     { value: m.totalGoals, decimals: 0, label: t('stats.tileGoals') },
     { value: Number(m.avgGoals.toFixed(2)), decimals: 2, label: t('stats.tileAvg') },
     { value: m.biggestMargin, decimals: 0, label: t('stats.tileBiggestMargin') },
     { value: m.cleanSheets, decimals: 0, label: t('stats.tileCleanSheets') },
   ];
-  return `
-    <section class="stats-hero glass slide-up">
-      <p class="hero-label">${t('stats.heroTitle')}<span class="hero-phase">${progress}</span></p>
-      <div class="stats-hero-tiles">
-        ${tiles.map((tile) => `
-          <div class="stats-tile">
-            <span class="stats-tile-value" data-countup="${tile.value}" data-decimals="${tile.decimals}">${tile.decimals ? '0.00' : '0'}</span>
-            <span class="stats-tile-label">${tile.label}</span>
-          </div>`).join('')}
-      </div>
-    </section>`;
+  return tiles.map((tile) => `
+    <div class="stats-tile">
+      <span class="stats-tile-value" data-countup="${tile.value}" data-decimals="${tile.decimals}">${tile.decimals ? '0.00' : '0'}</span>
+      <span class="stats-tile-label">${tile.label}</span>
+    </div>`).join('');
 }
 
 function overviewHTML() {
@@ -348,7 +443,8 @@ function overviewHTML() {
           <span class="stat-label">${card.label}</span>
         </div>`).join('')}
     </div>
-    ${goalsByStageHTML()}`;
+    ${goalsByStageHTML()}
+    ${goalsByRoundHTML()}`;
 }
 
 function footerHTML() {
@@ -375,6 +471,29 @@ function goalsByStageHTML() {
   }).join('');
   return `
     <h2 class="section-title">${t('stats.goalsByPhase')}</h2>
+    <div class="stats-chart glass">${rows}</div>`;
+}
+
+// Finer companion to goals-by-stage: group matchdays + each knockout round.
+// Hidden until ≥2 rounds have data, so it never shows a lone bar that just
+// duplicates the goals-by-stage "Group" bar early in the tournament.
+function goalsByRoundHTML() {
+  const order = ROUND_ORDER.filter((round) => model.byRound.has(round));
+  if (order.length < 2) return '';
+  const max = Math.max(...order.map((round) => model.byRound.get(round).goals));
+  const rows = order.map((round) => {
+    const bucket = model.byRound.get(round);
+    const pct = max ? Math.round((bucket.goals / max) * 100) : 0;
+    const label = round.startsWith('MD') ? `${t('stats.matchday')} ${round.slice(2)}` : translatePhase(round);
+    return `
+      <div class="chart-row">
+        <span class="chart-bar-label">${label}</span>
+        <div class="chart-track"><div class="chart-bar" style="width:${pct}%"></div></div>
+        <span class="chart-bar-val">${bucket.goals}</span>
+      </div>`;
+  }).join('');
+  return `
+    <h2 class="section-title">${t('stats.goalsByRound')}</h2>
     <div class="stats-chart glass">${rows}</div>`;
 }
 

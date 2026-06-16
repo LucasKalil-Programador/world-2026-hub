@@ -48,6 +48,94 @@
   color: var(--text-secondary);
 }
 
+/* -------------------------------------------------------- verdict hero */
+/* post-tournament hero: champion + podium above the count-up tiles */
+
+.stats-verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.3rem;
+}
+
+.stats-verdict .hero-label { margin-bottom: 0.1rem; }
+
+.verdict-champion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.verdict-trophy {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.verdict-flag {
+  border-radius: 4px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  outline: 2px solid var(--accent-gold);
+}
+
+.verdict-name {
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--accent-gold-soft);
+}
+
+.verdict-crown {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-gold);
+}
+
+.verdict-podium {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem 1.5rem;
+}
+
+.verdict-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 84px;
+}
+
+.verdict-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.verdict-place-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.verdict-place-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.stats-verdict .stats-hero-tiles { width: 100%; }
+
 /* ----------------------------------------------------------- overview */
 
 .stats-overview-grid {
