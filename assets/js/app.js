@@ -357,12 +357,20 @@ function setupCountdown(target) {
   countdownEls = Object.fromEntries(
     units.map((unit) => [unit, root.querySelector(`[data-unit="${unit}"]`)]),
   );
+  
+  lastSeconds = null;
   updateCountdown();
 }
+
+let lastSeconds = null
 
 function updateCountdown() {
   if (!countdownEls) return;
   const seconds = Math.floor(Math.max(0, countdownTarget - Date.now()) / 1000);
+
+  if (seconds === lastSeconds) return;
+  lastSeconds = seconds;
+
   countdownEls.days.textContent = Math.floor(seconds / 86400);
   countdownEls.hours.textContent = String(Math.floor((seconds % 86400) / 3600)).padStart(2, '0');
   countdownEls.minutes.textContent = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
@@ -374,7 +382,7 @@ function updateCountdown() {
 // match), the signature flips and we rebuild the hero — no reload, no JSON edit.
 function startHeroClock() {
   if (heroTimer) return;
-  heroTimer = setInterval(heroTick, 1000);
+  heroTimer = setInterval(heroTick, 250);
 }
 
 function heroTick() {
