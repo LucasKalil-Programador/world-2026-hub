@@ -40,7 +40,11 @@ worldcup2026/
 │   │   │                                   edge fades on the scrollable nav), formatMatchTime(), dashboard,
 │   │   │                                   clock-driven hero (matchState/findFeaturedMatches +
 │   │   │                                   1s heroTick: hybrid JSON+clock, 2h/3h window; stacks
-│   │   │                                   simultaneous group-final matches, one shared timer)
+│   │   │                                   simultaneous group-final matches, one shared timer),
+│   │   │                                   live data refresh (startResultsPolling: 90s poll of
+│   │   │                                   results.json, no-store + ?t, content signature, pauses
+│   │   │                                   when tab hidden, stops at FINAL; on change also refetches
+│   │   │                                   bracket-config.json; fires `datachange`)
 │   │   ├── schedule.js                   Match list, filters (incl. occurrence toggle
 │   │   │                                   Played/Upcoming via hybrid matchState), search,
 │   │   │                                   sort, "My Matches"; 60s clock-tick re-render
