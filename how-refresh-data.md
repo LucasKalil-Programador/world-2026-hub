@@ -134,9 +134,52 @@ single-source (Wikipedia 17:00 PDT vs one ESPN summary implying 14:00 PDT).
    `thirdPlaceAssignment` is filled, **Knockout** R32 shows real team names.
 4. Console must stay free of errors.
 
+## Commit convention (standardized)
+
+Every `/update-worldcup` run produces **two commits**, in this order, with these
+exact subject formats — do not improvise per run.
+
+### 1. Data commit — `results.json` + `DATA_VERSION` (+ `bracket-config.json` when the third-place fill happens)
+
+- **One match:**
+  ```
+  data: update DD/MM/YYYY HH:MM HOMExAWAY HxA
+  ```
+  e.g. `data: update 15/06/2026 18:00 BELxEGY 1x1`
+- **Multiple matches:** short subject, one body line per match:
+  ```
+  data: update DD/MM/YYYY — N jogos
+
+  HH:MM HOMExAWAY HxA
+  HH:MM HOMExAWAY HxA
+  ```
+
+Rules:
+- `DD/MM/YYYY` and `HH:MM` are the match's **UTC** date/kickoff (same UTC used in
+  `matches.json` — a 9 p.m. PDT game is the next UTC day).
+- Team codes are the 3-letter uppercase ids; separators are lowercase `x`
+  (`HOMExAWAY` and `HxA`).
+- **Penalties** (knockout only): append `(pen HxA)`, e.g.
+  `data: update 04/07/2026 20:00 BRAxARG 1x1 (pen 4x3)`.
+- The one-time `thirdPlaceAssignment` fill rides in the same data commit; note it
+  in the body line (`+ thirdPlaceAssignment filled`).
+
+### 2. Docs commit — `.agents/` memory + TODO log
+
+```
+docs: log daily refresh DD/MM/YYYY
+```
+
+`.agents/` is excluded from the FTP deploy, so keeping it a separate commit keeps
+the data commit (the one that actually changes the live site) a clean diff.
+
+> The previous habit of letting `/git-semantic-commit` invent a fresh subject
+> each run (`data: update match 13 result and stats`, `data: update match 12 …`)
+> is **retired** — use the formats above verbatim.
+
 ## After finishing
 
 Per project convention, append a short dated line to `.agents/project-memory.md`
 ("results updated through match id N on YYYY-MM-DD") and tick anything completed
 in `.agents/TODO.md` §6. Confirm `DATA_VERSION` in `assets/js/app.js` was bumped
-to today's date (step 4 above) before committing.
+to today's date (step 4 above) before committing with the two commits above.

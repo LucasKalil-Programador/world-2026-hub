@@ -309,6 +309,27 @@ Follow `how-refresh-data.md` (project root). In short:
 - **DATA_VERSION bumped to 2026-06-15-rev2** (segunda edição do mesmo dia, após o rev1 do match 12 + smart-hero).
 - Next: match 14 (BEL–EGY, Group G, 2026-06-15 19:00 UTC) e seguintes ainda `scheduled`. `thirdPlaceAssignment` intacto (13/72 jogos de grupo concluídos).
 
+### Daily refresh (2026-06-15 — match 15)
+- **Results updated through match id 15** (KSA–URU):
+  - id 15: KSA 1–1 URU (Group H) — confirmed Outlook India + ESPN + FOX Sports + Opta/TheAnalyst (Abdulelah Al-Amri 41' para a Arábia; Maxi Araújo 80' empata para o Uruguai de Bielsa). Jogado no Hard Rock Stadium, Miami.
+  - Stats added: possession 33/67, shots 7/28, cards 1/0 — fontes: posse 67% Uruguai (TheAnalyst, maior posse uruguaia em Copas desde 1966) → 33/67; finalizações 7/28 (TheAnalyst — Uruguai com 28 totais, 22 só no 2º tempo; ESPN listou 23/21 mas inconsistente com o domínio, descartado); cartões 1/0 (FOX live blog: amarelo Al-Amri 44' KSA, Uruguai sem cartões).
+- **Nota:** o match 14 (BEL 1–1 EGY, Group G — posse 54/46, chutes 15/14, cartões 4/3) já estava `finished` no results.json no início deste run (editado num rev3 do mesmo dia, sem entrada de log própria); este refresh cobre o 15.
+- Verified in preview (rev4): modal do jogo 15 mostra 33%/7/1 vs 67%/28/0 (PT) com a nota "stats em breve" sumida; console limpo. Group H agora com Spain/Cape Verde/Saudi Arabia/Uruguay todos com 1pt (dois 0-0… na verdade ESP-CPV 0-0 e KSA-URU 1-1, 4 times empatados em 1pt).
+- **DATA_VERSION bumped to 2026-06-15-rev4.**
+- Next: match 16 (IRN–NZL, Group G, 2026-06-16 01:00 UTC) e seguintes ainda `scheduled`. `thirdPlaceAssignment` intacto (15/72 jogos de grupo concluídos).
+
+### Commit convention — standardized (2026-06-15)
+
+- **Problema:** cada run do `/update-worldcup` deixava o `/git-semantic-commit` inventar um subject diferente (`data: update match 13 result and stats`, `data: update match 12 …`, etc.) — sem padrão. O usuário fez o último commit à mão num formato limpo (`data: update 15/06/2026 18:00 BELxEGY 1x1`) e pediu pra padronizar a partir dele.
+- **Padrão definido (full em `how-refresh-data.md` → "Commit convention (standardized)"):** cada refresh = **2 commits**.
+  1. **Data commit** (`results.json` + `DATA_VERSION`, + `bracket-config.json` no dia do third-place):
+     - 1 jogo → `data: update DD/MM/YYYY HH:MM HOMExAWAY HxA`
+     - N jogos → subject `data: update DD/MM/YYYY — N jogos` + 1 linha de corpo por jogo (`HH:MM HOMExAWAY HxA`).
+     - Pênaltis (só mata-mata): sufixo `(pen HxA)`.
+  2. **Docs commit:** `docs: log daily refresh DD/MM/YYYY` (mexidas em `.agents/` + TODO).
+- **Regras:** `DD/MM/YYYY`+`HH:MM` são a data/kickoff **UTC** do jogo (igual `matches.json`); códigos = 3 letras maiúsculas; separadores `x` minúsculo. `.agents/` fica fora do deploy FTP → mantê-lo em commit separado deixa o data commit (o que muda o site) com diff limpo.
+- **Por quê 2 commits e não 1:** decisão do usuário (2026-06-15) — separa o que vai pro ar (data) do log interno (docs).
+
 ### Daily refresh runbook (2026-06-12)
 - **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
 - `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.

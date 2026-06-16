@@ -249,3 +249,13 @@ Per this project's conventions, update `.agents/`:
 - Append a dated entry to `.agents/project-memory.md` documenting: data source
   used, the stadiums 30→16 decision (and final list if trimmed), and the
   `thirdPlaceAssignment` status (filled / partially filled / still null).
+
+### Commit convention
+
+This migration is a one-off; commit it descriptively (e.g.
+`data: migrate mock → real WC2026 data`). For **day-to-day result updates**
+during the tournament, the standardized commit format lives in
+`how-refresh-data.md` → "Commit convention (standardized)": a `data:` commit per
+refresh (`data: update DD/MM/YYYY HH:MM HOMExAWAY HxA`, or `— N jogos` with one
+body line per match) plus a `docs: log daily refresh DD/MM/YYYY` commit. Use those
+verbatim, not a freshly worded subject each run.
