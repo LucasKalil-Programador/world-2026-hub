@@ -29,6 +29,22 @@ const COLUMNS = [
   { key: 'cleanSheets', label: 'stats.colCS', tip: 'tip.cs' },
 ];
 
+// Sub-nav sections (graceful-degradation contract, stats-screen-plan.md §0.1): a
+// section renders — and its sub-nav chip appears — only when `available(model)`
+// holds. Otherwise it is omitted from the DOM entirely (no placeholder, no "—",
+// no "coming soon") and the nav never points at emptiness. Later stages flip
+// `available` and supply `body` for players/records/comparator/archive; the same
+// code base thus renders a coherent, "full" screen with only today's data and
+// lights up sections as each data layer arrives.
+const SECTIONS = [
+  { id: 'overview', navKey: 'stats.navOverview', available: () => true, body: overviewHTML },
+  { id: 'teams', navKey: 'stats.navTeams', available: () => true, body: teamsSectionHTML },
+  { id: 'players', navKey: 'stats.navPlayers', available: () => false, body: () => '' },
+  { id: 'records', navKey: 'stats.navRecords', available: () => false, body: () => '' },
+  { id: 'comparator', navKey: 'stats.navComparator', available: () => false, body: () => '' },
+  { id: 'archive', navKey: 'stats.navArchive', available: () => false, body: () => '' },
+];
+
 let model = null;
 // table interaction state — survives langchange re-renders (default on load:
 // most goals first, page 1), like the bracket keeps its zoom across re-renders.
@@ -165,6 +181,7 @@ function computeLeaders(teamStats) {
 // ---------------------------------------------------------------- render
 
 export function initStats() {
+  installImageFallback();
   render();
   // labels re-render on language change; the derived model never changes at
   // runtime (data is static per page load) so it is reused.
@@ -176,7 +193,15 @@ export function initStats() {
 function render() {
   if (!model) model = buildStatsModel();
   const root = document.getElementById('stats-root');
-  root.innerHTML = heroHTML() + overviewHTML() + teamsSectionHTML() + footerHTML();
+  const sections = SECTIONS.filter((section) => section.available(model));
+  root.innerHTML =
+    heroHTML()
+    + subNavHTML(sections)
+    + sections.map((section) => `
+      <section id="stats-${section.id}" class="stats-section" tabindex="-1" aria-label="${t(section.navKey)}">
+        ${section.body(model)}
+      </section>`).join('')
+    + footerHTML();
   root.querySelector('#stats-see-matches')?.addEventListener('click', () => navigateTo('matches'));
   const teamsHost = root.querySelector('#stats-teams-table');
   if (teamsHost) {
@@ -184,6 +209,103 @@ function render() {
     renderTeamTable();
   }
   setupCountUps(root);
+  setupSubNav(root, sections);
+}
+
+// ----------------------------------------------------------- sub-nav
+
+function subNavHTML(sections) {
+  if (sections.length < 2) return ''; // a lone section needs no navigation
+  const chips = sections.map((section, i) => `
+    <a class="stats-subnav-chip${i === 0 ? ' active' : ''}" href="#stats-${section.id}"
+       data-section="${section.id}" aria-current="${i === 0 ? 'true' : 'false'}">${t(section.navKey)}</a>`).join('');
+  return `<nav class="stats-subnav" aria-label="${t('stats.sectionsNav')}">${chips}</nav>`;
+}
+
+let spyScrollHandler = null;
+function setupSubNav(root, sections) {
+  const nav = root.querySelector('.stats-subnav');
+  if (!nav) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // chip → smooth-scroll to the section WITHOUT touching location.hash: the tab
+  // router (app.js) listens on hashchange, so a real #fragment would route to
+  // an unknown tab and bounce the user to Home. preventDefault keeps us in-tab.
+  nav.addEventListener('click', (event) => {
+    const chip = event.target.closest('.stats-subnav-chip');
+    if (!chip) return;
+    event.preventDefault();
+    document.getElementById(`stats-${chip.dataset.section}`)
+      ?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    setActiveChip(nav, chip.dataset.section);
+  });
+
+  // scrollspy: active = the last section whose heading has scrolled under the
+  // sticky sub-nav line; at the page bottom the last section always wins (a short
+  // final section may never reach the line — the classic scrollspy edge case an
+  // IntersectionObserver band leaves unlit). Reading getBoundingClientRect on a
+  // handful of sections per frame is cheap and always correct on short pages.
+  const ids = sections.map((section) => section.id);
+  const updateSpy = () => {
+    const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 64;
+    const line = headerH + 80; // just beneath the sticky sub-nav
+    let activeId = ids[0];
+    for (const id of ids) {
+      if (document.getElementById(`stats-${id}`)?.getBoundingClientRect().top <= line) activeId = id;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+      activeId = ids[ids.length - 1]; // bottom reached → last section
+    }
+    setActiveChip(nav, activeId);
+  };
+
+  if (spyScrollHandler) window.removeEventListener('scroll', spyScrollHandler);
+  let raf = 0;
+  spyScrollHandler = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; updateSpy(); });
+  };
+  window.addEventListener('scroll', spyScrollHandler, { passive: true });
+  updateSpy();
+}
+
+function setActiveChip(nav, id) {
+  for (const chip of nav.querySelectorAll('.stats-subnav-chip')) {
+    const on = chip.dataset.section === id;
+    chip.classList.toggle('active', on);
+    chip.setAttribute('aria-current', on ? 'true' : 'false');
+  }
+  // keep the active chip visible when the nav scrolls horizontally on mobile
+  // (only moves the nav's own scroll, never the page).
+  const active = nav.querySelector('.stats-subnav-chip.active');
+  if (active) nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.clientWidth) / 2;
+}
+
+// ----------------------------------------------------------- flags
+
+// Flag <img> that degrades to a 3-letter monogram if the SVG is missing — never
+// a broken-image icon (graceful degradation §0.3). Used everywhere the stats
+// screen shows a flag so the fallback is uniform.
+function flagImg(team, w, h, cls = 'flag') {
+  return `<img class="${cls}" src="${flagSrc(team)}" alt="" width="${w}" height="${h}" loading="lazy" data-monogram="${team.id}">`;
+}
+
+let fallbackInstalled = false;
+function installImageFallback() {
+  if (fallbackInstalled) return;
+  fallbackInstalled = true;
+  // error events don't bubble → listen in the capture phase. Only opted-in
+  // images (data-monogram) are touched, so other views are unaffected.
+  document.addEventListener('error', (event) => {
+    const img = event.target;
+    if (!(img instanceof HTMLImageElement) || !img.dataset.monogram) return;
+    const span = document.createElement('span');
+    span.className = 'flag-fallback';
+    span.style.width = `${img.getAttribute('width')}px`;
+    span.style.height = `${img.getAttribute('height')}px`;
+    span.textContent = img.dataset.monogram;
+    img.replaceWith(span);
+  }, true);
 }
 
 function heroHTML() {
@@ -292,7 +414,7 @@ function leaderCardHTML({ label, row, value }) {
     <div class="leader-card glass">
       <span class="leader-label">${label}</span>
       <div class="leader-team">
-        <img class="flag" src="${flagSrc(team)}" alt="" width="30" height="20" loading="lazy">
+        ${flagImg(team, 30, 20)}
         <span class="leader-name">${team.name}</span>
       </div>
       <span class="leader-value">${value}</span>
@@ -340,7 +462,7 @@ function tableHTML(rows, startIndex) {
       <tr class="${row.played === 0 ? 'row-idle' : ''}">
         <td class="col-rank">${startIndex + i + 1}</td>
         <td class="col-team">
-          <img class="flag" src="${flagSrc(team)}" alt="" width="22" height="15" loading="lazy">
+          ${flagImg(team, 22, 15)}
           <span>${team.name}</span>
         </td>
         ${cells}

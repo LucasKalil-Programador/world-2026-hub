@@ -381,6 +381,75 @@
   background: var(--glass-bg-strong);
 }
 
+/* -------------------------------------------------- sub-nav (scrollspy) */
+
+/* sticks just below the variable-height sticky header (--header-h is kept live
+   by app.js trackHeaderHeight). NOT a tablist — it's a <nav> of in-page anchors
+   whose clicks are intercepted, so the top tablist's arrow keys never conflict. */
+.stats-subnav {
+  position: sticky;
+  top: var(--header-h, 64px);
+  z-index: 20;
+  display: flex;
+  gap: 0.35rem;
+  margin: 1.4rem 0;
+  padding: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: rgba(8, 20, 33, 0.88);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+}
+
+.stats-subnav::-webkit-scrollbar { display: none; }
+
+.stats-subnav-chip {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.stats-subnav-chip:hover { color: var(--text-primary); }
+
+.stats-subnav-chip.active {
+  color: var(--bg-primary);
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-soft));
+}
+
+/* offset scroll targets so the sticky header + sub-nav never cover a heading */
+.stats-section {
+  scroll-margin-top: calc(var(--header-h, 64px) + 3.75rem);
+}
+
+.stats-section + .stats-section { margin-top: 2.5rem; }
+.stats-section:focus { outline: none; }
+/* section spacing is owned by the wrapper, not the first heading inside it */
+.stats-section > .section-title:first-child { margin-top: 0; }
+
+/* flag monogram fallback (graceful degradation §0.3) — never a broken-img icon */
+.flag-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
 /* ---------------------------------------------------------- responsive */
 
 @media (max-width: 600px) {
