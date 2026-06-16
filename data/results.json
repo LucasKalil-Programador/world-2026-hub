@@ -177,9 +177,14 @@
   },
   {
     "matchId": 17,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 3,
+    "awayScore": 1,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 54, "away": 46 },
+      "shots": { "home": 11, "away": 6 },
+      "cards": { "home": 0, "away": 0 }
+    }
   },
   {
     "matchId": 18,
