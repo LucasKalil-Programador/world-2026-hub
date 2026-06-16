@@ -60,6 +60,41 @@ Only if:
 
 ---
 
+## PWA Tier 2 — Service Worker + Offline (2026-06-16)
+
+**Status:** Analyzed, deferred (Tier 1 shipped 2026-06-16 — see project-memory "PWA — installable app").
+
+### Context
+The PWA install issue was delivered as **Tier 1** (manifest + icons + meta tags), which already meets
+every acceptance criterion (installable, correct name/icon, standalone launch from the OS shortcut, no
+app-pipeline risk). Tier 2 — a service worker for offline launch and the strongest cross-browser
+"app feel" — was intentionally left out. It is **not** required for the install prompt in modern
+Chrome/Edge.
+
+### Why deferred (the real risk)
+A naïve precaching SW would cache `data/*.json` and **silently defeat the 2026-06-16 live-refresh
+system** (the 90s `results.json` poll with `cache:'no-store'` + the `DATA_VERSION` cache-buster) —
+open tabs would stop seeing new scores, and `DATA_VERSION` bumps would do nothing. It would also make
+the "stale JS module" gotcha (#5) *permanent* (cached assets live until the cache name changes).
+
+### How to implement (if revisited) — constraints, not optional
+1. **Never cache `data/*.json`.** Use network-only, or network-first with the cache only as an
+   offline fallback (so an offline launch shows the last-seen results). The 90s poll must stay the
+   owner of freshness.
+2. **Version the SW cache** with a constant mirroring/derived from `DATA_VERSION`; clean up old caches
+   on `activate` — otherwise every code deploy risks serving stale JS forever (gotcha #5).
+3. **Register at the subpath** (`worldcup2026/sw.js`) so the SW scope matches the deploy (gotcha #7);
+   keep `start_url`/`scope` relative as they already are.
+4. App-shell strategy: cache-first (versioned) for `index.html` + `assets/css` + `assets/js` +
+   `assets/icons`; precache on `install`.
+5. Verify the poll still updates an open tab **with the SW active** (the easy thing to regress).
+
+### When to implement
+Only if offline launch / a fuller install experience is actually wanted, and only with the data-cache
+exclusion + cache-versioning above. Otherwise Tier 1 is sufficient.
+
+---
+
 ## Live Data Refresh — Stale Results Until Page Reload (2026-06-15)
 
 **Status:** ✅ **Implemented 2026-06-16** (Option A⁺ — "Fixed polling done right"). The analysis below

@@ -24,7 +24,14 @@ worldcup2026/
 │
 ├── index.html                            ★ SPA shell — header, nav tabs (Home, Matches,
 │                                           Groups, Knockout, Stadiums, Stats), hero, dashboard,
-│                                           modal container; loads app.js as ES module
+│                                           modal container; loads app.js as ES module.
+│                                           <head> has the PWA block (manifest link, theme-color,
+│                                           favicons, apple-mobile-web-app-* meta)
+│
+├── manifest.json                         PWA web app manifest (name/short_name, standalone,
+│                                           theme/background #081421, icons[]) — relative paths
+│                                           (start_url ".", scope "./") for the subpath deploy
+│ favicon.ico                             Root favicon (16+32, from the trophy logo)
 │
 ├── assets/
 │   ├── css/
@@ -59,7 +66,11 @@ worldcup2026/
 │   │   │                                   matches only), hero pulse + overview + goals-by-stage.
 │   │   │                                   PARTIAL (during-cup) — grows into the post-cup plan.
 │   │   └── calendar.js                   .ics export (RFC 5545, CRLF, Blob download)
-│   └── images/                           Team flag SVGs, stadium placeholders
+│   ├── images/                           Team flag SVGs, stadium placeholders
+│   └── icons/                            PWA app icons (from the header trophy logo): icon.svg
+│                                           (master + manifest SVG), icon-192/512.png (purpose any),
+│                                           icon-maskable-192/512.png (safe-zone padded),
+│                                           apple-touch-icon.png (180), favicon-16/32.png, favicon.ico
 │
 ├── data/                                 All content — REAL WC2026 data since 2026-06-12
 │   ├── teams.json                        48 real qualifiers: { id, name, flag } (FIFA codes)
@@ -149,6 +160,7 @@ matches.json time (UTC) ── formatMatchTime(match, stadium, mode)
 | Where is simulation state stored/cleared? | `localStorage` key `wc2026_simulation`, via `assets/js/storage.js` |
 | Where do I change colors/theme? | CSS variables at the top of `assets/css/style.css` |
 | Where do I add a stadium? | `data/stadiums.json` + image in `assets/images/` |
+| Where do I change the app name / install icon / theme color? | `manifest.json` (name/short_name/theme) + `assets/icons/` (regenerate PNGs from `icon.svg`) + PWA `<meta>` in `index.html` `<head>` |
 | How do I replace mock data with real WC2026 data? | `how-update.md` (root) — done 2026-06-12; kept as schema reference |
 | How do I update scores during the tournament? | `how-refresh-data.md` (root) — daily results.json routine + thirdPlaceAssignment how-to |
 

@@ -66,6 +66,10 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 - [ ] Real stadium photos + team flag SVGs in `assets/images/` (10 new-team flags created 2026-06-12 in placeholder style)
 - [ ] **Pós-Copa: estado final da home.** Quando a Final encerrar, o hero fica vazio (por design atual). Criar um estado pós-torneio (campeão/epílogo) na home — ver entrada "Hero cronômetro inteligente (2026-06-15)" em project-memory; provavelmente converge com a aba Stats (`stats-screen-plan.md`).
 
+### 🟢 OPTIONAL
+- [x] ~~PWA Tier 1 — instalável (manifest + ícones + meta tags; 2026-06-16). Atende todos os critérios de aceitação da issue.~~
+- [ ] PWA Tier 2 — service worker + offline (deferido; ver `.agents/issues.md` → "PWA Tier 2". DEVE excluir `data/*.json` do cache p/ não quebrar o live-refresh + `DATA_VERSION`).
+
 ---
 
 ## Quick final checklist
