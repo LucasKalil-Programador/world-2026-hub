@@ -72,6 +72,27 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 
 ---
 
+## 7. Stats final screen — `feature/stats-final-screen` (post-Cup release)
+
+Full build of `.agents/stats-screen-plan.md` on a feature branch, merged to `master` at the end of
+the Cup. One approval gate before each stage. A–F are buildable from today's data; G/H/I are
+data-blocked (graceful-degradation shell lets the UI land dark until JSON arrives).
+
+### 🟢 OPTIONAL (release feature)
+- [x] ~~Stage 0 — branch `feature/stats-final-screen` off `master`~~
+- [x] ~~Stage A — degradation engine + fault-tolerant `loadData` + sticky scrollspy sub-nav + media fallback~~ (2026-06-16)
+- [ ] Stage B — verdict hero (gated on FINAL finished; aggregate-hero fallback) + goals-by-round chart
+- [ ] Stage C — final ranking 1–48 (phase-reached chain), favorite-row highlight, team record cards
+- [ ] Stage D — auto record-cards + "format-48 debuts" band
+- [ ] Stage E — 104-match results archive (accordion by phase, row → modal)
+- [ ] Stage F — team comparator (diverging bars)
+- [ ] Stage G — Layer 2 cheap data (attendance, `cards`→{y,r} migration, decidedIn, coords) — **SCHEDULE LATE**
+- [ ] Stage H — Layer 3 players (`players.json` + `player-events.json` + `awards.json`)
+- [ ] Stage I — Layer 4 editorial (`curiosities.json` + `all-time-baselines.json`)
+- [ ] Stage J — polish (responsive/a11y audit, perf, Lighthouse, `DATA_VERSION` bump, README/i18n)
+
+---
+
 ## Quick final checklist
 
 ```
