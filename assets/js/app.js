@@ -8,7 +8,7 @@ import { initSchedule } from './schedule.js';
 import { initGroups } from './groups.js';
 import { initStadiums } from './stadiums.js';
 import { initModal } from './modal.js';
-import { initBracket } from './bracket.js';
+import { initBracket, invalidateBracket } from './bracket.js';
 import { initStats } from './stats.js';
 
 // ---------------------------------------------------------------- data
@@ -38,6 +38,73 @@ export async function loadData() {
 
 export function getData() {
   return data;
+}
+
+// ------------------------------------------------------ live data refresh
+// results.json is the only file that changes during the tournament, and it is
+// updated by a MANUAL daily push (scores land post-match, on deploy) — not a
+// live feed. An open tab fetches it once at load; this poll surfaces a newly
+// published result/stats without an F5. Static host → polling is the only
+// option; because the data isn't live, a plain fixed interval is right (a
+// per-match "live" tier would have nothing new to fetch). Paused while the tab
+// is hidden and stopped once the final result is in — see .agents/issues.md.
+const POLL_INTERVAL_MS = 90 * 1000;
+let pollTimer = null;
+let resultsSig = null;
+
+// Nothing left to fetch once the final's REAL result is in the data. Guard on
+// the JSON status, not the clock-driven 'over' — clock-over fires 3h after
+// kickoff and could stop the poll before the actual score is published.
+function tournamentOver() {
+  const final = data.matches.find((m) => m.bracketRef === 'FINAL');
+  return final ? data.resultByMatchId.get(final.id)?.status === 'finished' : false;
+}
+
+async function pollResults() {
+  if (tournamentOver()) { stopResultsPolling(); return; }
+  let results;
+  try {
+    // ?t bypasses the frozen DATA_VERSION + Hostinger's missing cache headers
+    const res = await fetch(`data/results.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return;
+    results = await res.json();
+  } catch {
+    return; // network blip or mid-deploy partial — just retry next tick
+  }
+  // Content signature: catches scores, stats backfill and penalties alike —
+  // a finished-count signature would miss corrections and stats-only edits.
+  const sig = JSON.stringify(results);
+  if (sig === resultsSig) return; // unchanged → zero re-render
+  resultsSig = sig;
+  data.results = results;
+  data.resultByMatchId = new Map(results.map((r) => [r.matchId, r])); // derived map must be rebuilt too
+  // bracket-config.json (thirdPlaceAssignment) only ever changes alongside a
+  // results change — the one-time 3rd-place fill ships in the same daily push.
+  // So piggyback a refetch on the rare results-changed event (not every tick):
+  // closes the gap where the 8 third-place slots would otherwise need an F5.
+  try {
+    const cfg = await fetch(`data/bracket-config.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (cfg.ok) data.bracketConfig = await cfg.json();
+  } catch { /* keep the in-memory config */ }
+  invalidateBracket(); // cached tree depends on results + bracketConfig
+  document.dispatchEvent(new CustomEvent('datachange')); // each view re-renders itself
+  if (tournamentOver()) stopResultsPolling();
+}
+
+function onVisibility() {
+  if (!document.hidden) pollResults(); // catch up the instant the user returns
+}
+
+function startResultsPolling() {
+  if (pollTimer || tournamentOver()) return;
+  resultsSig = JSON.stringify(data.results); // seed from what loadData() already fetched
+  pollTimer = setInterval(() => { if (!document.hidden) pollResults(); }, POLL_INTERVAL_MS);
+  document.addEventListener('visibilitychange', onVisibility);
+}
+
+function stopResultsPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  document.removeEventListener('visibilitychange', onVisibility);
 }
 
 // ---------------------------------------------------------------- time
@@ -461,6 +528,7 @@ async function init() {
   initTooltips();
   document.addEventListener('langchange', renderHome);
   document.addEventListener('timemodechange', renderHero);
+  document.addEventListener('datachange', renderHome); // poll picked up new results → refresh hero + dashboard counts
   try {
     await loadData();
     renderHome();
@@ -470,6 +538,7 @@ async function init() {
     initBracket();
     initStadiums();
     initStats();
+    startResultsPolling(); // after the views register their datachange listeners
   } catch (error) {
     showError(error);
   }

@@ -268,6 +268,7 @@ export function initBracket() {
   render();
   document.addEventListener('langchange', render);
   document.addEventListener('favchange', render);
+  document.addEventListener('datachange', render); // tree already invalidated by the poll → rebuilds
   loadPredictionFromURL();
 
   const root = document.getElementById('bracket-root');

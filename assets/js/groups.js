@@ -58,6 +58,7 @@ export function initGroups() {
   render();
   document.addEventListener('langchange', render);
   document.addEventListener('favchange', render);
+  document.addEventListener('datachange', render); // new results → recompute standings
 }
 
 function render() {

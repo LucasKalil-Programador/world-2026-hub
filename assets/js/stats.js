@@ -169,6 +169,8 @@ export function initStats() {
   // labels re-render on language change; the derived model never changes at
   // runtime (data is static per page load) so it is reused.
   document.addEventListener('langchange', render);
+  // new published results change the aggregates → rebuild the memoized model
+  document.addEventListener('datachange', () => { model = null; render(); });
 }
 
 function render() {

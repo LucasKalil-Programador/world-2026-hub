@@ -34,6 +34,7 @@ export function initSchedule() {
   document.addEventListener('simchange', renderList);
   document.addEventListener('favchange', renderList);
   document.addEventListener('timemodechange', renderList);
+  document.addEventListener('datachange', renderList); // new published results/status
 
   // delegation on the panel root — survives every list re-render
   const root = document.getElementById('schedule-root');
