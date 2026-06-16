@@ -81,7 +81,7 @@ data-blocked (graceful-degradation shell lets the UI land dark until JSON arrive
 ### 🟢 OPTIONAL (release feature)
 - [x] ~~Stage 0 — branch `feature/stats-final-screen` off `master`~~
 - [x] ~~Stage A — degradation engine + fault-tolerant `loadData` + sticky scrollspy sub-nav + media fallback~~ (2026-06-16)
-- [ ] Stage B — verdict hero (gated on FINAL finished; aggregate-hero fallback) + goals-by-round chart
+- [x] ~~Stage B — verdict hero (gated on FINAL finished; aggregate-hero fallback) + goals-by-round chart~~ (2026-06-16)
 - [ ] Stage C — final ranking 1–48 (phase-reached chain), favorite-row highlight, team record cards
 - [ ] Stage D — auto record-cards + "format-48 debuts" band
 - [ ] Stage E — 104-match results archive (accordion by phase, row → modal)
