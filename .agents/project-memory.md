@@ -328,6 +328,14 @@ Follow `how-refresh-data.md` (project root). In short:
 - **DATA_VERSION bumped to 2026-06-15-rev4.**
 - Next: match 16 (IRN–NZL, Group G, 2026-06-16 01:00 UTC) e seguintes ainda `scheduled`. `thirdPlaceAssignment` intacto (15/72 jogos de grupo concluídos).
 
+### Daily refresh (2026-06-16 — match 16)
+- **Results updated through match id 16** (IRN–NZL):
+  - id 16: IRN 2–2 NZL (Group G) — confirmed ESPN + Al Jazeera + Sofascore (Elijah Just 7' & 54' for New Zealand; Ramin Rezaeian 32' & Mohammad Mohebi 64' for Iran). Played at SoFi Stadium, Los Angeles.
+  - Stats added: possession 48/52, shots 4/8, cards 1/0 — sources: ESPN (possession + shots); Sofascore (Ehsan Hajsafi yellow 89' for Iran, no yellows for NZL documented).
+- Verified in preview (rev1): match 16 modal displays correct score 2-2 with stats 48%/4/1 vs 52%/8/0 (PT); console clean. Group G now has Belgium, Egypt, Iran, New Zealand all competing with early results.
+- **DATA_VERSION bumped to 2026-06-16-rev1.**
+- Next: match 17 (FRA–SEN, Group I, 2026-06-16 19:00 UTC) onwards still `scheduled`. `thirdPlaceAssignment` untouched (16/72 group stage matches completed).
+
 ### Commit convention — standardized (2026-06-15)
 
 - **Problema:** cada run do `/update-worldcup` deixava o `/git-semantic-commit` inventar um subject diferente (`data: update match 13 result and stats`, `data: update match 12 …`, etc.) — sem padrão. O usuário fez o último commit à mão num formato limpo (`data: update 15/06/2026 18:00 BELxEGY 1x1`) e pediu pra padronizar a partir dele.
