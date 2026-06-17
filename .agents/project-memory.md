@@ -282,6 +282,12 @@ Static web app showing the FIFA World Cup 2026 (Mexico/USA/Canada, 48 teams) —
 - **Verified (preview 8126, branch, 19/104 real):** console clean; 3 chips (Overview/Teams/Records); Records = biggest-win card (high-score deduped) + debuts band (48/104/12/R32/8, no champion); Teams record cards now 0 (biggest-win moved). **Faked all-104-finished:** champion fact "Netherlands" appears in the band; forcing a distinct top-scoring match (6–5) shows both record cards. EN↔PT relabels section/cards/band ("16 avos de final" via translatePhase), survives re-render; mobile 375px band stacks 1-col; real state restored.
 - **Next:** Stage E — 104-match results archive in-tab (accordion by phase, filters/sort, row → `openMatchModal`, reusing schedule.js patterns + `resolveBracketTeams` for knockout labels). At the gate I'll confirm full archive vs. keeping the "See all matches → Matches tab" link. Awaiting approval.
 
+### Stats final screen — Stage E SKIPPED by decision (2026-06-17, Option B)
+- **The in-tab 104-match results archive will NOT be built.** User decision (Option B over a full archive / a lighter one): keep the existing **"See all matches →" footer link** (`#stats-see-matches` → `navigateTo('matches')`) and let the **Matches tab remain the single surface** for browsing matches.
+- **Rationale:** the Matches tab (`schedule.js`) already lists all 104 with filters (date/group/phase/team/stadium), search, sort, occurrence toggle, "My matches", and card→modal. An in-tab archive would duplicate it for little gain and add the heaviest section (104 rows) to maintain.
+- **State:** the `archive` entry in `SECTIONS` stays `available: () => false` / `body: () => ''` (no chip, no DOM) — leave it as a dormant slot, don't delete the registry line. **No code change** was made for this decision. If ever revisited, the lighter "phase-accordion, results-only" variant (Option C) was the recommended shape.
+- **Next:** Stage F — team comparator (A-vs-B selector + diverging mirrored bars; players side stays dark until Stage H). Awaiting approval.
+
 ### How to update real-world data (scores, schedule)
 Follow `how-refresh-data.md` (project root). In short:
 1. Edit `data/results.json` (scores/status) or `data/matches.json` (schedule, rare).

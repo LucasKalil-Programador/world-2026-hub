@@ -84,7 +84,7 @@ data-blocked (graceful-degradation shell lets the UI land dark until JSON arrive
 - [x] ~~Stage B — verdict hero (gated on FINAL finished; aggregate-hero fallback) + goals-by-round chart~~ (2026-06-16)
 - [x] ~~Stage C — final ranking 1–48 (phase-reached chain), favorite-row highlight, team record cards~~ (2026-06-17)
 - [x] ~~Stage D — auto record-cards + "format-48 debuts" band~~ (2026-06-17)
-- [ ] Stage E — 104-match results archive (accordion by phase, row → modal)
+- [x] ~~Stage E — 104-match results archive (accordion by phase, row → modal)~~ — **SKIPPED (2026-06-17, Option B):** kept the "See all matches → Matches" link; the Matches tab already covers browsing. No archive built.
 - [ ] Stage F — team comparator (diverging bars)
 - [ ] Stage G — Layer 2 cheap data (attendance, `cards`→{y,r} migration, decidedIn, coords) — **SCHEDULE LATE**
 - [ ] Stage H — Layer 3 players (`players.json` + `player-events.json` + `awards.json`)
