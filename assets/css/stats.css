@@ -433,6 +433,104 @@ button.record-card:hover { border-color: var(--accent-gold); background: var(--g
   color: var(--text-secondary);
 }
 
+/* ---------------------------------------------------- team comparator */
+
+.cmp-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.cmp-select { flex: 1 1 0; min-width: 0; max-width: 16rem; }
+
+.cmp-vs {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.cmp-panel {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.3rem 1.4rem;
+}
+
+.cmp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+}
+
+.cmp-team { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.cmp-team span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-team-b { flex-direction: row; text-align: right; }
+
+.cmp-row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr minmax(56px, auto) 1fr 2.2rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cmp-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.cmp-val.a { text-align: right; }
+.cmp-val.b { text-align: left; }
+.cmp-val.lead { color: var(--accent-gold-soft); }
+
+.cmp-track {
+  height: 12px;
+  background: var(--glass-bg-strong);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.cmp-track.a { justify-content: flex-end; }
+.cmp-track.b { justify-content: flex-start; }
+
+.cmp-bar {
+  height: 100%;
+  border-radius: 999px;
+  animation: cmp-grow 0.5s ease both;
+}
+
+.cmp-bar.a {
+  background: linear-gradient(90deg, var(--accent-gold-soft), var(--accent-gold));
+  transform-origin: right center;
+}
+
+.cmp-bar.b {
+  background: linear-gradient(90deg, var(--accent-blue), #5aa9f0);
+  transform-origin: left center;
+}
+
+@keyframes cmp-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.cmp-label {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmp-bar { animation: none; }
+}
+
 .col-sort {
   display: inline-flex;
   align-items: center;

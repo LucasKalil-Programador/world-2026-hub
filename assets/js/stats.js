@@ -49,8 +49,20 @@ const SECTIONS = [
   { id: 'teams', navKey: 'stats.navTeams', available: () => true, body: teamsSectionHTML },
   { id: 'players', navKey: 'stats.navPlayers', available: () => false, body: () => '' },
   { id: 'records', navKey: 'stats.navRecords', available: () => true, body: recordsSectionHTML },
-  { id: 'comparator', navKey: 'stats.navComparator', available: () => false, body: () => '' },
+  { id: 'comparator', navKey: 'stats.navComparator', available: (m) => m.finishedCount > 0, body: comparatorSectionHTML },
   { id: 'archive', navKey: 'stats.navArchive', available: () => false, body: () => '' },
+];
+
+// Metrics shown as diverging bars in the team comparator — all non-negative so
+// the mirrored bars read cleanly (GD is excluded; it's GF/GA derived). Reuses
+// the standings.* abbreviations the user already knows.
+const CMP_METRICS = [
+  { key: 'played', label: 'standings.played' },
+  { key: 'won', label: 'standings.won' },
+  { key: 'gf', label: 'standings.gf' },
+  { key: 'ga', label: 'standings.ga' },
+  { key: 'cleanSheets', label: 'stats.colCS' },
+  { key: 'points', label: 'standings.pts' },
 ];
 
 let model = null;
@@ -59,6 +71,9 @@ let model = null;
 let sortKey = 'rank';
 let sortDir = 'asc';
 let teamPage = 0;
+// comparator selection (team ids) — survives langchange like the table state
+let cmpA = null;
+let cmpB = null;
 
 function stageOf(phase) {
   return phase.startsWith('Group ') ? 'Group' : phase;
@@ -399,6 +414,13 @@ function render() {
     el.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
     });
+  }
+  // comparator selects → update the chosen side, re-render just the bars panel
+  const cmpAEl = root.querySelector('#cmp-a');
+  const cmpBEl = root.querySelector('#cmp-b');
+  if (cmpAEl && cmpBEl) {
+    cmpAEl.addEventListener('change', () => { cmpA = cmpAEl.value; refreshComparator(); });
+    cmpBEl.addEventListener('change', () => { cmpB = cmpBEl.value; refreshComparator(); });
   }
   setupCountUps(root);
   setupSubNav(root, sections);
@@ -768,6 +790,68 @@ function formatDebutsHTML() {
           <span class="debut-label">${f.label}</span>
         </div>`).join('')}
     </div>`;
+}
+
+// --------------------------------------------------- comparator section
+
+// Default the two sides to the top-2 ranked teams; the choice then survives
+// langchange (module-level cmpA/cmpB), like the table sort.
+function ensureComparatorDefaults() {
+  if (cmpA && cmpB) return;
+  const byRank = [...model.teamStats].sort((a, b) => a.rank - b.rank);
+  cmpA = cmpA ?? byRank[0]?.teamId;
+  cmpB = cmpB ?? byRank[1]?.teamId;
+}
+
+function comparatorSectionHTML() {
+  ensureComparatorDefaults();
+  const teams = [...getData().teams].sort((a, b) => a.name.localeCompare(b.name));
+  const options = (selected) => teams
+    .map((team) => `<option value="${team.id}"${team.id === selected ? ' selected' : ''}>${team.name}</option>`).join('');
+  return `
+    <h2 class="section-title">${t('stats.comparatorTitle')}</h2>
+    <div class="cmp-controls">
+      <select class="filter-control cmp-select" id="cmp-a" aria-label="${t('stats.cmpTeamA')}">${options(cmpA)}</select>
+      <span class="cmp-vs">${t('hero.vs')}</span>
+      <select class="filter-control cmp-select" id="cmp-b" aria-label="${t('stats.cmpTeamB')}">${options(cmpB)}</select>
+    </div>
+    <div class="cmp-panel glass" id="cmp-panel">${comparatorBarsHTML()}</div>`;
+}
+
+// Diverging mirrored bars: A grows leftward from the center label, B rightward.
+// Each row scales to max(a,b) so the longer bar is the higher value.
+function comparatorBarsHTML() {
+  const byId = new Map(model.teamStats.map((row) => [row.teamId, row]));
+  const a = byId.get(cmpA);
+  const b = byId.get(cmpB);
+  const teamA = getData().teamById.get(cmpA);
+  const teamB = getData().teamById.get(cmpB);
+  const header = `
+    <div class="cmp-head">
+      <div class="cmp-team">${flagImg(teamA, 28, 19)} <span>${teamA.name}</span></div>
+      <div class="cmp-team cmp-team-b"><span>${teamB.name}</span> ${flagImg(teamB, 28, 19)}</div>
+    </div>`;
+  const rows = CMP_METRICS.map((metric) => {
+    const av = a[metric.key];
+    const bv = b[metric.key];
+    const max = Math.max(av, bv, 1);
+    return `
+      <div class="cmp-row">
+        <span class="cmp-val a${av >= bv ? ' lead' : ''}">${av}</span>
+        <div class="cmp-track a"><div class="cmp-bar a" style="width:${Math.round((av / max) * 100)}%"></div></div>
+        <span class="cmp-label">${t(metric.label)}</span>
+        <div class="cmp-track b"><div class="cmp-bar b" style="width:${Math.round((bv / max) * 100)}%"></div></div>
+        <span class="cmp-val b${bv >= av ? ' lead' : ''}">${bv}</span>
+      </div>`;
+  }).join('');
+  return header + rows;
+}
+
+// Re-render only the bars panel on a selection change (keeps the selects'
+// focus/scroll and replays the grow animation on the new bars).
+function refreshComparator() {
+  const panel = document.getElementById('cmp-panel');
+  if (panel) panel.innerHTML = comparatorBarsHTML();
 }
 
 // Compact abbreviation key — hidden on desktop (the hover tooltip covers it
