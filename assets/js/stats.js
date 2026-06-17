@@ -433,13 +433,23 @@ function subNavHTML(sections) {
   const chips = sections.map((section, i) => `
     <a class="stats-subnav-chip${i === 0 ? ' active' : ''}" href="#stats-${section.id}"
        data-section="${section.id}" aria-current="${i === 0 ? 'true' : 'false'}">${t(section.navKey)}</a>`).join('');
-  return `<nav class="stats-subnav" aria-label="${t('stats.sectionsNav')}">${chips}</nav>`;
+  // chips live in an inner scroll track so the edge-fade mask never clips the
+  // pill's background/rounded ends (only the chips fade at the edges).
+  return `<nav class="stats-subnav" aria-label="${t('stats.sectionsNav')}"><div class="stats-subnav-track">${chips}</div></nav>`;
 }
 
 let spyScrollHandler = null;
+let subnavResizeHandler = null;
+// While a chip-click smooth-scroll is in flight, the page-scroll spy must NOT
+// fight it: early in the animation the viewport is still over the old section,
+// so the spy would flip the active chip back and then forward again (a visible
+// jump). Suppress spy updates until the programmatic scroll has settled.
+let suppressSpyUntil = 0;
+
 function setupSubNav(root, sections) {
   const nav = root.querySelector('.stats-subnav');
   if (!nav) return;
+  const track = nav.querySelector('.stats-subnav-track');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // chip → smooth-scroll to the section WITHOUT touching location.hash: the tab
@@ -449,10 +459,15 @@ function setupSubNav(root, sections) {
     const chip = event.target.closest('.stats-subnav-chip');
     if (!chip) return;
     event.preventDefault();
+    suppressSpyUntil = Date.now() + (reduce ? 0 : 700); // hold the spy off during the animated scroll
     document.getElementById(`stats-${chip.dataset.section}`)
       ?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
     setActiveChip(nav, chip.dataset.section);
   });
+
+  // edge fades while the chip track overflows horizontally (mirrors the header
+  // tabs): a fade shows only on a side that still has chips to scroll toward.
+  track?.addEventListener('scroll', () => updateSubnavFades(nav), { passive: true });
 
   // scrollspy: active = the last section whose heading has scrolled under the
   // sticky sub-nav line; at the page bottom the last section always wins (a short
@@ -461,6 +476,7 @@ function setupSubNav(root, sections) {
   // handful of sections per frame is cheap and always correct on short pages.
   const ids = sections.map((section) => section.id);
   const updateSpy = () => {
+    if (Date.now() < suppressSpyUntil) return; // a chip-click scroll owns the active chip
     const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 64;
     const line = headerH + 80; // just beneath the sticky sub-nav
     let activeId = ids[0];
@@ -480,19 +496,40 @@ function setupSubNav(root, sections) {
     raf = requestAnimationFrame(() => { raf = 0; updateSpy(); });
   };
   window.addEventListener('scroll', spyScrollHandler, { passive: true });
+
+  // re-evaluate the fades when the viewport width changes the track's overflow
+  if (subnavResizeHandler) window.removeEventListener('resize', subnavResizeHandler);
+  subnavResizeHandler = () => updateSubnavFades(nav);
+  window.addEventListener('resize', subnavResizeHandler, { passive: true });
+
   updateSpy();
+  updateSubnavFades(nav);
+}
+
+// Toggle the edge-fade mask classes on the pill based on the inner track's
+// horizontal overflow (the mask lives on the track, so the pill stays crisp).
+function updateSubnavFades(nav) {
+  const track = nav.querySelector('.stats-subnav-track');
+  if (!track) return;
+  const overflowing = track.scrollWidth - track.clientWidth > 1;
+  const atStart = track.scrollLeft <= 1;
+  const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 1;
+  nav.classList.toggle('fade-left', overflowing && !atStart);
+  nav.classList.toggle('fade-right', overflowing && !atEnd);
 }
 
 function setActiveChip(nav, id) {
+  const track = nav.querySelector('.stats-subnav-track');
   for (const chip of nav.querySelectorAll('.stats-subnav-chip')) {
     const on = chip.dataset.section === id;
     chip.classList.toggle('active', on);
     chip.setAttribute('aria-current', on ? 'true' : 'false');
   }
-  // keep the active chip visible when the nav scrolls horizontally on mobile
-  // (only moves the nav's own scroll, never the page).
+  // keep the active chip visible when the track scrolls horizontally on mobile
+  // (only moves the track's own scroll, never the page).
   const active = nav.querySelector('.stats-subnav-chip.active');
-  if (active) nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.clientWidth) / 2;
+  if (active && track) track.scrollLeft = active.offsetLeft - (track.clientWidth - active.clientWidth) / 2;
+  updateSubnavFades(nav);
 }
 
 // ----------------------------------------------------------- flags

@@ -687,12 +687,9 @@ button.record-card:hover { border-color: var(--accent-gold); background: var(--g
   position: sticky;
   top: var(--header-h, 64px);
   z-index: 20;
-  display: flex;
-  gap: 0.35rem;
   margin: 1.4rem 0;
   padding: 0.4rem;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden; /* clip the inner track to the rounded pill */
   background: rgba(8, 20, 33, 0.88);
   backdrop-filter: blur(10px) saturate(1.2);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
@@ -700,7 +697,33 @@ button.record-card:hover { border-color: var(--accent-gold); background: var(--g
   border-radius: 999px;
 }
 
-.stats-subnav::-webkit-scrollbar { display: none; }
+/* the scrolling chip track — the edge-fade mask goes here, not on the pill, so
+   the pill's background + rounded ends stay crisp while only chips fade out. */
+.stats-subnav-track {
+  position: relative;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stats-subnav-track::-webkit-scrollbar { display: none; }
+
+/* edge fades — toggled by JS only on a side that still has chips to scroll to */
+.stats-subnav.fade-right .stats-subnav-track {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 28px);
+  mask-image: linear-gradient(to left, transparent 0, #000 28px);
+}
+
+.stats-subnav.fade-left .stats-subnav-track {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px);
+}
+
+.stats-subnav.fade-left.fade-right .stats-subnav-track {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+}
 
 .stats-subnav-chip {
   flex: 0 0 auto;
