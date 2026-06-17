@@ -26,6 +26,12 @@ no backend, no framework, no build step. All content lives in JSON files.
 - **Time zones** — show kickoff times in your local time or the stadium's time.
 - **Add to calendar** — download any match as an RFC 5545 `.ics` file.
 - **Match modal** — details for every match, with space reserved for future stats.
+- **Stats** — a sub-navigated screen (Overview · Teams · Records · Comparator):
+  tournament-to-date aggregates and goals-by-stage/round charts; a verdict hero
+  (champion + podium) that takes over once the final is played; a final ranking
+  1–48 by stage reached; team record cards (biggest win, win streak, champion's
+  path); a "format debuts" band; and an A-vs-B team comparator. Sections appear
+  only when they have data (graceful degradation).
 - Responsive (mobile / tablet / desktop), keyboard-accessible, honors
   `prefers-reduced-motion`.
 

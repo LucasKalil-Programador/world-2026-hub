@@ -17,18 +17,49 @@ let data = null;
 
 const DATA_VERSION = '2026-06-16-rev4';
 
+// Optional data layers for the post-tournament stats screen (players, awards,
+// editorial — see .agents/stats-screen-plan.md §0.2). They don't exist yet, so
+// an absent/404 file is the NORMAL "this layer hasn't arrived" state: return the
+// empty default silently (graceful degradation — never surface the gap, and keep
+// the console clean). Warn only when a file is present but malformed (a real dev
+// error). Never throws — the stats screen lights these up as the JSON lands.
+async function loadOptional(name, fallback) {
+  try {
+    const res = await fetch(`data/${name}.json?v=${DATA_VERSION}`);
+    if (!res.ok) return fallback; // not provided yet → empty, no noise
+    return await res.json();
+  } catch (err) {
+    console.warn(`data/${name}.json present but unreadable — ignoring`, err);
+    return fallback;
+  }
+}
+
 export async function loadData() {
   if (data) return data;
   const files = ['teams', 'groups', 'matches', 'results', 'stadiums', 'bracket-config'];
-  const [teams, groups, matches, results, stadiums, bracketConfig] = await Promise.all(
+  // Core files are mandatory: a failure here is fatal (throws → showError()).
+  const corePromise = Promise.all(
     files.map(async (name) => {
       const res = await fetch(`data/${name}.json?v=${DATA_VERSION}`);
       if (!res.ok) throw new Error(`data/${name}.json — HTTP ${res.status}`);
       return res.json();
     }),
   );
+  // Optional layers fetched concurrently; each defaults to empty, never fatal.
+  const optionalPromise = Promise.all([
+    loadOptional('players', []),
+    loadOptional('player-events', []),
+    loadOptional('awards', {}),
+    loadOptional('keeper-stats', []),
+    loadOptional('curiosities', []),
+    loadOptional('all-time-baselines', {}),
+  ]);
+  const [teams, groups, matches, results, stadiums, bracketConfig] = await corePromise;
+  const [players, playerEvents, awards, keeperStats, curiosities, allTimeBaselines] =
+    await optionalPromise;
   data = {
     teams, groups, matches, results, stadiums, bracketConfig,
+    players, playerEvents, awards, keeperStats, curiosities, allTimeBaselines,
     teamById: new Map(teams.map((team) => [team.id, team])),
     stadiumByName: new Map(stadiums.map((s) => [s.name, s])),
     resultByMatchId: new Map(results.map((r) => [r.matchId, r])),
@@ -515,6 +546,18 @@ function initLangSwitch() {
   sync();
 }
 
+// The header is sticky with a VARIABLE height (one row ≥1100px, two bands below).
+// Expose its live height as --header-h so the stats sub-nav can stick right
+// beneath it and sections can offset their scroll target at every breakpoint.
+function trackHeaderHeight() {
+  const header = document.querySelector('.site-header');
+  if (!header) return;
+  const set = () => document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`);
+  set();
+  if ('ResizeObserver' in window) new ResizeObserver(set).observe(header);
+  else window.addEventListener('resize', set);
+}
+
 function renderHome() {
   renderHero();
   renderDashboard();
@@ -530,6 +573,7 @@ function showError(error) {
 async function init() {
   initI18n();
   initTabs();
+  trackHeaderHeight();
   initLangSwitch();
   initTimeToggle();
   initFavorites();

@@ -3,6 +3,8 @@
 Navigation map of the codebase. Use this to find which file owns a concern before reading code.
 
 > **Status 2026-06-12 (all 12 steps + real-data migration done):** everything works with **real World Cup 2026 data** — all views, bracket interactions, simulation, responsive/a11y pass, favorites, time toggle, challenge, share link, `.ics` export. Remaining: keep `results.json` current, fill `thirdPlaceAssignment` after the group stage (~Jun 27), Lighthouse run + GitHub Pages deploy. Spec source of truth: `world-cup-2026-hub-spec-en.md` + `complement-spec-worldcup2026-en.md` (complement **wins on conflict**).
+>
+> **Branch note (2026-06-16):** the full post-Cup Stats screen (`.agents/stats-screen-plan.md`, stages A–J) is being built on **`feature/stats-final-screen`** (merges to `master` at the end of the Cup). **Stages A–D + F + J(round 1 polish) done and MERGED TO MASTER (2026-06-17)** — built on that branch (degradation engine + fault-tolerant `loadData` + sticky scrollspy sub-nav + flag monogram fallback; verdict-or-aggregate hero + goals-by-round chart; final ranking 1–48 by stage-reached + favorite-row highlight + team record cards; Records section = match records + format-48 debuts band; team comparator with diverging bars). Stage E skipped. Sub-nav live chips: Overview · Teams · Records · Comparator. **Stage E (in-tab results archive) skipped by decision** — the Matches tab stays the single surface for browsing; the "See all matches →" link is kept. `master` keeps the partial Stats tab + daily refreshes. Descriptions below reflect the branch.
 
 ---
 
@@ -51,7 +53,10 @@ worldcup2026/
 │   │   │                                   live data refresh (startResultsPolling: 90s poll of
 │   │   │                                   results.json, no-store + ?t, content signature, pauses
 │   │   │                                   when tab hidden, stops at FINAL; on change also refetches
-│   │   │                                   bracket-config.json; fires `datachange`)
+│   │   │                                   bracket-config.json; fires `datachange`);
+│   │   │                                   loadOptional() = fault-tolerant fetch of the stats screen's
+│   │   │                                   optional data layers (absent → silent empty default);
+│   │   │                                   trackHeaderHeight() keeps the --header-h CSS var live
 │   │   ├── schedule.js                   Match list, filters (incl. occurrence toggle
 │   │   │                                   Played/Upcoming via hybrid matchState), search,
 │   │   │                                   sort, "My Matches"; 60s clock-tick re-render
@@ -63,8 +68,16 @@ worldcup2026/
 │   │   ├── storage.js                    localStorage wrapper — wc2026_* keys, auto-JSON
 │   │   ├── i18n.js                       EN/PT-BR dicts + t(key), lang toggle
 │   │   ├── stats.js                      ★ Stats tab: tournament-to-date aggregates (finished
-│   │   │                                   matches only), hero pulse + overview + goals-by-stage.
-│   │   │                                   PARTIAL (during-cup) — grows into the post-cup plan.
+│   │   │                                   matches only); verdict-or-aggregate hero + overview + goals-by-stage/round +
+│   │   │                                   48-team table ranked 1–48 by stage-reached (sortable, # = canonical rank) +
+│   │   │                                   favorite-row highlight + team record cards (win streak,
+│   │   │                                   champion path) + Records section (biggest win/high-scoring
+│   │   │                                   match → modal, format-48 debuts band) + team comparator
+│   │   │                                   (A-vs-B diverging bars). SECTIONS registry (graceful-
+│   │   │                                   degradation gate: section + chip render only if available,
+│   │   │                                   else removed from DOM) + sticky scrollspy sub-nav (anchor
+│   │   │                                   chips, hash-safe) + flagImg fallback; imports getBracketTree/getFavorites/openMatchModal. Grows into
+│   │   │                                   the post-cup plan (.agents/stats-screen-plan.md, A–J).
 │   │   └── calendar.js                   .ics export (RFC 5545, CRLF, Blob download)
 │   ├── images/                           Team flag SVGs, stadium placeholders
 │   └── icons/                            PWA app icons (from the header trophy logo): icon.svg
@@ -80,9 +93,13 @@ worldcup2026/
 │   ├── results.json                      { matchId, homeScore, awayScore, penalties?, status } —
 │   │                                       update as the tournament progresses
 │   ├── stadiums.json                     16 real venues: { id, name, city, capacity, image, timezone }
-│   └── bracket-config.json               ★ official R32 structure + thirdPlaceAssignment (all null) —
-│                                           the ONLY file to edit once real 3rd places are known
-│                                           (slot → allowed-groups table in project-memory.md)
+│   ├── bracket-config.json               ★ official R32 structure + thirdPlaceAssignment (all null) —
+│   │                                       the ONLY file to edit once real 3rd places are known
+│   │                                       (slot → allowed-groups table in project-memory.md)
+│   └── (optional, NOT yet created)        stats-screen data layers loaded fault-tolerantly by
+│                                           loadOptional(): players.json, player-events.json,
+│                                           awards.json, keeper-stats.json, curiosities.json,
+│                                           all-time-baselines.json — absent = silent empty default
 │
 ├── README.md                             Setup, GitHub Pages deploy, JSON maintenance guide
 ├── how-update.md                         Real-data migration runbook (mock → real — DONE 2026-06-12)
