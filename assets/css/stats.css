@@ -395,6 +395,44 @@ button.record-card:hover { border-color: var(--accent-gold); background: var(--g
 .champ-path-score { font-weight: 700; font-variant-numeric: tabular-nums; }
 .champ-path-opp { display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end; font-size: 0.88rem; }
 
+/* -------------------------------------------------- format-48 debuts band */
+
+.stats-subhead {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.8rem;
+}
+
+.debut-band {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem 1.25rem;
+  padding: 1.4rem 1.5rem;
+}
+
+.debut-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.debut-value {
+  font-size: clamp(1.6rem, 4.5vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--accent-gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.debut-value-sm { font-size: clamp(1rem, 3vw, 1.3rem); }
+
+.debut-label {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
 .col-sort {
   display: inline-flex;
   align-items: center;

@@ -48,7 +48,7 @@ const SECTIONS = [
   { id: 'overview', navKey: 'stats.navOverview', available: () => true, body: overviewHTML },
   { id: 'teams', navKey: 'stats.navTeams', available: () => true, body: teamsSectionHTML },
   { id: 'players', navKey: 'stats.navPlayers', available: () => false, body: () => '' },
-  { id: 'records', navKey: 'stats.navRecords', available: () => false, body: () => '' },
+  { id: 'records', navKey: 'stats.navRecords', available: () => true, body: recordsSectionHTML },
   { id: 'comparator', navKey: 'stats.navComparator', available: () => false, body: () => '' },
   { id: 'archive', navKey: 'stats.navArchive', available: () => false, body: () => '' },
 ];
@@ -303,8 +303,21 @@ function computeRecords(finished, resultByMatchId, verdict) {
     }
   }
 
+  // highest-scoring match (most combined goals; tie → bigger margin)
+  let highestScoringMatch = null;
+  for (const m of finished) {
+    const r = resultByMatchId.get(m.id);
+    const total = r.homeScore + r.awayScore;
+    const margin = Math.abs(r.homeScore - r.awayScore);
+    if (!highestScoringMatch || total > highestScoringMatch.total
+        || (total === highestScoringMatch.total && margin > highestScoringMatch.margin)) {
+      highestScoringMatch = { matchId: m.id, total, margin, homeTeam: m.homeTeam, awayTeam: m.awayTeam, score: `${r.homeScore}-${r.awayScore}` };
+    }
+  }
+
   return {
     biggestWin,
+    highestScoringMatch,
     longestWinStreak: longestWinStreak && longestWinStreak.count >= 2 ? longestWinStreak : null,
     championPath: computeChampionPath(verdict),
   };
@@ -633,12 +646,12 @@ function teamsSectionHTML() {
     ${legendHTML(COLUMNS)}`;
 }
 
-// Auto record cards (degrade individually when their data is null). Biggest win
-// opens the match modal; champion's path appears only post-final.
+// Team-level cards in the Teams section: longest win streak + the champion's
+// path (post-final). Match-level records live in the Records section. Each
+// degrades away individually when its data is null.
 function teamRecordsHTML() {
   const rec = model.records;
   const cards = [];
-  if (rec.biggestWin) cards.push(biggestWinCardHTML(rec.biggestWin));
   if (rec.longestWinStreak) cards.push(streakCardHTML(rec.longestWinStreak));
   const grid = cards.length ? `<div class="stats-records-grid">${cards.join('')}</div>` : '';
   return grid + (rec.championPath ? championPathHTML(rec.championPath) : '');
@@ -692,6 +705,68 @@ function championPathHTML(path) {
     <div class="champ-path glass">
       <span class="record-label">${t('stats.championPath')}</span>
       ${rows}
+    </div>`;
+}
+
+// ----------------------------------------------------- records section
+
+// Match/tournament records + the "format-48 debuts" band. Match record cards
+// degrade away individually; the debuts band is always meaningful (format facts),
+// so this section (and its sub-nav chip) is always present.
+function recordsSectionHTML() {
+  const rec = model.records;
+  const cards = [];
+  if (rec.biggestWin) cards.push(biggestWinCardHTML(rec.biggestWin));
+  // skip the high-score card when it's the very same match as the biggest win
+  // (early in the tournament they often coincide); they diverge as it goes on.
+  if (rec.highestScoringMatch && rec.highestScoringMatch.matchId !== rec.biggestWin?.matchId) {
+    cards.push(highScoreCardHTML(rec.highestScoringMatch));
+  }
+  const grid = cards.length ? `<div class="stats-records-grid">${cards.join('')}</div>` : '';
+  return `
+    <h2 class="section-title">${t('stats.recordsTitle')}</h2>
+    ${grid}
+    ${formatDebutsHTML()}`;
+}
+
+function highScoreCardHTML(rec) {
+  const home = getData().teamById.get(rec.homeTeam);
+  const away = getData().teamById.get(rec.awayTeam);
+  return `
+    <button type="button" class="record-card glass" data-record-match="${rec.matchId}"
+            aria-label="${t('stats.highScoreMatch')}: ${home.name} ${rec.score} ${away.name}">
+      <span class="record-label">${t('stats.highScoreMatch')}</span>
+      <span class="record-main">
+        ${flagImg(home, 26, 17)}
+        <span class="record-score">${rec.score}</span>
+        ${flagImg(away, 26, 17)}
+      </span>
+      <span class="record-teams">${home.name} <span class="record-vs">${t('hero.vs')}</span> ${away.name}</span>
+    </button>`;
+}
+
+// "Format debuts" band — the firsts of the 48-team era. Mostly static format
+// facts (always true); the champion fact lights up once the verdict is in.
+function formatDebutsHTML() {
+  const data = getData();
+  const facts = [
+    { value: String(data.teams.length), label: t('stats.debutTeams') },
+    { value: String(model.totalMatches), label: t('stats.debutMatches') },
+    { value: String(Object.keys(data.groups).length), label: t('stats.debutGroups') },
+    { value: translatePhase('Round of 32'), label: t('stats.debutR32'), small: true },
+    { value: '8', label: t('stats.debutThird') },
+  ];
+  if (model.verdict) {
+    facts.push({ value: data.teamById.get(model.verdict.champion).name, label: t('stats.debutChampion'), small: true });
+  }
+  return `
+    <h3 class="stats-subhead">${t('stats.formatDebutsTitle')}</h3>
+    <div class="debut-band glass">
+      ${facts.map((f) => `
+        <div class="debut-fact">
+          <span class="debut-value${f.small ? ' debut-value-sm' : ''}">${f.value}</span>
+          <span class="debut-label">${f.label}</span>
+        </div>`).join('')}
     </div>`;
 }
 
