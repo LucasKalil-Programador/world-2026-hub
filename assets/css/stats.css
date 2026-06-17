@@ -322,6 +322,79 @@
   background: var(--bg-secondary);
 }
 
+/* favorite-team row highlight (gold) — after the hover rules so it persists */
+.stats-table tbody tr.row-fav td { background: rgba(212, 175, 55, 0.12); }
+.stats-table tbody tr.row-fav .col-rank,
+.stats-table tbody tr.row-fav .col-team { background: var(--bg-secondary); }
+.stats-table tbody tr.row-fav .col-rank { box-shadow: inset 3px 0 0 var(--accent-gold); }
+
+/* ------------------------------------------------------ team records */
+
+.stats-records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.record-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 1rem;
+  text-align: center;
+  width: 100%;
+}
+
+button.record-card { cursor: pointer; transition: border-color 0.2s, background-color 0.2s; }
+button.record-card:hover { border-color: var(--accent-gold); background: var(--glass-bg-strong); }
+
+.record-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.record-main { display: flex; align-items: center; gap: 0.6rem; }
+
+.record-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-gold-soft);
+}
+
+.record-teams { font-size: 0.85rem; color: var(--text-secondary); }
+.record-vs { opacity: 0.55; }
+
+.champ-path {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.25rem;
+}
+
+.champ-path .record-label { margin-bottom: 0.3rem; }
+
+.champ-path-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1.4fr;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.champ-path-row.clickable { cursor: pointer; }
+.champ-path-row.clickable:hover { background: var(--glass-bg-strong); }
+
+.champ-path-phase { font-size: 0.82rem; color: var(--text-secondary); text-align: left; }
+.champ-path-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+.champ-path-opp { display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end; font-size: 0.88rem; }
+
 .col-sort {
   display: inline-flex;
   align-items: center;

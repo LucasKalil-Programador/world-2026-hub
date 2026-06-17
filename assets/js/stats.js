@@ -7,6 +7,8 @@
 
 import { getData, flagSrc, navigateTo } from './app.js';
 import { getBracketTree } from './bracket.js';
+import { getFavorites } from './storage.js';
+import { openMatchModal } from './modal.js';
 import { t, translatePhase } from './i18n.js';
 
 // "Goals by stage" collapses all 12 groups into one bucket; knockout phases
@@ -52,10 +54,10 @@ const SECTIONS = [
 ];
 
 let model = null;
-// table interaction state — survives langchange re-renders (default on load:
-// most goals first, page 1), like the bracket keeps its zoom across re-renders.
-let sortKey = 'gf';
-let sortDir = 'desc';
+// table interaction state — survives langchange re-renders. Default on load is
+// the canonical final ranking (page 1); like the bracket keeps its zoom.
+let sortKey = 'rank';
+let sortDir = 'asc';
 let teamPage = 0;
 
 function stageOf(phase) {
@@ -165,6 +167,9 @@ function buildStatsModel() {
     };
   });
 
+  const verdict = computeVerdict();
+  assignRanks(teamStats);
+
   return {
     totalMatches: matches.length,
     finishedCount: finished.length,
@@ -176,9 +181,10 @@ function buildStatsModel() {
     cleanSheets,
     byStage,
     byRound,
-    verdict: computeVerdict(),
+    verdict,
     teamStats,
     leaders: computeLeaders(teamStats),
+    records: computeRecords(finished, resultByMatchId, verdict),
   };
 }
 
@@ -220,6 +226,114 @@ function computeVerdict() {
   return verdict;
 }
 
+// Canonical final ranking 1–48 (stats-screen-plan.md §6.5): primary key is the
+// deepest stage REACHED (champion → runner-up → 3rd → 4th → QF → R16 → R32 →
+// group), then points → GD → GF → id. Reproducible and stable; each team carries
+// its rank, so the table can sort by any column yet still show this # identity.
+const GROUP_TIER = 7;
+function assignRanks(teamStats) {
+  const tiers = computeRankTiers();
+  const ranked = [...teamStats].sort((a, b) =>
+    (tiers.get(a.teamId) ?? GROUP_TIER) - (tiers.get(b.teamId) ?? GROUP_TIER)
+    || b.points - a.points || b.gd - a.gd || b.gf - a.gf || a.teamId.localeCompare(b.teamId));
+  ranked.forEach((row, i) => { row.rank = i + 1; });
+}
+
+// Phase-reached tier per team, from REAL knockout results only (a simulated pick
+// never affects the ranking). Champion 0, runner-up 1, 3rd 2, 4th 3, then losers
+// by round (QF 4, R16 5, R32 6). Absent → group tier (7) via the default above.
+function computeRankTiers() {
+  const tree = getBracketTree();
+  const tier = new Map();
+  const set = (id, value) => { if (id && !tier.has(id)) tier.set(id, value); };
+
+  const finalNode = tree.nodesByRef.get('FINAL');
+  if (finalNode && !finalNode.simulated && finalNode.result?.status === 'finished' && finalNode.winner) {
+    set(finalNode.winner, 0);
+    set(finalNode.loser, 1);
+  }
+  const third = tree.third;
+  if (third && !third.simulated && third.result?.status === 'finished' && third.winner) {
+    set(third.winner, 2);
+    set(third.loser, 3);
+  }
+  const roundTier = { QF: 4, R16: 5, R32: 6 };
+  for (const round of tree.rounds) {
+    const value = roundTier[round.id];
+    if (value === undefined) continue;
+    for (const node of round.nodes) {
+      if (!node.simulated && node.result?.status === 'finished' && node.loser) set(node.loser, value);
+    }
+  }
+  return tier;
+}
+
+// Auto-derived team records over finished matches. Each is null when its data
+// isn't there yet, so the cards degrade away individually (§0.1).
+function computeRecords(finished, resultByMatchId, verdict) {
+  let biggestWin = null;
+  for (const m of finished) {
+    const r = resultByMatchId.get(m.id);
+    const margin = Math.abs(r.homeScore - r.awayScore);
+    if (margin === 0) continue;
+    const total = r.homeScore + r.awayScore;
+    if (!biggestWin || margin > biggestWin.margin || (margin === biggestWin.margin && total > biggestWin.total)) {
+      const homeWon = r.homeScore > r.awayScore;
+      biggestWin = {
+        matchId: m.id, margin, total,
+        winnerId: homeWon ? m.homeTeam : m.awayTeam,
+        loserId: homeWon ? m.awayTeam : m.homeTeam,
+        score: homeWon ? `${r.homeScore}-${r.awayScore}` : `${r.awayScore}-${r.homeScore}`,
+      };
+    }
+  }
+
+  // longest run of consecutive wins by any team, in chronological order
+  const order = [...finished].sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`) || a.id - b.id);
+  const current = new Map();
+  let longestWinStreak = null;
+  for (const m of order) {
+    const r = resultByMatchId.get(m.id);
+    const homeWin = r.homeScore > r.awayScore || (r.homeScore === r.awayScore && r.penalties && r.penalties.home > r.penalties.away);
+    const awayWin = r.awayScore > r.homeScore || (r.homeScore === r.awayScore && r.penalties && r.penalties.away > r.penalties.home);
+    for (const [teamId, won] of [[m.homeTeam, homeWin], [m.awayTeam, awayWin]]) {
+      const run = won ? (current.get(teamId) ?? 0) + 1 : 0;
+      current.set(teamId, run);
+      if (won && (!longestWinStreak || run > longestWinStreak.count)) longestWinStreak = { teamId, count: run };
+    }
+  }
+
+  return {
+    biggestWin,
+    longestWinStreak: longestWinStreak && longestWinStreak.count >= 2 ? longestWinStreak : null,
+    championPath: computeChampionPath(verdict),
+  };
+}
+
+// The champion's knockout route (R32 → Final) with each result, for the path
+// card. Null unless there's a real champion (verdict present).
+function computeChampionPath(verdict) {
+  if (!verdict) return null;
+  const tree = getBracketTree();
+  const champ = verdict.champion;
+  const path = [];
+  for (const round of tree.rounds) {
+    const node = round.nodes.find((n) => n.winner === champ && (n.home.teamId === champ || n.away.teamId === champ));
+    if (!node || !node.result) continue;
+    const side = node.home.teamId === champ ? 'home' : 'away';
+    const r = node.result;
+    path.push({
+      matchId: node.match?.id ?? null,
+      phase: node.phase,
+      opponentId: side === 'home' ? node.away.teamId : node.home.teamId,
+      gf: side === 'home' ? r.homeScore : r.awayScore,
+      ga: side === 'home' ? r.awayScore : r.homeScore,
+      pens: r.penalties ? (side === 'home' ? `${r.penalties.home}-${r.penalties.away}` : `${r.penalties.away}-${r.penalties.home}`) : null,
+    });
+  }
+  return path.length ? path : null;
+}
+
 // Highlight leaders consider only teams that have played, so a 0-game team's
 // empty record never counts as "best defense". Null before any match finishes.
 function computeLeaders(teamStats) {
@@ -242,6 +356,9 @@ export function initStats() {
   document.addEventListener('langchange', render);
   // new published results change the aggregates → rebuild the memoized model
   document.addEventListener('datachange', () => { model = null; render(); });
+  // favorites change elsewhere (schedule/groups/modal) → re-render the table so
+  // the gold favorite-row highlight stays in sync (no model rebuild needed).
+  document.addEventListener('favchange', renderTeamTable);
 }
 
 function render() {
@@ -261,6 +378,14 @@ function render() {
   if (teamsHost) {
     teamsHost.addEventListener('click', onTeamTableClick);
     renderTeamTable();
+  }
+  // record cards / champion-path rows that reference a match open it in the modal
+  for (const el of root.querySelectorAll('[data-record-match]')) {
+    const open = () => openMatchModal(Number(el.dataset.recordMatch));
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+    });
   }
   setupCountUps(root);
   setupSubNav(root, sections);
@@ -503,8 +628,71 @@ function teamsSectionHTML() {
   return `
     <h2 class="section-title">${t('stats.teamStatsTitle')}</h2>
     ${leadersHTML()}
+    ${teamRecordsHTML()}
     <div id="stats-teams-table" class="stats-teams-table"></div>
     ${legendHTML(COLUMNS)}`;
+}
+
+// Auto record cards (degrade individually when their data is null). Biggest win
+// opens the match modal; champion's path appears only post-final.
+function teamRecordsHTML() {
+  const rec = model.records;
+  const cards = [];
+  if (rec.biggestWin) cards.push(biggestWinCardHTML(rec.biggestWin));
+  if (rec.longestWinStreak) cards.push(streakCardHTML(rec.longestWinStreak));
+  const grid = cards.length ? `<div class="stats-records-grid">${cards.join('')}</div>` : '';
+  return grid + (rec.championPath ? championPathHTML(rec.championPath) : '');
+}
+
+function biggestWinCardHTML(win) {
+  const winner = getData().teamById.get(win.winnerId);
+  const loser = getData().teamById.get(win.loserId);
+  return `
+    <button type="button" class="record-card glass" data-record-match="${win.matchId}"
+            aria-label="${t('stats.biggestWin')}: ${winner.name} ${win.score} ${loser.name}">
+      <span class="record-label">${t('stats.biggestWin')}</span>
+      <span class="record-main">
+        ${flagImg(winner, 26, 17)}
+        <span class="record-score">${win.score}</span>
+        ${flagImg(loser, 26, 17)}
+      </span>
+      <span class="record-teams">${winner.name} <span class="record-vs">${t('hero.vs')}</span> ${loser.name}</span>
+    </button>`;
+}
+
+function streakCardHTML(streak) {
+  const team = getData().teamById.get(streak.teamId);
+  return `
+    <div class="record-card glass">
+      <span class="record-label">${t('stats.winStreak')}</span>
+      <span class="record-main">
+        ${flagImg(team, 26, 17)}
+        <span class="record-score">${streak.count}</span>
+      </span>
+      <span class="record-teams">${team.name}</span>
+    </div>`;
+}
+
+function championPathHTML(path) {
+  const rows = path.map((step) => {
+    const opp = getData().teamById.get(step.opponentId);
+    const pens = step.pens ? ` <small>(${t('status.pens')} ${step.pens})</small>` : '';
+    const clickable = step.matchId != null;
+    const attrs = clickable
+      ? `data-record-match="${step.matchId}" role="button" tabindex="0" aria-label="${translatePhase(step.phase)}: ${step.gf}–${step.ga} ${opp.name}"`
+      : '';
+    return `
+      <div class="champ-path-row${clickable ? ' clickable' : ''}" ${attrs}>
+        <span class="champ-path-phase">${translatePhase(step.phase)}</span>
+        <span class="champ-path-score">${step.gf}–${step.ga}${pens}</span>
+        <span class="champ-path-opp">${flagImg(opp, 20, 13)} ${opp.name}</span>
+      </div>`;
+  }).join('');
+  return `
+    <div class="champ-path glass">
+      <span class="record-label">${t('stats.championPath')}</span>
+      ${rows}
+    </div>`;
 }
 
 // Compact abbreviation key — hidden on desktop (the hover tooltip covers it
@@ -542,11 +730,13 @@ function leaderCardHTML({ label, row, value }) {
 
 function sortedTeamStats() {
   const dir = sortDir === 'asc' ? 1 : -1;
+  if (sortKey === 'rank') {
+    return [...model.teamStats].sort((a, b) => (a.rank - b.rank) * dir);
+  }
   return [...model.teamStats].sort((a, b) => {
     const primary = (a[sortKey] - b[sortKey]) * dir;
     if (primary) return primary;
-    // tiebreak is always GD → GF → name, independent of the sort direction
-    return b.gd - a.gd || b.gf - a.gf || a.teamId.localeCompare(b.teamId);
+    return a.rank - b.rank; // canonical rank is the stable tiebreak
   });
 }
 
@@ -557,29 +747,34 @@ function renderTeamTable() {
   const pages = Math.ceil(sorted.length / PAGE_SIZE);
   teamPage = Math.max(0, Math.min(teamPage, pages - 1));
   const start = teamPage * PAGE_SIZE;
-  host.innerHTML = tableHTML(sorted.slice(start, start + PAGE_SIZE), start) + paginationHTML(pages);
+  host.innerHTML = tableHTML(sorted.slice(start, start + PAGE_SIZE)) + paginationHTML(pages);
 }
 
-function tableHTML(rows, startIndex) {
-  const head = COLUMNS.map((col) => {
-    const active = col.key === sortKey;
-    const aria = active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
-    const arrow = active ? `<span class="sort-arrow" aria-hidden="true">${sortDir === 'asc' ? '▲' : '▼'}</span>` : '';
-    const tip = t(col.tip);
-    return `<th scope="col" class="col-num${active ? ' sorted' : ''}" aria-sort="${aria}">
-      <button type="button" class="col-sort has-tip" data-sort="${col.key}" data-tip="${tip}" aria-label="${t(col.label)} — ${tip}">${t(col.label)}${arrow}</button>
-    </th>`;
-  }).join('');
+// One sortable header cell; `aria` falls back to the visible label.
+function sortHeaderHTML(key, label, tip, cls, aria = label) {
+  const active = key === sortKey;
+  const ariaSort = active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+  const arrow = active ? `<span class="sort-arrow" aria-hidden="true">${sortDir === 'asc' ? '▲' : '▼'}</span>` : '';
+  return `<th scope="col" class="${cls}${active ? ' sorted' : ''}" aria-sort="${ariaSort}">
+    <button type="button" class="col-sort has-tip" data-sort="${key}" data-tip="${tip}" aria-label="${aria} — ${tip}">${label}${arrow}</button>
+  </th>`;
+}
 
-  const body = rows.map((row, i) => {
+function tableHTML(rows) {
+  const rankHead = sortHeaderHTML('rank', '#', t('tip.rank'), 'col-rank', t('stats.rankCol'));
+  const head = COLUMNS.map((col) => sortHeaderHTML(col.key, t(col.label), t(col.tip), 'col-num')).join('');
+  const favs = new Set(getFavorites());
+
+  const body = rows.map((row) => {
     const team = getData().teamById.get(row.teamId);
     const cells = COLUMNS.map((col) => {
       const value = col.key === 'gpg' ? row.gpg.toFixed(2) : col.key === 'gd' ? fmtGd(row.gd) : row[col.key];
       return `<td class="col-num${col.key === sortKey ? ' sorted' : ''}">${value}</td>`;
     }).join('');
+    const classes = [row.played === 0 ? 'row-idle' : '', favs.has(row.teamId) ? 'row-fav' : ''].filter(Boolean).join(' ');
     return `
-      <tr class="${row.played === 0 ? 'row-idle' : ''}">
-        <td class="col-rank">${startIndex + i + 1}</td>
+      <tr class="${classes}">
+        <td class="col-rank${sortKey === 'rank' ? ' sorted' : ''}">${row.rank}</td>
         <td class="col-team">
           ${flagImg(team, 22, 15)}
           <span>${team.name}</span>
@@ -594,7 +789,7 @@ function tableHTML(rows, startIndex) {
         <caption class="sr-only">${t('stats.teamStatsTitle')}</caption>
         <thead>
           <tr>
-            <th scope="col" class="col-rank">#</th>
+            ${rankHead}
             <th scope="col" class="col-team">${t('standings.team')}</th>
             ${head}
           </tr>
@@ -624,7 +819,7 @@ function onTeamTableClick(event) {
   if (sortBtn) {
     const key = sortBtn.dataset.sort;
     if (key === sortKey) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
-    else { sortKey = key; sortDir = 'desc'; }
+    else { sortKey = key; sortDir = key === 'rank' ? 'asc' : 'desc'; }
     teamPage = 0;
     renderTeamTable();
     return;
