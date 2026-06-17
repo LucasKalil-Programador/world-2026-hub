@@ -5,6 +5,9 @@
 
 import { getPrefs, setPref } from './storage.js';
 
+// App version for footer display — bump this after any notable changes
+const APP_VERSION = 'v1.0.1';
+
 const dicts = {
   en: {
     'a11y.skip': 'Skip to content',
@@ -174,7 +177,7 @@ const dicts = {
     'stats.prevPage': 'Previous page',
     'stats.nextPage': 'Next page',
     'stats.seeAllMatches': 'See all matches',
-    'footer.note': 'Fan-made static hub — all data lives in JSON files.',
+    'footer.note': `Fan-made static hub ${APP_VERSION}`,
   },
   pt: {
     'a11y.skip': 'Pular para o conteúdo',
@@ -344,7 +347,7 @@ const dicts = {
     'stats.prevPage': 'Página anterior',
     'stats.nextPage': 'Próxima página',
     'stats.seeAllMatches': 'Ver todas as partidas',
-    'footer.note': 'Hub estático feito por fãs — todos os dados vivem em arquivos JSON.',
+    'footer.note': `Hub estático feito por fãs ${APP_VERSION}`,
   },
 };
 
