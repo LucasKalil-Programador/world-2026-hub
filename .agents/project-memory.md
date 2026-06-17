@@ -505,3 +505,10 @@ Follow `how-refresh-data.md` (project root). In short:
 
 - User communicates in English/Portuguese mix; docs in English per conventions.
 - **Ask before each build step** — never chain into the next step without explicit go-ahead.
+
+### App version management (2026-06-17)
+- **Single source of truth:** `assets/js/i18n.js` line 9 — `const APP_VERSION = 'v1.0.1'`
+- **Footer display:** both EN and PT footers now show the version (template literals); removed "all data lives in JSON files" message
+- **When to bump:** after notable feature ships (stats stages, major bugfix, schema change, deploy to production)
+- **How to bump:** edit line 9, commit with `refactor(footer): bump version to vX.Y.Z`, push
+- **Why:** makes versioning explicit and easy to track; enables future release notes / changelog automation
