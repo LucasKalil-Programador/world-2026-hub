@@ -4,7 +4,7 @@ Navigation map of the codebase. Use this to find which file owns a concern befor
 
 > **Status 2026-06-12 (all 12 steps + real-data migration done):** everything works with **real World Cup 2026 data** — all views, bracket interactions, simulation, responsive/a11y pass, favorites, time toggle, challenge, share link, `.ics` export. Remaining: keep `results.json` current, fill `thirdPlaceAssignment` after the group stage (~Jun 27), Lighthouse run + GitHub Pages deploy. Spec source of truth: `world-cup-2026-hub-spec-en.md` + `complement-spec-worldcup2026-en.md` (complement **wins on conflict**).
 >
-> **Branch note (2026-06-16):** the full post-Cup Stats screen (`.agents/stats-screen-plan.md`, stages A–J) is being built on **`feature/stats-final-screen`** (merges to `master` at the end of the Cup). **Stages A–C done** on that branch (degradation engine + fault-tolerant `loadData` + sticky scrollspy sub-nav + flag monogram fallback; verdict-or-aggregate hero + goals-by-round chart; final ranking 1–48 by stage-reached + favorite-row highlight + team record cards). `master` keeps the partial Stats tab + daily refreshes. Descriptions below reflect the branch.
+> **Branch note (2026-06-16):** the full post-Cup Stats screen (`.agents/stats-screen-plan.md`, stages A–J) is being built on **`feature/stats-final-screen`** (merges to `master` at the end of the Cup). **Stages A–D done** on that branch (degradation engine + fault-tolerant `loadData` + sticky scrollspy sub-nav + flag monogram fallback; verdict-or-aggregate hero + goals-by-round chart; final ranking 1–48 by stage-reached + favorite-row highlight + team record cards; Records section = match records + format-48 debuts band). Sub-nav live chips: Overview · Teams · Records. `master` keeps the partial Stats tab + daily refreshes. Descriptions below reflect the branch.
 
 ---
 
@@ -70,8 +70,9 @@ worldcup2026/
 │   │   ├── stats.js                      ★ Stats tab: tournament-to-date aggregates (finished
 │   │   │                                   matches only); verdict-or-aggregate hero + overview + goals-by-stage/round +
 │   │   │                                   48-team table ranked 1–48 by stage-reached (sortable, # = canonical rank) +
-│   │   │                                   favorite-row highlight + auto record cards (biggest win →
-│   │   │                                   modal, win streak, champion path). SECTIONS registry (graceful-
+│   │   │                                   favorite-row highlight + team record cards (win streak,
+│   │   │                                   champion path) + Records section (biggest win/high-scoring
+│   │   │                                   match → modal, format-48 debuts band). SECTIONS registry (graceful-
 │   │   │                                   degradation gate: section + chip render only if available,
 │   │   │                                   else removed from DOM) + sticky scrollspy sub-nav (anchor
 │   │   │                                   chips, hash-safe) + flagImg fallback; imports getBracketTree/getFavorites/openMatchModal. Grows into
