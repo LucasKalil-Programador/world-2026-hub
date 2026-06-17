@@ -15,7 +15,7 @@ import { initStats } from './stats.js';
 
 let data = null;
 
-const DATA_VERSION = '2026-06-16-rev2';
+const DATA_VERSION = '2026-06-16-rev4';
 
 export async function loadData() {
   if (data) return data;
