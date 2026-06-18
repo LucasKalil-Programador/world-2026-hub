@@ -15,7 +15,15 @@ import { initStats } from './stats.js';
 
 let data = null;
 
-const DATA_VERSION = '2026-06-18-rev3';
+// Cache-buster rounded down to the current minute: the URL stays stable within
+// the same minute (so the browser can reuse the response) but changes every
+// minute, guaranteeing a fresh fetch without ever serving a stale results.json.
+function dataCacheBust() {
+  const now = new Date();
+  now.setSeconds(0);
+  now.setMilliseconds(0);
+  return now.getTime();
+}
 
 // Optional data layers for the post-tournament stats screen (players, awards,
 // editorial — see .agents/stats-screen-plan.md §0.2). They don't exist yet, so
@@ -25,7 +33,7 @@ const DATA_VERSION = '2026-06-18-rev3';
 // error). Never throws — the stats screen lights these up as the JSON lands.
 async function loadOptional(name, fallback) {
   try {
-    const res = await fetch(`data/${name}.json?v=${DATA_VERSION}`);
+    const res = await fetch(`data/${name}.json?t=${dataCacheBust()}`);
     if (!res.ok) return fallback; // not provided yet → empty, no noise
     return await res.json();
   } catch (err) {
@@ -40,7 +48,7 @@ export async function loadData() {
   // Core files are mandatory: a failure here is fatal (throws → showError()).
   const corePromise = Promise.all(
     files.map(async (name) => {
-      const res = await fetch(`data/${name}.json?v=${DATA_VERSION}`);
+      const res = await fetch(`data/${name}.json?t=${dataCacheBust()}`);
       if (!res.ok) throw new Error(`data/${name}.json — HTTP ${res.status}`);
       return res.json();
     }),
@@ -95,7 +103,7 @@ async function pollResults() {
   if (tournamentOver()) { stopResultsPolling(); return; }
   let results;
   try {
-    // ?t bypasses the frozen DATA_VERSION + Hostinger's missing cache headers
+    // ?t + no-store bypasses Hostinger's missing cache headers (same scheme loadData uses)
     const res = await fetch(`data/results.json?t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return;
     results = await res.json();
