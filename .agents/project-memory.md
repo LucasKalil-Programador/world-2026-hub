@@ -447,16 +447,16 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-17.** Data: **results through match 23/104** (23 of 72 group-stage matches
+**Updated 2026-06-18.** Data: **results through match 25/104** (25 of 72 group-stage matches
 finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
-`DATA_VERSION = 2026-06-17-rev3`. `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
+`DATA_VERSION = 2026-06-18-rev2`. `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped).
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-18 (rev1–rev2)** — matches 24–25: UZB 1–3 COL, CZE 1–1 RSA.
 - **2026-06-17 (rev1–rev3)** — matches 18–23: IRQ 1–4 NOR, ARG 3–0 ALG, AUT 3–1 JOR, POR 1–1 COD,
   ENG 4–2 CRO, GHA 1–0 PAN.
 - **2026-06-16 (rev1–rev2)** — matches 16–17: IRN 2–2 NZL, FRA 3–1 SEN.
-- **2026-06-15 (rev1–rev4)** — matches 12–15: SWE 5–1 TUN, ESP 0–0 CPV, BEL 1–1 EGY, KSA 1–1 URU.
 
 ### Pending / next
 - **`thirdPlaceAssignment` fill** once the group stage ends (~Jun 27) — slot→group table above.
