@@ -138,8 +138,9 @@ automated tests / linter (explicit spec constraint).
 - The data is **not live** — it's a manual push after each match. So poll is **fixed**
   (`POLL_INTERVAL_MS = 90s`), not state-based. `startResultsPolling()` (called at the end of
   `init()`, after views register listeners) arms one `setInterval` (`if (pollTimer) return`).
-  `pollResults()` fetches `data/results.json?t=${Date.now()}` with `cache:'no-store'` — **NOT**
-  `?v=DATA_VERSION` (frozen in the tab + no Hostinger cache headers → would serve cached; gotcha #2).
+  `pollResults()` fetches `data/results.json?t=${Date.now()}` with `cache:'no-store'`. (As of
+  2026-06-18 the initial `loadData()` fetch also uses `?t=Date.now()`; the old hand-bumped
+  `?v=DATA_VERSION` cache-buster was removed — see Cache-busting runbook.)
 - **Signature = full response text** (catches score corrections, `stats` backfill, penalties — a
   finished-count signature would miss them). On change: rewrite `data.results` **and rebuild
   `data.resultByMatchId`** (the derived map), `invalidateBracket()`, dispatch `datachange`.
@@ -200,8 +201,8 @@ automated tests / linter (explicit spec constraint).
 
 ### Daily data refresh
 Follow **`how-refresh-data.md`** (project root) before touching any `data/*.json`. In short: edit
-`data/results.json` (scores/status, two-source rule, `penalties` only on knockout ids 73–104) → bump
-`DATA_VERSION` → verify in preview → commit (two-commit convention) → push (user's go) → deploy.
+`data/results.json` (scores/status, two-source rule, `penalties` only on knockout ids 73–104) →
+verify in preview → commit (two-commit convention) → push (user's go) → deploy.
 Frozen files (never edit): `stadiums/teams/groups/bracket-config.round32/assets/code`.
 `how-update.md` stays as the schema reference for the (completed) mock→real migration.
 
@@ -221,13 +222,15 @@ letter appears in **at most one** slot; unfilled slots stay `null`:
 | 7 | M85 (vs Winner B) | E/F/G/I/J |
 | 8 | M87 (vs Winner K) | D/E/I/J/L |
 
-### DATA_VERSION (cache-busting)
-`app.js` `loadData()` appends `?v=${DATA_VERSION}` to every `data/*.json` fetch (constant near the
-top, currently `'2026-06-17-rev3'`). **Bump on every data refresh** (format `YYYY-MM-DD-revN`;
-increment `revN` for same-day re-edits). The live-refresh poll deliberately uses `?t=` + `no-store`
-instead (see Live data refresh). Note: **JS/CSS are not versioned** (no build step) — on Hostinger
-returning visitors may serve stale code until their browser re-fetches; new visitors / hard-refresh
-see it at once. Accepted.
+### Cache-busting (2026-06-18: DATA_VERSION removed)
+`app.js` `loadData()` appends `?t=${Date.now()}` to every `data/*.json` fetch — same scheme the
+live-refresh poll already used. **There is no `DATA_VERSION` constant to bump anymore** (removed
+2026-06-18); every load gets a unique URL, so Hostinger can never serve a stale `results.json` and
+the daily refresh has zero cache step. ~~Previously appended `?v=${DATA_VERSION}` (a hand-bumped
+`YYYY-MM-DD-revN` constant) — retired because the manual bump was easy to forget and `Date.now()`
+guarantees freshness.~~ Note: **JS/CSS are not versioned** (no build step) — on Hostinger returning
+visitors may serve stale code until their browser re-fetches; new visitors / hard-refresh see it at
+once. Accepted.
 
 ### App version (footer)
 Single source of truth: **`assets/js/i18n.js` line 9** — `const APP_VERSION = 'v1.0.X'`. Auto-shown
@@ -236,7 +239,7 @@ bugfix, schema change, deploy). Commit e.g. `refactor(footer): bump version to v
 
 ### Commit convention (standardized 2026-06-15)
 Every `/update-worldcup` run = **two commits** (full spec in `how-refresh-data.md`):
-1. **Data commit** (`results.json` + `DATA_VERSION`, + `bracket-config.json` on the 3rd-place day):
+1. **Data commit** (`results.json`, + `bracket-config.json` on the 3rd-place day):
    - 1 game → `data: update DD/MM/YYYY HH:MM HOMExAWAY HxA`
    - N games → `data: update DD/MM/YYYY — N jogos` + one body line per game.
    - Penalties (knockout only): suffix `(pen HxA)`.
@@ -360,7 +363,8 @@ variant (Option C) was the recommended shape.
 Polish over A–F: i18n audit (no hardcoded strings), a11y (sections `aria-label`led + `tabindex=-1`,
 table caption + sort buttons + `aria-sort`, sub-nav is a `<nav>`), reduced-motion gating, cross-tab
 regression — **no code fixes were needed**. README got a Stats bullet. **Deferred to the actual
-deploy:** the Lighthouse run + a final `DATA_VERSION` bump. **Merge sequence:** merge latest
+deploy:** the Lighthouse run (the once-deferred final `DATA_VERSION` bump is moot — `DATA_VERSION`
+was removed 2026-06-18). **Merge sequence:** merge latest
 `master`→branch (resolve conflicts on the branch, never on master), re-verify, then `master ← branch
 --no-ff`. Pushing to origin (which triggers the deploy) is the user's explicit final go.
 
@@ -426,7 +430,7 @@ block (manifest link, `<meta theme-color #081421>`, favicons, apple-mobile-web-a
 `.webmanifest`) for safe MIME on Hostinger. **To change the icon:** edit the SVG(s) and re-run the
 ImageMagick rasterize commands (`magick -background none icon.svg -resize NxN ...`; favicon.ico =
 16+32). **Tier 2 (service worker / offline) is deliberately deferred** — see `issues.md`; if built it
-**must exclude `data/*.json`** from the cache or it breaks the 90s poll + `DATA_VERSION`.
+**must exclude `data/*.json`** from the cache or it breaks the live-refresh poll.
 
 ### Responsive header — 2 bands + scrollable tabs (2026-06-15)
 Single-row flip (`.tabs { flex:0 1 auto; margin-inline:auto }`) moved from `@media (min-width:768px)`
@@ -449,7 +453,7 @@ supersedes the old "768–1439 single-row header" note.
 
 **Updated 2026-06-18.** Data: **results through match 26/104** (26 of 72 group-stage matches
 finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
-`DATA_VERSION = 2026-06-18-rev3`. `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
+Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped).
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
@@ -461,7 +465,7 @@ done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped).
 
 ### Pending / next
 - **`thirdPlaceAssignment` fill** once the group stage ends (~Jun 27) — slot→group table above.
-- **Lighthouse > 90** run (needs a deployed URL) + a final `DATA_VERSION` bump at deploy.
+- **Lighthouse > 90** run (needs a deployed URL).
 - **Post-Cup home state** — when the Final goes `over` the hero is empty; build a champion/epilogue
   state (likely converges with the Stats screen).
 - **Stats Stage G** (Layer-2 cheap data — `cards`→{y,r} migration is breaking for `modal.js` +

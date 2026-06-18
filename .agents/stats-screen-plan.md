@@ -87,8 +87,8 @@ assets/css/stats.css   (NOVO — como bracket.css; componentes da tela de stats)
 - `resolveBracketTeams`, `computeStandings`, `getBracketTree`, `calculateChallengeScore` → reusados
   para ranking, caminho do campeão, fase alcançada.
 - `t(key)`, eventos `langchange`/`favchange`/`timemodechange`, `.glass`, `.slide-up`, `.container`.
-- `DATA_VERSION` (cache-busting) **deve ser bumpado** quando os novos `data/*.json` entrarem no
-  `Promise.all` de `loadData()`.
+- Cache-busting é automático: `loadData()` já anexa `?t=Date.now()` a cada fetch de `data/*.json`,
+  então novos arquivos de dados não exigem nenhum passo de versão (`DATA_VERSION` foi removido em 2026-06-18).
 
 ---
 
@@ -219,7 +219,7 @@ framework/bundler/CDN) e o orçamento de **JS < 300KB (hoje ~74KB)**.
 | **G** | **Camada 2 — dados baratos** | estende `results.json` (attendance, cards y/r, decidedIn), `teams.json` (ranking/wcDebut/confederation), `stadiums.json` (coords); backfill `stats`; liga recordes de público, disciplina, zebras, distância | 🟡🧩2 | **M** + entrada de dados |
 | **H** | **Camada 3 — jogadores** | `players.json`+`player-events.json`+`awards.json`; pódio artilharia, chips (assist/cartões/defesas), bloco de prêmios, **Seleção do Torneio** (formação), comparador de jogadores, recordes de tempo de gol | 🔴3 | **L** (maior) + entrada contínua |
 | **I** | **Camada 4 — editorial** | `curiosities.json` + `all-time-baselines.json`; render de cards editoriais + painel "esta Copa vs história" | 📝4 | **M** + redação |
-| **J** | **Polimento** | auditoria responsiva/a11y, performance (lazy, sem blur em cards repetidos), Lighthouse, bump `DATA_VERSION`, README + i18n review | todas | **M** |
+| **J** | **Polimento** | auditoria responsiva/a11y, performance (lazy, sem blur em cards repetidos), Lighthouse, README + i18n review | todas | **M** |
 
 Caminho mínimo para uma tela publicável e bonita: **A→B→C→D→E→F** (tudo com dados de hoje).
 G/H/I são aditivos e podem entrar em qualquer ordem conforme os dados aparecem (graças a §0).
@@ -246,7 +246,8 @@ G/H/I são aditivos e podem entrar em qualquer ordem conforme os dados aparecem 
    *fallback* para o outro (não renderiza em branco).
 8. **Performance.** Render preguiçoso por seção; **sem `backdrop-filter` em cards repetidos** (custo de
    paint — regra já vigente no projeto); charts em SVG/CSS sem lib; memoizar o modelo.
-9. **Cache-busting & deploy.** Bumpar `DATA_VERSION` quando novos `data/*.json` entrarem; novos
+9. **Cache-busting & deploy.** Automático via `?t=Date.now()` em cada fetch (sem `DATA_VERSION` a
+   bumpar — removido em 2026-06-18); novos
    arquivos em `data/` **são** deployados (bom); `.agents/` (este plano) é excluído (bom). Paths
    relativos para fotos de jogador (gotcha #7 — subpath Hostinger/Pages).
 10. **Não quebrar o existente.** Manter o padrão de import circular com `app.js`; novo tab não pode

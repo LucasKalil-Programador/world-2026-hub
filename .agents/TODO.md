@@ -68,7 +68,7 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 
 ### 🟢 OPTIONAL
 - [x] ~~PWA Tier 1 — instalável (manifest + ícones + meta tags; 2026-06-16). Atende todos os critérios de aceitação da issue.~~
-- [ ] PWA Tier 2 — service worker + offline (deferido; ver `.agents/issues.md` → "PWA Tier 2". DEVE excluir `data/*.json` do cache p/ não quebrar o live-refresh + `DATA_VERSION`).
+- [ ] PWA Tier 2 — service worker + offline (deferido; ver `.agents/issues.md` → "PWA Tier 2". DEVE excluir `data/*.json` do cache p/ não quebrar o live-refresh).
 
 ---
 
@@ -88,13 +88,13 @@ champion path, debuts champion) once the final lands. The **data-layer stages (G
 - [x] ~~Stage D — auto record-cards + "format-48 debuts" band~~
 - [x] ~~Stage E — in-tab results archive~~ — **SKIPPED (Option B):** kept the "See all matches → Matches" link; the Matches tab already covers browsing.
 - [x] ~~Stage F — team comparator (diverging bars)~~ — teams only; the Teams/Players toggle is deferred to Stage H per graceful degradation.
-- [x] ~~Stage J (round 1, release polish) — a11y/responsive/i18n/README audit on A–F~~ — passed clean (no code fixes). **Lighthouse + final `DATA_VERSION` bump still pending an actual deploy.**
+- [x] ~~Stage J (round 1, release polish) — a11y/responsive/i18n/README audit on A–F~~ — passed clean (no code fixes). **Lighthouse still pending an actual deploy** (the once-planned final `DATA_VERSION` bump is moot — `DATA_VERSION` removed 2026-06-18).
 
 ### 🔭 Future (data layers + 2nd polish — near/after the Cup)
-- [ ] **Stage G — Layer 2 cheap data.** Extend `results.json` (attendance, **`cards`→{y,r} migration** — breaking for `modal.js` + `stats.js` `aggregateTeams`, add a backward-compatible reader; `decidedIn`; backfill `stats`), `teams.json` (`ranking`/`wcDebut`/`confederation`), `stadiums.json` (`lat`/`lng`). Light up records: attendance, discipline/fair-play, ranking upsets, confederation performance, distance. **SCHEDULE LATE — conflicts with master's daily `results.json` refreshes.** Bump `DATA_VERSION`.
+- [ ] **Stage G — Layer 2 cheap data.** Extend `results.json` (attendance, **`cards`→{y,r} migration** — breaking for `modal.js` + `stats.js` `aggregateTeams`, add a backward-compatible reader; `decidedIn`; backfill `stats`), `teams.json` (`ranking`/`wcDebut`/`confederation`), `stadiums.json` (`lat`/`lng`). Light up records: attendance, discipline/fair-play, ranking upsets, confederation performance, distance. **SCHEDULE LATE — conflicts with master's daily `results.json` refreshes.**
 - [ ] **Stage H — Layer 3 players.** `players.json` + `player-events.json` + `awards.json` (+ optional `keeper-stats.json`). Top-scorers podium, assists/cards/saves chips, awards block, Squad of the Tournament, **Teams/Players toggle in the comparator** (the deferred half of Stage F), goal-time records. Relative photo paths (gotcha #7).
 - [ ] **Stage I — Layer 4 editorial.** `curiosities.json` (bilingual EN+PT) + `all-time-baselines.json`; editorial record-cards + "this Cup vs history" panel.
-- [ ] **Stage J (round 2) — polish over the NEW G/H/I features.** Repeat the audit on the added sections (a11y/responsive/perf, Lighthouse, EN/PT review) + bump `DATA_VERSION` for the new data files + README refresh.
+- [ ] **Stage J (round 2) — polish over the NEW G/H/I features.** Repeat the audit on the added sections (a11y/responsive/perf, Lighthouse, EN/PT review) + README refresh.
 
 ---
 

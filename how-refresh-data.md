@@ -65,13 +65,12 @@ Rules:
 > ⚠️ First pending item: **match id 4 (USA vs Paraguay)** kicked off 2026-06-13
 > 01:00 UTC and is still `scheduled` in the data.
 
-### 4. Bump the cache-busting version
+### 4. Cache-busting (no longer a manual step)
 
-Any time `data/*.json` changes, update `DATA_VERSION` in `assets/js/app.js`
-(top of `loadData()`) to today's date, e.g. `'2026-06-14-rev1'`. This is
-appended as `?v=...` to every data fetch — without bumping it, visitors on
-Hostinger may keep getting yesterday's cached `results.json`. If you edit
-data more than once in the same day, increment the `revN` suffix.
+There is **no `DATA_VERSION` to bump**. `loadData()` appends `?t=${Date.now()}`
+to every `data/*.json` fetch, so each page load gets a fresh URL and Hostinger
+can never serve a stale `results.json`. Just edit the data and ship — nothing
+to bump.
 
 ---
 
@@ -139,7 +138,7 @@ single-source (Wikipedia 17:00 PDT vs one ESPN summary implying 14:00 PDT).
 Every `/update-worldcup` run produces **two commits**, in this order, with these
 exact subject formats — do not improvise per run.
 
-### 1. Data commit — `results.json` + `DATA_VERSION` (+ `bracket-config.json` when the third-place fill happens)
+### 1. Data commit — `results.json` (+ `bracket-config.json` when the third-place fill happens)
 
 - **One match:**
   ```
@@ -161,6 +160,7 @@ Rules:
   (`HOMExAWAY` and `HxA`).
 - **Penalties** (knockout only): append `(pen HxA)`, e.g.
   `data: update 04/07/2026 20:00 BRAxARG 1x1 (pen 4x3)`.
+- (No `DATA_VERSION` bump rides along anymore — cache-busting is automatic via `?t=Date.now()`.)
 - The one-time `thirdPlaceAssignment` fill rides in the same data commit; note it
   in the body line (`+ thirdPlaceAssignment filled`).
 
@@ -182,7 +182,7 @@ the data commit (the one that actually changes the live site) a clean diff.
 Update `.agents/project-memory.md` → **Current State** section (do **not** append a new dated
 section — that habit bloated the file and duplicated git):
 
-1. Refresh the header line: data through match id N, finished count, `DATA_VERSION`, `APP_VERSION`.
+1. Refresh the header line: data through match id N, finished count, `APP_VERSION`.
 2. Update the **"Recent refreshes (rolling — keep the last 3)"** list: add today's entry at the top
    and **delete the oldest** so only the last 3 dated entries remain. Each entry is one compact line
    (`DD/MM or YYYY-MM-DD (revN) — matches X–Y: HOME H–A AWAY, …`); per-match sources live in the git
@@ -190,6 +190,5 @@ section — that habit bloated the file and duplicated git):
 3. Adjust **Pending / next** if a milestone was reached (e.g. `thirdPlaceAssignment` filled).
 4. Tick anything completed in `.agents/TODO.md` §6.
 
-Confirm `DATA_VERSION` in `assets/js/app.js` was bumped to today's date (step 4 above) before
-committing with the two commits above. Only **durable** new facts (a new gotcha, a decision) go into
+Only **durable** new facts (a new gotcha, a decision) go into
 the other sections of `project-memory.md` — never a daily refresh log.

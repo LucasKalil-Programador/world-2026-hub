@@ -73,16 +73,17 @@ Chrome/Edge.
 
 ### Why deferred (the real risk)
 A naïve precaching SW would cache `data/*.json` and **silently defeat the 2026-06-16 live-refresh
-system** (the 90s `results.json` poll with `cache:'no-store'` + the `DATA_VERSION` cache-buster) —
-open tabs would stop seeing new scores, and `DATA_VERSION` bumps would do nothing. It would also make
+system** (the 90s `results.json` poll with `cache:'no-store'`, plus the `?t=Date.now()` cache-buster
+on every data fetch) — open tabs would stop seeing new scores. It would also make
 the "stale JS module" gotcha (#5) *permanent* (cached assets live until the cache name changes).
 
 ### How to implement (if revisited) — constraints, not optional
 1. **Never cache `data/*.json`.** Use network-only, or network-first with the cache only as an
    offline fallback (so an offline launch shows the last-seen results). The 90s poll must stay the
    owner of freshness.
-2. **Version the SW cache** with a constant mirroring/derived from `DATA_VERSION`; clean up old caches
-   on `activate` — otherwise every code deploy risks serving stale JS forever (gotcha #5).
+2. **Version the SW cache** with a dedicated cache-name constant bumped on each deploy (there is no
+   longer a `DATA_VERSION` to mirror — data freshness is handled by `?t=Date.now()`); clean up old
+   caches on `activate` — otherwise every code deploy risks serving stale JS forever (gotcha #5).
 3. **Register at the subpath** (`worldcup2026/sw.js`) so the SW scope matches the deploy (gotcha #7);
    keep `start_url`/`scope` relative as they already are.
 4. App-shell strategy: cache-first (versioned) for `index.html` + `assets/css` + `assets/js` +
@@ -109,8 +110,9 @@ published `results.json` (daily push) only appeared after F5.
 - **Not a live-feed problem.** `results.json` is a manual post-match push, so there is no new server
   data *during* a match — a faster "during live" poll buys nothing. A **fixed** 90s poll is correct;
   dynamic/state-based polling was rejected (complexity for no gain, double-schedule risk per gotcha #6).
-- **Cache-busting must use `?t=${Date.now()}` + `cache:'no-store'`, NOT `?v=DATA_VERSION`** — that
-  constant is frozen in the open tab and Hostinger sends no cache headers (gotcha #2).
+- **Cache-busting must use `?t=${Date.now()}` + `cache:'no-store'`** — a frozen per-tab constant
+  would never refetch and Hostinger sends no cache headers. (As of 2026-06-18 the initial
+  `loadData()` fetch also uses `?t=Date.now()`; the old `?v=DATA_VERSION` constant was removed.)
 - **Signature = full response text**, not a finished-count (a count misses score corrections, `stats`
   backfill on an already-finished match, and added penalties).
 - **`thirdPlaceAssignment` lives in `bracket-config.json`, not `results.json`** → on a detected change
