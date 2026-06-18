@@ -79,7 +79,7 @@ export function getData() {
 // option; because the data isn't live, a plain fixed interval is right (a
 // per-match "live" tier would have nothing new to fetch). Paused while the tab
 // is hidden and stopped once the final result is in — see .agents/issues.md.
-const POLL_INTERVAL_MS = 90 * 1000;
+const POLL_INTERVAL_MS = 60 * 1000;
 let pollTimer = null;
 let resultsSig = null;
 
