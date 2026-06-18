@@ -1,514 +1,477 @@
 # Project Memory — World Cup 2026 Hub
 
-Persistent memory for this project. Read this before any significant change.
+Persistent memory for this project. **Read before any significant change.**
+
+**Fixed structure (keep this order):** Context · Architecture & Decisions · Gotchas ·
+Operational Runbooks · Stats Screen · Patterns & How-tos · Current State.
+
+> **Maintenance rule (set 2026-06-17):** this file holds **durable** knowledge only —
+> architecture, decisions, gotchas, patterns. Per-match daily-refresh detail lives in **git
+> commits** (see the commit convention), *not here*. The **Current State** section keeps a rolling
+> window of the **last 3 refreshes** and is **pruned on each update** (do not append new dated
+> refresh logs). New *decisions / gotchas / patterns* are appended to their section. Content is kept
+> in its original language (EN or PT) where it was written that way; new scaffolding is in English.
 
 ---
 
 ## Context
 
-Static web app showing the FIFA World Cup 2026 (Mexico/USA/Canada, 48 teams) — schedule, group standings, interactive knockout bracket with user simulation, stadiums. Hosted on GitHub Pages, all content from `data/*.json`. Started 2026-06-11 from two spec documents; built step-by-step with user approval between steps.
+Static web app for the FIFA World Cup 2026 (Mexico/USA/Canada, 48 teams) — schedule, group
+standings, interactive knockout bracket with user simulation, stadiums, and a post-tournament stats
+screen. All content from `data/*.json`. Started 2026-06-11 from two spec documents; built
+step-by-step with user approval between steps; now live with **real** WC2026 data, refreshed daily.
 
-### What this project is
-- A **personal/portfolio** piece — visual polish (glassmorphism, animations) is a primary goal, not a nice-to-have.
-- A **static SPA**: one `index.html`, ES-module vanilla JS, JSON as the only "database".
-- Maintained by editing JSON only — code should never need touching to update scores/teams.
+**What it is:** a **personal/portfolio** piece (visual polish is a primary goal); a **static SPA**
+(one `index.html`, ES-module vanilla JS, JSON as the only "database"); maintained by **editing JSON
+only** — code should never need touching to update scores/teams.
 
-### What this project is **not**
-- No backend, no database, no build step, no bundler, no CDN dependencies, no frameworks.
-- No automated tests, no linter (explicit spec constraint).
-- Not real-data-complete: ships with mock data (fictional teams) to be replaced later.
+**What it is not:** no backend, database, build step, bundler, CDN dependency, or framework; no
+automated tests / linter (explicit spec constraint).
+
+**Spec source of truth:** `world-cup-2026-hub-spec-en.md` + `complement-spec-worldcup2026-en.md`
+(**complement wins on conflict**).
 
 ---
 
 ## Priority objectives
 
-1. **Spec compliance** — both spec files define scope; `complement-spec-worldcup2026-en.md` wins on conflict.
+1. **Spec compliance** — complement spec wins on conflict.
 2. **Visual quality** — FIFA/UCL/Apple-inspired, glassmorphism, smooth animations; portfolio-grade.
-3. **Interactive bracket** — hover path highlight, zoom, drag, simulation mode; the centerpiece feature.
-4. **Easy maintenance** — real data drop-in via JSON; `bracket-config.json` is the only file edited after group stage.
+3. **Interactive bracket** — hover path highlight, zoom, drag, simulation; the centerpiece feature.
+4. **Easy maintenance** — real data drop-in via JSON; `bracket-config.json` is the only structural
+   file edited after the group stage.
 5. **Performance/accessibility** — Lighthouse > 90, first render < 2s, JS < 300KB, ARIA + keyboard nav.
 
 ---
 
-## Technical decisions and rationale
+## Architecture & Decisions
 
-### Stack
-- **Vanilla HTML/CSS/JS ES2022+, ES Modules** — spec mandate; GitHub Pages serves static files only. Frameworks/bundlers explicitly forbidden.
-- **EN/PT-BR UI toggle via `i18n.js`** (user decision 2026-06-11) — not in spec; spec UI examples are EN, user wants both. Tiny dict + `t(key)`, persisted in `wc2026_prefs.lang`. Alternative (EN only) rejected by user.
-- **`storage.js` pulled forward to step 2** (spec places it in phase 12) — prefs (`lang`, `lastTab`) are needed from the base-layout step; building it late would mean refactoring.
+### Stack & module pattern
+- **Vanilla HTML/CSS/JS ES2022+, ES Modules**, relative paths, no bundler/CDN/framework — spec
+  mandate (GitHub Pages / Hostinger serve static files only).
+- **EN/PT-BR UI toggle** via `i18n.js`: tiny dict + `t(key)`, persisted in `wc2026_prefs.lang`.
+  Static HTML uses `data-i18n` / `data-i18n-aria` re-applied by `applyI18n()`; dynamic renders call
+  `t()` and listen for `langchange`. Phases via `translatePhase()` (PT: R32 = "16 avos de final").
+  Default language: `navigator.language` startsWith `pt` → PT, else EN; only persisted on toggle.
+- **`storage.js`** is the only access path to `localStorage` (`wc2026_*` keys, auto JSON). Holds
+  prefs (`lang`, `lastTab`, `timeMode`), `wc2026_favorites`, `wc2026_simulation`.
+- **Per-view modules** (`schedule/groups/bracket/stadiums/stats`) + `app.js` entry. **Circular
+  imports `app.js` ⇄ view modules are intentional and safe** in native ESM — all cross-calls happen
+  at render runtime, after every module has evaluated. `stats.js` imports `getBracketTree`,
+  `getFavorites`, `openMatchModal` this way too.
+- **Custom events on `document`** drive re-renders — each view owns its own: `langchange`,
+  `simchange`, `favchange`, `timemodechange`, `datachange` (live refresh). No shared render loop.
 
 ### Data model
-- **All match times in UTC** in `matches.json`; converted at render via `Intl.DateTimeFormat` (`formatMatchTime`). `.ics` export depends on this.
-- **Knockout matches carry `bracketRef` instead of teams** — teams resolved at runtime from standings + `bracket-config.json`; rounds after R32 have no config, generated by sequential pairing of winners (indices 0-1 → 0, 2-3 → 1, …).
-- **Simulation never mutates JSON** — overlay stored in `localStorage` `wc2026_simulation`, keyed by bracket match ids (`R32-1`, `QF-2`, `FINAL`, …).
+- **All match times are UTC** in `matches.json`; converted at render by `formatMatchTime(match,
+  stadium, mode)` via `Intl.DateTimeFormat` (`mode` = `"local"` browser tz, or `"stadium"`
+  timezone). `.ics` export depends on this.
+- **Match ids:** group matches **1–72 = chronological by UTC kickoff** (≠ 6-per-group blocks);
+  **73–104 = FIFA official match numbers** (knockout, carry `bracketRef`).
+- **Knockout matches carry `bracketRef`, not teams** — resolved at runtime from standings +
+  `bracket-config.json`; rounds after R32 have no config and are generated by **sequential pairing
+  of winners** (indices 0-1 → 0, 2-3 → 1, …).
+- **Simulation never mutates JSON** — overlay in `localStorage.wc2026_simulation`, keyed by
+  bracketRef (`R32-6: { winner: "FRA", score: "2-1" }`, score home-away).
+- Team ids are **3-letter uppercase** (`MEX`, `BRA`). Knockout ids: `R32-1`…`R32-16`, `R16-1`…,
+  `QF-1`…, `SF-1`/`SF-2`, `THIRD-PLACE`, `FINAL`.
 
-### Mock data design (2026-06-11, step 1)
-- **Real country names, fictional results** — generated deterministically (seed 2026), script deleted after run; data is now static JSON.
-- **State crafted to test both bracket modes:** matchdays 1-2 all `finished`; matchday 3 `finished` for groups A–F, `scheduled` for G–L (match 61, Group G, is `live`). So R32 slots fed by A–F resolve to real teams; G–L and all `third` slots show placeholders.
-- **Knockout results:** `R32-2` (match 74) finished 1-1 + penalties 4-3; `R32-4` (match 76) finished 2-0. Everything else `scheduled` with `null` scores — `results.json` has an entry for **all 104 matches**.
-- **Image paths:** `flag`/`image` JSON values are relative to `assets/images/` (e.g. `flags/mex.svg`, `stadiums/azteca.svg`).
-- **Opener** (match 1) is MEX at Estadio Azteca 2026-06-11; **final** (match 104) at MetLife 2026-07-19.
+### Standings (`groups.js`)
+- **Only `status:"finished"` counts** toward standings (live scores ignored until full-time → stable
+  standings + deterministic bracket resolution).
+- **Tiebreak:** points → goal difference → goals for → team id alphabetical (stable fallback).
+- `computeStandings()` (per-group, finished only) and `isGroupFinished()` are exported and reused by
+  `bracket.js` / `stats.js` (no recompute).
 
-### Base layout decisions (2026-06-11, step 2)
-- **Hero priority: live > next scheduled** — a live match replaces the countdown with the score + pulse badge. Mock data keeps match 61 permanently `live`, so the countdown only shows if that status is changed (verified working by temporarily setting it to `scheduled`).
-- **i18n mechanics:** static HTML uses `data-i18n` / `data-i18n-aria` attributes re-applied by `applyI18n()`; dynamic renders call `t()` and listen for the `langchange` event on `document`. Phases translate via `translatePhase()` (PT: R32 = "16 avos de final").
-- **Tab routing:** hash (`#matches`) + `wc2026_prefs.lastTab`, `history.replaceState` to avoid history spam; precedence on load: hash → lastTab → home.
-- **Default language:** `navigator.language` startsWith `pt` → PT, else EN; only persisted when the user clicks the toggle.
-- **Preview server:** `.claude/launch.json` at `R:\lucas-kalil\Projects\` defines `worldcup2026` (python http.server, port 8126) for the Claude Preview panel.
+### Bracket (`bracket.js`)
+- **Tree is language-neutral**: slots are `{ teamId }` or `{ ph: {kind,…} }`; placeholder text is
+  produced at render time by `slotDisplay()`, so language switches never invalidate the tree.
+- **Tree is cached**; `invalidateBracket()` drops it (simulation overlay + live refresh).
+- **`resolveBracketTeams(matchOrRef)`** → `{ home, away }` of `{ team: Team|null, label }` for any
+  match (group or knockout); reused by schedule cards, modal, and search/team filters (so knockout
+  matches become searchable/filterable once resolved). `getBracketTree()` → `{ rounds, third,
+  nodesByRef, champion }`.
+- **CSS connectors depend on an equal-height invariant:** all columns share height with `flex:1`
+  slots, so pair children sit at 25%/75% and the next node at 50%; pure-CSS stubs meet exactly.
+  Column gap = 2 × stub (44px desktop / 36px ≤767). **Breaking equal height breaks the lines.**
+- **Simulation:** `decide()` applies only real finished results; `applySimulation()` overlays user
+  picks afterwards and **never overrides a real result** (so `simulated:false` ⇒ real). Stale entries
+  (winner no longer resolved) are silently ignored. Eligible nodes (both teams resolved, real result
+  still `scheduled`) get dashed blue borders + a SIM chip.
+- **Interactions:** full-path highlight computed from ref arithmetic (`floor(i/2)` up, `2i`/`2i+1`
+  down), no tree lookup. Zoom = CSS `transform:scale()` on the canvas + a sized `#bracket-zoom` box,
+  pointer-anchored, clamped 0.4–2; natural size measured lazily (`ensureMeasured()` — panel may be
+  `hidden` at render). Pan/pinch via Pointer Events, `touch-action:none` on the wrap. Drag–click
+  conflict: capture pointer only **after** the >5px threshold (gotcha #6).
+- **Share/import:** `?prediction=base64(simulation)` via `getShareableLink()` /
+  `loadPredictionFromURL()`; stripped from the URL (`history.replaceState`) whether applied or not;
+  unknown refs rejected wholesale. **Challenge** card scores sim vs real finished knockout results.
 
-### Schedule + performance decisions (2026-06-11, step 3)
-- **`schedule.js` ⇄ `app.js` circular import is intentional** — `app.js` calls `initSchedule()`, `schedule.js` imports `getData`/`formatMatchTime`/`flagSrc` back. Safe in native ESM because all calls happen after both modules evaluate; keep this pattern for `groups.js`/`bracket.js`/`modal.js`.
-- **Filter UX:** toolbar is rebuilt only on init/langchange/clear (state restored programmatically); list re-renders on every filter change. Filter state is in-memory only (not persisted) by design.
-- **Knockout cards show "TBD"** until step 7 swaps `teamColumnHTML`'s lookup to `resolveBracketTeams()`.
-- **Perf: no `backdrop-filter` on repeated cards** — `.match-card` overrides `.glass` blur (huge paint cost × 104 cards, invisible over the smooth gradient). Same rule applies to any future card grid (stadiums, bracket).
-- **Perf: fixed gradient lives on `body::before` (position: fixed)**, not `background-attachment: fixed` (the latter repaints the whole background on scroll).
+### Modal (`modal.js`)
+- **Native `<dialog>` + `showModal()`** → focus trap, Esc, `::backdrop` come free. Backdrop click =
+  `event.target === dialog`. Focus restored to the opener on close. Card→modal is **event delegation
+  on `#schedule-root`** (click + Enter/Space), surviving list re-renders. `openMatchModal(matchId)`
+  is the public API for every view.
+- **Match stats in modal:** optional `stats` field per game in `results.json`
+  (`{ possession, shots, cards }`, home/away following `homeTeam`/`awayTeam`; possession %, total
+  shots, yellow cards). Renders real stats when present, else the `—` placeholder + `modal.statsSoon`
+  note. Adding stats to more games = edit `results.json` only.
 
-### Standings decisions (2026-06-11, step 4)
-- **Only `status: "finished"` matches count toward standings** — live scores are ignored until full-time (keeps standings stable and bracket resolution deterministic).
-- **Tiebreak order:** points → goal difference → goals for → team id alphabetical (stable fallback). Verified against an independent Python computation for groups A and G.
-- **`computeStandings()` / `isGroupFinished()` exported from `groups.js`** — bracket.js (step 7) must import these instead of recomputing.
+### Hero — hybrid clock+JSON (`app.js`)
+- The home hero advances by the **clock**, not only by the JSON. **`matchState(match, result, now)`**
+  (pure, **exported**, reused by the schedule occurrence filter): `over` if `status==='finished'`
+  **OR** `now ≥ kickoff + window`; `live` if `status==='live'` **OR** `now ≥ kickoff`; else
+  `upcoming`. **JSON always wins** (finished/live force); the clock only advances when JSON lags.
+  Window: `GROUP_WINDOW_MS = 2h` for `Group*`, else `KO_WINDOW_MS = 3h`.
+- **`findFeaturedMatches(now)`** picks the earliest non-`over` match and returns **all** sharing that
+  exact kickoff → the hero stacks simultaneous group-final matches (last round = 12 pairs, always 2);
+  1-match render is DOM-identical to before. One persistent **1s `heroTick`**; signature
+  `"id:state"` (joined for the set) → full `renderHero()` on change, else just `updateCountdown()`.
+  `renderHero` is idempotent and re-arms the timer (`if (heroTimer) return`).
+- Live score shown only if `result.homeScore/awayScore` are non-null; no elapsed-time clock
+  (would be inaccurate on a static site). Badge "Bola rolando!" = key `hero.inProgress` (renamed from
+  `hero.kickoff`); `hero.live` still used by schedule/modal. **Scope: hero only** — Matches/Modal/
+  Bracket live badges stay JSON-`status`-driven (small transient inconsistency accepted). When the
+  Final goes `over`, the hero is empty (post-Cup home state is a TODO).
 
-### Stadiums decisions (2026-06-11, step 5)
-- **`stadiums.js` module added** — spec §4 has no module for the stadiums view; a dedicated view module keeps the per-view pattern (schedule/groups/bracket) instead of growing `app.js`.
-- **Cross-link:** "View matches" on a stadium card calls `setStadiumFilter(name)` (exported by `schedule.js`, resets other filters) + `navigateTo('matches')` (exported by `app.js`).
+### Live data refresh — poll `results.json` without F5 (2026-06-16, Option A⁺)
+- The data is **not live** — it's a manual push after each match. So poll is **fixed**
+  (`POLL_INTERVAL_MS = 90s`), not state-based. `startResultsPolling()` (called at the end of
+  `init()`, after views register listeners) arms one `setInterval` (`if (pollTimer) return`).
+  `pollResults()` fetches `data/results.json?t=${Date.now()}` with `cache:'no-store'` — **NOT**
+  `?v=DATA_VERSION` (frozen in the tab + no Hostinger cache headers → would serve cached; gotcha #2).
+- **Signature = full response text** (catches score corrections, `stats` backfill, penalties — a
+  finished-count signature would miss them). On change: rewrite `data.results` **and rebuild
+  `data.resultByMatchId`** (the derived map), `invalidateBracket()`, dispatch `datachange`.
+- **3 reinforcements over plain fixed poll:** (1) Page Visibility — interval no-ops when
+  `document.hidden`; `visibilitychange` does an immediate fetch on return. (2) **Stop at the end** —
+  `tournamentOver()` checks `FINAL`'s JSON `status==='finished'` (not clock-`over`, which would stop
+  3h after kickoff before the score lands) → `stopResultsPolling()`. (3) Content signature (above).
+- **`bracket-config.json` piggybacks the change event:** the poll fetches only `results.json` each
+  tick, but on a detected change it **also refetches `bracket-config.json`** the same cycle
+  (`data.bracketConfig`) — the one-time 3rd-place fill ships in the same push as a results change, so
+  no per-tick config polling, but the open tab still gets the new `thirdPlaceAssignment` without F5.
+- **Fan-out:** every view has a `datachange` listener (`app.js`→`renderHome`,
+  `schedule.js`→`renderList`, `groups.js`→`render`, `bracket.js`→`render`, `stats.js`→rebuild model).
+  Not handled (accepted, rare changes): open modal doesn't auto-update; re-render during drag/typing.
 
-### Modal decisions (2026-06-11, step 6)
-- **Native `<dialog>` + `showModal()`** — focus trap, Esc-to-close and `::backdrop` come free; no custom trap code. Backdrop click detected via `event.target === dialog` (content is in a padded inner div).
-- **Focus restore:** opener element saved in `openMatchModal()` and re-focused on `close`.
-- **Card → modal wiring is event delegation on `#schedule-root`** (click + Enter/Space keydown), so it survives list re-renders. Cards got `tabindex="0" role="button" aria-label` already in this step.
-- **`openMatchModal(matchId)` is the public API** — bracket (step 7) and any future view should call it rather than building their own.
-
-### Bracket decisions (2026-06-11, step 7)
-- **Tree model is language-neutral**: slots are `{ teamId }` or `{ ph: { kind, … } }`; placeholder text is produced at render time by `slotDisplay()` so language switches never invalidate the tree.
-- **Tree is cached** in `bracket.js`; `invalidateBracket()` exists for the simulation overlay (step 9). Results are static per page load, so nothing else invalidates it.
-- **`resolveBracketTeams(matchOrRef)`** accepts a match object (group or knockout) or a bracketRef string and always returns `{ home, away }` as `{ team: Team|null, label: string }` — schedule cards, modal, and search/team filters all consume this, so knockout matches become searchable/filterable once resolved.
-- **Connector geometry**: all bracket columns share equal height with `flex: 1` slots, so pair children sit at 25%/75% and the next round's node at 50% — pure-CSS connectors (`::before`/`::after` stubs + pair vertical) meet exactly. Column gap 44px = 22px out-stub + 22px in-stub. Breaking the equal-height invariant breaks the lines.
-- **Final column** holds champion box (top), FINAL (middle, aligns with SF pair), third-place block (bottom); its champion/third slots suppress the incoming connector stub.
-
-### Bracket interaction decisions (2026-06-11, step 8)
-- **"Full path" on hover/focus** = hovered node + its entire feeder subtree + its winner's route to the FINAL; THIRD-PLACE lights both SFs. Non-path nodes dim via `.has-path` on the canvas. Computed from ref arithmetic (`floor(i/2)` up, `2i/2i+1` down), no tree lookup.
-- **Zoom = CSS `transform: scale()` on the canvas + a `#bracket-zoom` box sized to `natural × scale`** (transform doesn't affect layout, so the box gives the scroll container the right scrollable area). Pointer-anchored: scroll adjusted so the point under the cursor stays put. Clamped 0.4–2.
-- **Natural canvas size is measured lazily** (`ensureMeasured()`) because the bracket panel can be `hidden` at render time (offsetWidth 0).
-- **Pan + pinch via Pointer Events** with `touch-action: none` on the wrap (we own all gestures there; page scroll over the bracket is intentionally captured, like a map widget).
-- **Drag–click conflict:** >5px movement sets a flag; a capture-phase click listener on the wrap swallows the click that ends a drag. The flag resets on the next `pointerdown`, so synthetic `el.click()` without pointerdown can be falsely suppressed in tests — dispatch pointerdown/up first.
-- **Zoom level survives langchange re-renders** (module-level `view.scale`) but intentionally not reloads (not in prefs).
-
-### Simulation decisions (2026-06-11, step 9)
-- **Separation of concerns in the tree:** `decide()` applies only real finished results; `applySimulation()` overlays user picks afterwards and never overrides a real result. Stale entries (winner no longer among the resolved teams) are silently ignored — same validation the prediction import (step 12) will use.
-- **Sim UX:** "Simulation" toggle in the bracket toolbar; eligible nodes (both teams resolved, real result still `scheduled`) get dashed blue borders; clicking one opens a small native `<dialog>` picker. An unequal score auto-selects the winner; a draw requires an explicit pick (penalties implied). Empty score defaults to 1-0 for the picked winner.
-- **Storage format** is exactly the complement-spec shape: `wc2026_simulation = { "R32-6": { winner: "FRA", score: "2-1" } }` keyed by bracketRef, score oriented home-away.
-- **`simchange` custom event** fires after any pick/reset; `schedule.js` listens and re-renders so simulated teams appear on knockout cards too (intentional leak — resolved tree is the single source).
-- **Simulated nodes** show a blue "SIM" corner chip and blue scores; the modal shows none of this (it reads real results only).
-
-### Responsive/a11y decisions (2026-06-11, step 10)
-- **Breakpoints:** ≤767 (tight spacing, bracket `--node-w: 168px`/gap 36px — connector stub offsets must stay at gap/2, overridden in the same media query), 768–1439 (single-row header, centered menu), 1440+ (container widens to 1360px).
-- **Tabs follow the WAI-ARIA pattern:** roving tabindex + ArrowLeft/Right/Home/End in `initTabs()`; focus follows activation.
-- **Dialogs get `aria-label`** set at open time (match name + phase); schedule count is `aria-live="polite"`; countdown has `role="timer"` + label.
-- **Entry animations:** every unhidden `.panel` fades in; card grids (`.match-grid/.groups-grid/.stadiums-grid > *`) slide up with a 45ms stagger on the first 6 children, 260ms for the rest. All killed by `prefers-reduced-motion`.
-
-### Extra features decisions (2026-06-12, step 12 — done before step 11 at user request)
-- **Favorites:** single global capture-phase click delegation in `app.js` handles every `.fav-btn` (schedule, groups, modal) and dispatches `favchange`; each view re-renders itself. Stars never trigger the card/modal click (guard via `closest('.fav-btn')`). Bracket shows highlight only (no stars — nodes too small). Favorite involvement = gold left border.
-- **`getFavoriteMatches(matches, favorites)`** lives in `bracket.js` (needs `resolveBracketTeams`), imported by `schedule.js` for the "My matches" filter.
-- **Time mode:** header `#time-toggle` flips `wc2026_prefs.timeMode` and dispatches `timemodechange`; `formatMatchTime()` already defaulted to the pref, so views just re-render.
-- **Challenge:** sim entries for real-finished matches can't be created in the UI (locked) but old ones persist in storage — that's by design: predictions are made while matches are `scheduled`, then scored when results land. Card renders only when ≥1 finished knockout match exists.
-- **Share/import:** `?prediction=` is stripped from the URL via `history.replaceState` whether applied or not (prevents re-prompt loops). Declining `confirm()` keeps local picks; unknown refs are rejected wholesale.
-- **`.ics`:** RFC 5545 TEXT escaping (`\,` etc.) applied even though the spec template shows raw commas — RFC compliance wins; verified output imports with CRLF-only endings.
-- **Custom events now in play:** `langchange`, `simchange`, `favchange`, `timemodechange` — all on `document`; views own their re-renders.
-
-### Build complete (2026-06-12, step 11 — all 12 steps done)
-- README is the user-facing manual (run, deploy, JSON maintenance, localStorage keys, acceptance checklist). Keep it in sync when data formats change.
-- **Verified at completion:** spec §18 criteria all pass; JS = 74 KB total (budget 300 KB); no root-absolute paths (GitHub Pages safe). **Not yet verified:** Lighthouse > 90 (needs a deployed URL or local Lighthouse run); actual GitHub Pages deploy.
-- No commits made yet — repo initialized but empty; commit when the user asks.
-
-### Workflow
-- **12-step build plan with approval gates** — user approves each step before the next starts; summary after each step. Plan: `C:\Users\Lucas\.claude\plans\read-r-lucas-kalil-projects-web-worldcup-goofy-meerkat.md`.
-- **Git repo, commits only when the user asks.**
-
----
-
-## Known gotchas
-
-### 1. `fetch()` of JSON fails on `file://`
-**Where:** any local testing of `index.html`
-**Why:** browsers block `fetch` of local files (CORS/origin rules)
-**Symptom if forgotten:** blank app, console CORS errors, wasted debugging
-**Solution:** always serve via `python -m http.server` (or any static server) from the project root
-
-### 2. `.ics` requires CRLF line endings
-**Where:** `assets/js/calendar.js`
-**Why:** RFC 5545 mandates `\r\n` between lines; some calendar apps reject `\n`
-**Symptom if forgotten:** exported event silently fails to import in Outlook/Apple Calendar
-**Solution:** join VCALENDAR lines with `\r\n` explicitly
-
-### 3. Third-place slots are `null` until defined
-**Where:** `data/bracket-config.json` → `thirdPlaceAssignment`
-**Why:** the 8 best third-place teams are only known after the group stage
-**Symptom if forgotten:** crash or "undefined" team names in R32 rendering
-**Solution:** `resolveBracketTeams()` must return placeholder labels ("Best 3rd #1", "Group A Winner") whenever a slot is `null` or the group isn't finished
-
-### 4. Claude Preview screenshots can hang (tooling, not app)
-**Where:** Claude Preview panel during verification
-**Why:** the preview window's screenshot pipeline occasionally gets stuck; `preview_eval` keeps working
-**Symptom if forgotten:** wasted debugging hunting a nonexistent app freeze
-**Solution:** `preview_stop` + `preview_start` recovers it; verify state via `preview_eval` first before suspecting the app
-
-### 5. Stale JS modules in the dev browser
-**Where:** any JS edit while previewing via `python -m http.server`
-**Why:** the server sends no cache headers, so browsers heuristically cache ES modules; a normal reload can keep serving old code
-**Symptom if forgotten:** "module does not provide an export" errors or old behavior despite correct code on disk
-**Solution:** `Promise.all(files.map(f => fetch(f, { cache: 'reload' })))` then `location.reload()`, or DevTools hard reload
-
-### 6. `setPointerCapture` on pointerdown kills element clicks
-**Where:** `assets/js/bracket.js` drag/pan handling on `#bracket-wrap`
-**Why:** capturing a pointer retargets the eventual `click` event to the capture element, so delegation via `event.target.closest('.bracket-match')` never matches — modal and simulation clicks silently die
-**Symptom if forgotten:** bracket nodes unclickable with real input while synthetic `el.click()` tests still pass
-**Solution:** capture only after the drag threshold (>5px) is exceeded, inside `pointermove`, wrapped in try/catch. **Always verify click flows with `preview_click` (trusted input), not `element.click()`.**
-
-### 7. GitHub Pages serves under a subpath
-**Where:** all asset/data URLs in `index.html` and JS `fetch` calls
-**Why:** project pages live at `https://<user>.github.io/<repo>/`, so root-absolute paths (`/data/...`) break
-**Symptom if forgotten:** works locally, 404s on GitHub Pages
-**Solution:** use relative paths (`data/matches.json`, `assets/...`) everywhere
-
-### 8. Claude Preview: resize beyond the native window breaks clicks/screenshots
-**Where:** Claude Preview panel, `preview_resize` wider than the native window (~791 CSS px)
-**Why:** viewport emulation desyncs the capture/click surface from the page (screenshots show the page squeezed in the left half; `preview_click` lands on wrong coordinates and silently does nothing)
-**Symptom if forgotten:** "clicks don't work" / half-black screenshots at desktop widths, wasted debugging — the app itself is fine (`preview_eval` geometry confirms)
-**Solution:** at emulated widths > native, navigate via `preview_eval` + exported `navigateTo()` and verify geometry via eval/inspect; trust screenshots only at widths ≤ native. `preview_resize preset: desktop` resets to native and fixes clicks.
+### Performance & responsive/a11y
+- **No `backdrop-filter` on repeated cards** — `.match-card` overrides `.glass` blur (huge paint ×
+  104 cards). Same rule for any future card grid.
+- **Fixed gradient lives on `body::before` (position:fixed)**, not `background-attachment:fixed`
+  (avoids repainting the background on scroll).
+- **Breakpoints:** ≤767 (tight; bracket `--node-w:168px`/gap 36px — stub offsets stay at gap/2),
+  768–1100 (two-band header), **1100+** (single-row header; the flip moved 768→1100, see header
+  pattern), 1440+ (`.container` widens to 1360px).
+- WAI-ARIA tabs: roving tabindex + Arrow/Home/End in `initTabs()`, focus follows activation.
+  Dialogs get `aria-label` at open; schedule count `aria-live="polite"`; countdown `role="timer"`.
+  Entry animations (panel fade, card stagger) all gated by `prefers-reduced-motion`.
 
 ---
 
-## Patterns for future changes
+## Gotchas
 
-### Match stats no modal (2026-06-14)
-- **Campo opcional `stats` em `results.json`** por jogo: `{ possession: {home,away}, shots: {home,away}, cards: {home,away} }` (`home`/`away` seguem `homeTeam`/`awayTeam` de `matches.json`; valores = posse em %, finalizações totais, cartões amarelos). Primeiro preenchido no jogo 6 (BRA 1–1 MAR) como teste do deploy: posse 51/49, finalizações 12/14, cartões 2/0 (fontes ESPN/Opta/Sofascore).
-- **`modal.js` renderiza stats reais quando `result.stats` existe**; senão mantém o placeholder com `—` + nota `modal.statsSoon` (backward-compatível, verificado nos jogos 6 com stats e 4 sem). `statRow(home, label, away)` agora recebe valores; antes só o label.
-- Reusa as chaves i18n já existentes: `modal.possession` / `modal.shots` / `modal.cards`. Adicionar stats a mais jogos = só editar `results.json`, nenhum código muda.
+1. **`fetch()` of JSON fails on `file://`** — always serve via `python -m http.server` (Claude
+   Preview `worldcup2026`, port 8126). Symptom: blank app + CORS errors.
+2. **GitHub Pages / Hostinger serve under a subpath** — use **relative paths** everywhere
+   (`data/matches.json`, `assets/...`); root-absolute (`/data/...`) 404s in production.
+3. **`.ics` requires CRLF line endings** (`calendar.js`) — RFC 5545 mandates `\r\n`; some calendar
+   apps silently reject `\n`.
+4. **Third-place slots are `null` until filled** (`bracket-config.json.thirdPlaceAssignment`) —
+   `resolveBracketTeams()` must return placeholder labels ("Best 3rd #1", "Group A Winner") whenever
+   a slot is `null` or its group isn't finished. Symptom if forgotten: crash / "undefined" in R32.
+5. **Stale JS modules in the dev browser** — `python -m http.server` sends no cache headers, so
+   browsers heuristically cache ES modules. Hard-reload via `Promise.all(files.map(f => fetch(f,
+   {cache:'reload'}))) → location.reload()`, or DevTools hard reload.
+6. **`setPointerCapture` on pointerdown kills element clicks** (`bracket.js`) — capturing retargets
+   the eventual `click`, so delegation never matches → modal/sim clicks die. Capture only after the
+   >5px drag threshold, in `pointermove`, try/catch. **Verify click flows with `preview_click`
+   (trusted input), not `element.click()`.**
+7. **Claude Preview screenshots can hang** (tooling, not app) — `preview_eval` keeps working;
+   `preview_stop` + `preview_start` recovers. Verify state via `preview_eval` before suspecting the app.
+8. **Claude Preview: resize beyond the native window (~791 CSS px) breaks clicks/screenshots** —
+   viewport emulation desyncs the capture surface. At emulated widths > native, navigate via
+   `preview_eval` + `navigateTo()` and verify geometry via eval/inspect; trust screenshots only at
+   widths ≤ native. `preview_resize preset: desktop` resets it.
 
-### Hero cronômetro inteligente — regra híbrida relógio+JSON (2026-06-15)
-- **O hero da home (`assets/js/app.js`) deixou de depender só do JSON pra trocar de estado.** Antes: cronômetro zerava → mostrava `hero.kickoff` ("Bola rolando!") congelado **até** o `results.json` mudar. Agora o estado avança pelo **relógio** mesmo sem update do JSON.
-- **`matchState(match, result, now)`** (função pura) é a fonte do estado: `over` se `status==='finished'` **OU** `now >= kickoff + janela`; `live` se `status==='live'` **OU** `now >= kickoff`; senão `upcoming`. O JSON sempre vence (finished/live forçam); o relógio só "chuta" o avanço quando o JSON está atrasado.
-- **Janela variável** (`matchWindowMs`): `GROUP_WINDOW_MS = 2h` se `match.phase.startsWith('Group')`, senão `KO_WINDOW_MS = 3h` (mata-mata pode ir a prorrogação+pênaltis). Constantes no topo da seção hero.
-- **`findFeaturedMatch(now)`** agora pega o jogo **não-`over`** de kickoff mais cedo, desempate por `id` (igual `schedule.js`). Substituiu o "pega o `live` do JSON, senão o `scheduled` mais cedo".
-- **Motor de 1 interval persistente** (`heroTimer`/`startHeroClock`/`heroTick`): a cada tick computa `heroSignature` = `"${id}:${estado}"`; **mudou** → `renderHero()` completo (cobre as transições kickoff e fim-de-janela sem reload/JSON); **igual** → só `updateCountdown()` (dígitos, sem flicker). `renderHero` é idempotente e re-chama `startHeroClock` (guard `if (heroTimer) return`), então langchange/timemodechange não duplicam o timer. `setupCountdown`/`updateCountdown` substituíram `startCountdown` (refs dos dígitos em `countdownEls`/`countdownTarget` módulo-level).
-- **Placar no estado live:** só renderiza se `result.homeScore`/`awayScore` **não forem null** (`hasScore`); senão cai pro "vs" (jogo em progresso pelo relógio, JSON ainda sem placar). Decidido com o usuário (opção C) — **sem** tempo decorrido tipo "45'" (seria impreciso num site estático).
-- **Badge "Bola rolando!" preservado:** o texto que o usuário via NÃO era `hero.live` ("Ao vivo") — era `hero.kickoff` ("Bola rolando!"). A chave foi **renomeada `hero.kickoff` → `hero.inProgress`** (EN passou de "Kickoff!" → "In progress"; PT continua "Bola rolando!") e o badge do hero usa ela. `hero.live` ficou intacta (ainda usada por `schedule.js:209` e `modal.js:58`). CSS órfão `.hero-kickoff` removido do `style.css`.
-- **Escopo: só o hero.** Os badges live de Matches/Modal/Bracket continuam guiados 100% pelo `status` do JSON → pode haver pequena inconsistência transitória (hero diz "em progresso" pelo relógio enquanto o card diz "agendado"). Aceito pelo usuário; "tornar badges time-aware" fica como tarefa futura se incomodar.
-- **Fim do torneio:** quando a Final vira `over`, `findFeaturedMatch` retorna `null` → hero vazio (comportamento mantido). TODO registrado: estado pós-Copa da home (campeão/epílogo) quando a Final encerrar.
-- **Verificado (preview, relógio fakeado via `Date.now` override + dispatch `langchange`):** 01:00Z→m12 upcoming (countdown 01:00:00); 02:30Z→m12 "Bola rolando!"+vs sem placar/sem cronômetro; 04:30Z→avança pro m13 (m12 ainda `scheduled` no JSON!); 18:30Z→avança pro m14; EN mostra "In progress"; console limpo. Screenshots de upcoming e in-progress conferidos.
+---
 
-### Filtro de ocorrência na aba Matches (2026-06-15)
-- **Novo botão de 3 estados** na `filter-row` do schedule que cicla `Todos → Já ocorreram → A ocorrer` (`state.occurred` = `''`/`'occurred'`/`'upcoming'`, via `OCC_CYCLE`). Em memória, **não persistido** — segue a convenção dos outros filtros. `.active` (dourado) quando ≠ 'Todos', igual ao `★ Minhas partidas`. Resetado por **Clear** e `setStadiumFilter`.
-- **Reusa a regra híbrida do hero:** `matchState(match, result, now)` foi **exportada de `app.js`** (antes privada) e importada por `schedule.js` — fonte única, sem duplicar a lógica. "Já ocorreram" = estado `over` (status `finished` **OU** relógio passou `kickoff + janela`, 2h grupo / 3h mata-mata); "A ocorrer" = `live` + `upcoming` (jogo ao vivo ainda não "ocorreu").
-- **Inconsistência relógio×JSON resolvida no card:** quando `status==='scheduled'` mas `matchState==='over'`, o card mostra o chip **"Pendente de resultado"** (`status.pending`; EN "Awaiting result"; cor `--accent-blue`, `.match-status.pending`) em vez do "vs" mudo. Os badges live de Matches/Modal/Bracket continuam 100% guiados pelo `status` do JSON (escopo do hero inteligente mantido — só o caso `over` ganhou tratamento aqui).
-- **Lista fica fresca via timer leve de 60s** (`startOccurrenceClock`/`countOverMatches`, `OCC_TICK_MS`): assinatura = **nº de jogos `over` agora** (monotônico, pois `over` nunca volta). Só `renderList()` quando a contagem muda → nada de repaint dos 104 cards por segundo. `renderList` sincroniza a baseline `overSignature` ao final (qualquer re-render por evento mantém o timer em dia).
-- **`renderList`/`matchesFilters`/`matchCardHTML` agora recebem `now`** (um único `Date.now()` por render, consistente entre filtro e chips). Chaves i18n novas: `schedule.occAria/occAll/occPlayed/occUpcoming` + `status.pending` (EN/PT).
-- **Verificado (preview, relógio fakeado via `Date.now` override + dispatch `timemodechange`):** Todos 104 / Já ocorreram 12 / A ocorrer 92; com `now=2026-06-16T03:00Z` → 4 chips "Pendente de resultado", Já ocorreram=16 / A ocorrer=88; Clear reseta pra Todos/104; rótulos EN ("All matches/Played/Upcoming") sobrevivem ao langchange; console limpo. Screenshot do estado "Já ocorreram" conferido.
+## Operational Runbooks
 
-### Hero com jogos simultâneos (2026-06-15)
-- **A home agora exibe 2+ partidas quando caem no mesmo kickoff** (última rodada de grupos: ids 49–72, 12 pares — mesmo grupo, estádios diferentes; confirmado na `matches.json`: 12 slots, **sempre exatamente 2**). Antes o hero só mostrava 1 jogo (`findFeaturedMatch`).
-- **`findFeaturedMatch` → `findFeaturedMatches(now)`** (`app.js`): pega o jogo não-`over` de kickoff mais cedo e retorna **todos** que compartilham aquele kickoff exato (`getTime()`). Genérico (1/2/N), mas o dado real é sempre 2. `heroSignature(featured, now)` agora cobre o **conjunto** (`id:estado` join por `|`) → o `heroTick` de 1s já existente detecta entrada/saída/troca de estado e re-renderiza. **Mesmo timer/countdown**, como pedido.
-- **`renderHero` ramifica:** 1 jogo = **DOM idêntico ao de antes** (sem wrapper, meta completa `hora · estádio, cidade`, regressão zero — verificado); 2+ = 1 rótulo plural compartilhado (`hero.nextMatches`, EN "Next matches"/PT "Próximas partidas") + 1 fase (todos do mesmo grupo) + **1 linha de hora compartilhada** (`.hero-time`) + N confrontos empilhados (`.hero-matchups` › `.hero-match`, separados por `.hero-divider`), **cada um com seu próprio estádio** e seu próprio placar/`vs` + **1 countdown compartilhado**. Badge "Bola rolando!" e supressão do countdown são por-slot (todos compartilham kickoff+janela → estado de relógio sincronizado).
-- **`heroMatchupHTML(match, now, multi)`** extraído (uma linha de confronto + meta; `multi` tira a hora da meta, deixa só o estádio).
-- **Gotchas conhecidos:** (a) a hora compartilhada usa o estádio de `featured[0]` no modo "hora do estádio" — os pares reais são do mesmo fuso, então fica correto; (b) se um dos dois for marcado `finished` no JSON **antes** da janela do slot fechar, ele vira `over` e **sai** do conjunto (o hero mostraria só o outro até a janela acabar) — não ocorre na prática porque o update diário é feito depois que ambos já encerraram pelo relógio.
-- **Verificado (preview, relógio fakeado):** real-now → 1 jogo idêntico (ESP-CPV, "Bola rolando!"); 24/06 18:30Z → 2 confrontos (SUI×CAN BC Place / BIH×QAT Lumen Field), "Próximas partidas Grupo B", hora compartilhada, 1 divisória, 1 countdown, 4 bandeiras; 19:30Z → ambos "Bola rolando!"/vs sem countdown; restauro do relógio volta ao hero de 1 jogo sem resíduo; EN "Next matches Group B"; mobile 375px empilha certo; console limpo. Screenshots desktop+mobile conferidos.
+### Daily data refresh
+Follow **`how-refresh-data.md`** (project root) before touching any `data/*.json`. In short: edit
+`data/results.json` (scores/status, two-source rule, `penalties` only on knockout ids 73–104) → bump
+`DATA_VERSION` → verify in preview → commit (two-commit convention) → push (user's go) → deploy.
+Frozen files (never edit): `stadiums/teams/groups/bracket-config.round32/assets/code`.
+`how-update.md` stays as the schema reference for the (completed) mock→real migration.
 
-### Header responsivo — 2 faixas + abas roláveis (2026-06-15)
-- **Problema:** o header (logo + 6 abas + controles hora/idioma) tentava virar linha única já a partir de **768px**, mas só cabe com ~950px de conteúdo → entre 768–~1100px os controles vazavam pra uma 2ª linha quebrada; no estreito a faixa de abas (scroll-x, scrollbar escondida) cortava a aba ativa sem pista (parecia bug).
-- **Solução (CSS):** o flip pra linha única (`.tabs { flex:0 1 auto; order:0; margin-inline:auto }`) subiu de `@media (min-width:768px)` → **`@media (min-width:1100px)`**. Abaixo disso vale o base mobile-first = **2 faixas estáveis**: faixa 1 = logo + controles (`margin-left:auto`), faixa 2 = abas (`flex:1 1 100%; order:3`, scroll-x). `.logo` e `.header-controls` ganharam `flex-shrink:0`. Breakpoint medido no preview: container `min(1200px,100%−2rem)`; single-row precisa ~950px (logo 166 + abas 561 PT + controles 191 + gaps) → 1100 dá ~118px de folga (1099=2 faixas/98px, 1100=1 linha/59px, confirmado).
-- **Fade nas bordas das abas:** `.tabs.fade-left`/`.fade-right` aplicam `mask-image` (gradiente 28px), ligadas/desligadas por JS (`updateTabFades` em `app.js`) só do lado com aba pra rolar (scrollWidth/scrollLeft/clientWidth). Some sem overflow.
-- **Aba ativa sempre visível:** `scrollActiveTabIntoView(smooth)` centraliza a aba ativa via `scrollLeft` (cálculo por getBoundingClientRect — **sem** `scrollIntoView`, pra não rolar a página). Chamada em `activateTab` (smooth) e em load/resize/langchange (instantâneo); listeners (scroll passivo, resize rAF, langchange) montados em `initTabs`.
-- **Botão de hora vira ícone no estreito:** `syncTimeToggle` agora monta `<span.time-icon>🕐</span><span.time-label>…</span>`; `@media (max-width:420px) .time-label{display:none}` → só o relógio, logo+controles cabem numa faixa até ~360px. A11y intacta (nome acessível vem de `data-i18n-aria="time.toggleAria"`, não do texto). `.control-btn` virou `inline-flex`. **Nota:** isso supera a linha "768–1439 single-row header" da entrada "Responsive/a11y decisions (2026-06-12)".
-- **Verificado (preview, eval-geometry acima da largura nativa + screenshot mobile):** 375px→2 faixas, hora só ícone, fade-right, logo+controles juntos; 900px (zona antiga quebrada)→2 faixas estáveis, controles não vazam, "Hora local" completo; 1099→2 faixas; 1100→1 linha centrada; clicar Estatísticas rola a faixa até o fim + troca pra fade-left com a aba 100% visível; console limpo.
+### `thirdPlaceAssignment` (one-time, after the group stage ~Jun 27–28)
+When all 72 group matches are `finished`, fill `bracket-config.json.thirdPlaceAssignment`
+(slot → group **LETTER**, per FIFA's published allocation — never derive it yourself). Each group
+letter appears in **at most one** slot; unfilled slots stay `null`:
 
-### Live data refresh — poll de `results.json` sem F5 (2026-06-16, Opção A⁺)
-- **Problema:** aba aberta carregava `data/*.json` 1x no load e nunca mais; um novo `results.json` publicado (placar/stats do refresh diário) só aparecia após F5. Implementada a **Opção A⁺** analisada em `.agents/issues.md` (poll fixo + 3 reforços baratos), aprovada pelo usuário.
-- **Reframe que guiou o design:** o dado **não é live** — é push manual pós-jogo. Então o que importa é "dev publicou → aba aberta vê em ≤1 intervalo", limitado pelo intervalo **independente do estado da partida**. Por isso poll **fixo** (não dinâmico/30s-no-live: não há dado novo no servidor durante o jogo). O hero inteligente já cobre a sensação de "vivo" pelo relógio; o poll só traz o **dado novo**.
-- **Motor (`app.js`, seção "live data refresh" logo após `getData()`):** `startResultsPolling()` (chamado no fim do `try` de `init()`, **depois** das views registrarem seus listeners) arma 1 `setInterval` de `POLL_INTERVAL_MS = 90s` (guard anti-duplicata `if (pollTimer) return`, igual `startHeroClock`). `pollResults()` busca `data/results.json?t=${Date.now()}` com `cache:'no-store'` (**não** usa `DATA_VERSION` — constante congelada na aba + Hostinger sem cache headers, gotcha #2). Assinatura = `JSON.stringify(results)` (conteúdo, não count de finished — pega correção de placar, backfill de `stats` e pênaltis); igual → `return` sem churn. Mudou → reescreve `data.results` **e reconstrói `data.resultByMatchId`** (mapa derivado; trocar só `.results` deixaria o mapa velho), `invalidateBracket()` (árvore cacheada), `dispatchEvent(new CustomEvent('datachange'))`.
-- **Os 3 reforços sobre a Opção A pura:** (1) **Page Visibility** — `setInterval` checa `!document.hidden`; `visibilitychange` faz fetch imediato ao voltar (`onVisibility`); aba em background = poll no-op (browser já throttla). (2) **Parar no fim** — `tournamentOver()` = `resultByMatchId.get(FINAL.id)?.status === 'finished'` (guard no **status do JSON**, não no `over` de relógio, senão pararia 3h após kickoff antes do placar sair) → `stopResultsPolling()` limpa interval + remove o listener de visibility. (3) **Assinatura por conteúdo** (acima).
-- **Fan-out de re-render (reusa o padrão de eventos existente):** cada view ganhou `document.addEventListener('datachange', ...)`: `app.js`→`renderHome` (hero+dashboard counts), `schedule.js`→`renderList`, `groups.js`→`render` (recomputa standings; `computeStandings` não tem cache, só re-render), `bracket.js`→`render` (árvore já invalidada pelo poll → reconstrói), `stats.js`→`{ model = null; render() }` (modelo memoizado precisa rebuild). `datachange` é o **5º evento custom** (junto de `langchange`/`simchange`/`favchange`/`timemodechange`). `app.js` agora importa `invalidateBracket` do `bracket.js`.
-- **`bracket-config.json` (thirdPlaceAssignment) — piggyback no evento de mudança:** o poll busca **só** `results.json` a cada tick, mas quando detecta mudança **rebusca também o `bracket-config.json` no mesmo ciclo** (`data.bracketConfig = await cfg.json()`, try/catch → mantém o config em memória se falhar). Racional (apontado pelo usuário 2026-06-16): o preenchimento único dos 8 terceiros (~27/06) só sai **junto** com um update de results (mesmo push), então não precisa pollar o config a cada 90s — pega carona no evento raro. Fecha a brecha em que os slots de 3º lugar exigiriam F5. **Cuidado:** "config muda junto no servidor" **não** bastava sozinho — o poll não buscava o config, então a aba ficaria com o `bracketConfig` velho; é o refetch explícito que resolve. Verificado: ao mudar results, o poll faz fetch de `data/results.json` **e** `data/bracket-config.json` no mesmo ciclo (console limpo).
-- **Não tratado (aceito, baixo risco — mudanças raras, poucas/dia):** modal aberto não auto-atualiza (relê no próximo open); re-render durante interação (drag do bracket / digitação no filtro) — filtros sobrevivem (state módulo-level), scroll pode pular.
-- **Verificado (preview, sem tocar no disco — `window.fetch` interceptado pra simular jogo 16 IRN×NZL finished 3–0, `visibilitychange` disparando `pollResults`):** dashboard Encerradas 15→16 / Próximas 89→88; hero trocou IRN×NZL→FRA×SEN (jogo 16 virou `over`); Group G recomputou (Irã `1 1 0 0 3 0 +3 3`); bracket(32)/stats(4 tiles)/matches(104) re-renderizaram; **console limpo**. Restaurado o `fetch` real → poll seguinte **auto-revertou** pra 15/89 (prova a assinatura nos dois sentidos). `DATA_VERSION` **não** bumpado (nenhum dado mudou no disco — só código).
+| Slot | Feeds (FIFA match) | Allowed groups |
+|---|---|---|
+| 1 | M74 (vs Winner E) | A/B/C/D/F |
+| 2 | M77 (vs Winner I) | C/D/F/G/H |
+| 3 | M81 (vs Winner D) | B/E/F/I/J |
+| 4 | M82 (vs Winner G) | A/E/H/I/J |
+| 5 | M79 (vs Winner A) | C/E/F/H/I |
+| 6 | M80 (vs Winner L) | E/H/I/J/K |
+| 7 | M85 (vs Winner B) | E/F/G/I/J |
+| 8 | M87 (vs Winner K) | D/E/I/J/L |
 
-### PWA — installable app (Tier 1, 2026-06-16)
-- **O site virou um PWA instalável** (issue "Adicionar suporte a instalação como aplicativo"). Escopo entregue = **Tier 1** (manifest + ícones + meta tags) — atende a TODOS os critérios de aceitação (instalável, nome/ícone corretos, abre standalone pelo atalho do SO). **Service worker / offline ficou de fora de propósito** (Tier 2, registrado em `.agents/issues.md`).
-- **Decisão-chave (por quê só Tier 1):** um SW que cacheasse `data/*.json` **quebraria** o poll de 90s + `DATA_VERSION` (live-refresh de 2026-06-16) — abas abertas parariam de ver placares novos. Tier 1 não toca em nada do pipeline de dados/JS → risco zero pro live-refresh. Se Tier 2 entrar, o SW **precisa excluir `data/*.json`** do cache (network-only/network-first) e versionar junto com `DATA_VERSION` (senão piora a gotcha #5 de módulo velho).
-- **Arquivos novos:** `manifest.json` (raiz), `favicon.ico` (raiz), `assets/icons/` (icon.svg master + icon-192/512.png `purpose:any` + icon-maskable-192/512.png + apple-touch-icon.png 180 + favicon-16/32.png + favicon.ico). **Nenhum JS mudou.** `index.html` ganhou um bloco PWA no `<head>` (link manifest, `<meta theme-color #081421>`, favicons, `apple-mobile-web-app-capable/-status-bar-style black-translucent/-title "WC 2026 Hub"`).
-- **Ícones derivados do logo do header** (o troféu SVG inline) sobre o gradiente escuro `#10243b→#081421` com o dourado `#d4af37`. Fontes em `assets/icons/icon.svg` (any, troféu a ~60%) e `icon-maskable.svg` (troféu a ~46%, dentro da safe-zone do maskable). **Rasterizados com ImageMagick** (`magick -background none icon.svg -resize NxN ...`); `favicon.ico` = 16+32 combinados. **Para trocar o ícone:** editar o(s) SVG e re-rodar os mesmos comandos `magick` (não há build step; é geração de asset 1x).
-- **Manifest:** `name "World Cup 2026 Hub"` / `short_name "WC 2026 Hub"` (nome estático, EN — manifest não faz i18n runtime); `display:standalone`; `background_color`+`theme_color` = `#081421` (`--bg-primary`, evita flash branco no splash); `start_url:"."` + `scope:"./"` **relativos** (gotcha #7 — site mora em `…/worldcup2026/`; absoluto quebraria). Nomeado `manifest.json` (não `.webmanifest`) p/ MIME seguro na Hostinger.
-- **Deploy:** os arquivos novos (manifest.json, favicon.ico, assets/icons/) **não** estão no `exclude` do `deploy.yml` → sobem normalmente. HTTPS da Hostinger já satisfaz o requisito de PWA.
-- **Verificado (preview localhost:8126, contexto seguro):** manifest 200 e parseado (name/short/start `.`/scope `./`/display standalone/theme `#081421`); todos os ícones 200 `image/png`; `favicon.ico` 200; `<meta theme-color>` + apple tags presentes; **console limpo**; app intacto (hero FRA×SEN, 4 cards do dashboard, 16 encerradas/88 próximas — sem regressão visual). **Não testável pelo preview:** o prompt de instalação real / "Add to Home Screen" + ícone no SO — confirmar no Chrome/Edge devtools (aba Application) ou num celular após o deploy.
+### DATA_VERSION (cache-busting)
+`app.js` `loadData()` appends `?v=${DATA_VERSION}` to every `data/*.json` fetch (constant near the
+top, currently `'2026-06-17-rev3'`). **Bump on every data refresh** (format `YYYY-MM-DD-revN`;
+increment `revN` for same-day re-edits). The live-refresh poll deliberately uses `?t=` + `no-store`
+instead (see Live data refresh). Note: **JS/CSS are not versioned** (no build step) — on Hostinger
+returning visitors may serve stale code until their browser re-fetches; new visitors / hard-refresh
+see it at once. Accepted.
 
-### Stats final screen — branch + Stage A (2026-06-16)
-- **New feature branch `feature/stats-final-screen`** (off `master`) to build the full post-Cup stats screen from `.agents/stats-screen-plan.md` (stages A–J). `master` stays live with the partial Stats tab + daily refreshes; merge `master`→branch periodically; the branch merges back to `master` at the **end of the Cup** (= release). Pure-UI stages **A–F first**; schema-changing data stages (esp. **G**, which migrates `results.json` `cards`→`{y,r}`) deferred to late to avoid conflicting with master's daily `results.json` edits. **Approval gate before each stage.**
-- **Stage A — degradation engine + scaffolding (DONE, branch only):**
-  - **Fault-tolerant `loadData()` (`app.js`):** the 6 core files still **throw** on failure (fatal → `showError`); 6 NEW optional layers (`players`, `player-events`, `awards`, `keeper-stats`, `curiosities`, `all-time-baselines`) load via `loadOptional(name, fallback)` → an **absent/404 file returns the empty default SILENTLY** (graceful degradation §0.2; absence is the normal "layer not arrived yet" state and keeps the console clean for verification), and it **warns only on a present-but-malformed file**. Exposed on `data` as `players/playerEvents/awards/keeperStats/curiosities/allTimeBaselines`. Core + optional fetch concurrently (two `Promise.all`, core awaited first).
-  - **`DATA_VERSION` deliberately NOT bumped in Stage A** — no deployed *data* changed (the optional files don't exist yet), and bumping it on the branch would conflict with master's daily bump on every merge. Bump only when real data files land (Stage G/H). (Supersedes the plan's literal "bump when wiring loadData".)
-  - **Section-gating contract — `SECTIONS` registry in `stats.js`:** each section `{ id, navKey, available(model), body(model) }` renders — and shows its sub-nav chip — **only when `available` holds**; otherwise it is **omitted from the DOM entirely** (no placeholder, no `—`, no "coming soon"), and the nav never points at emptiness (§0.1). Overview/Teams are `available:()=>true`; players/records/comparator/archive are `available:()=>false` (chips absent until later stages flip them + supply `body`).
-  - **Sticky scrollspy sub-nav:** `render()` now emits hero + `<nav.stats-subnav>` (anchor chips) + one `<section.stats-section>` per available section + footer. Chips are `<a href="#stats-{id}">` but their click is **`preventDefault` + `scrollIntoView`** — they **NEVER set `location.hash`** (the tab router listens on `hashchange`; a real `#stats-teams` fragment would route to an unknown tab → bounce to Home — the key gotcha here). Scrollspy is **position-based** (rAF-throttled `scroll` listener reading `getBoundingClientRect`), **not** an IntersectionObserver band: the band left a short final section unlit at the page bottom, so the position approach + an explicit "at page bottom → last section" rule is used (robust on short pages). `setActiveChip` keeps the active chip visible via the nav's own `scrollLeft` (no page jump).
-  - **`--header-h` CSS var** kept live by `trackHeaderHeight()` (`app.js`, `ResizeObserver` on the variable-height sticky header — one row ≥1100px, two bands below). The sub-nav sticks at `top: var(--header-h)` and sections use `scroll-margin-top: calc(var(--header-h) + 3.75rem)`, correct at every breakpoint (verified 137px wide / 98px at 375px).
-  - **Media fallback (§0.3):** `flagImg(team,w,h)` emits the flag `<img>` with `data-monogram="<id>"`; a one-time capture-phase `error` listener (`installImageFallback`) replaces a broken flag with a `<span.flag-fallback>` of the 3-letter code — never a broken-image icon. Existing stats flag usages (leaders, team table) converted to `flagImg`.
-  - **New i18n keys** (EN+PT): `stats.sectionsNav` + `stats.navOverview/navTeams/navPlayers/navRecords/navComparator/navArchive`. **New CSS** in `stats.css`: `.stats-subnav`/`.stats-subnav-chip`, `.stats-section` (scroll-margin + inter-section spacing + first-heading margin reset), `.flag-fallback`. **No `index.html` change** — the sub-nav is JS-rendered into the existing `#stats-root`.
-  - **Verified (preview 8126, branch):** console clean (no errors, no 404 warnings); 6 optional layers = empty defaults, core 48/104/104; sub-nav sticky at `--header-h`, only Overview+Teams chips; scrollspy top→Overview / bottom→Teams; chip click leaves hash `#stats`; EN↔PT relabels chips + sections/table survive; flag fallback → "XYZ" span at 22×15; mobile 375px (2-band header, 2×2 tiles, nav follows 98px header); Home hero+dashboard regression clean.
-  - **Next:** Stage B (verdict hero gated on FINAL finished, falling back to the current aggregate hero; + goals-by-round chart) — awaiting approval. Will consume `getBracketTree().champion` + `resolveBracketTeams('FINAL'|'THIRD-PLACE')` from `bracket.js`.
+### App version (footer)
+Single source of truth: **`assets/js/i18n.js` line 9** — `const APP_VERSION = 'v1.0.X'`. Auto-shown
+in both EN and PT footers via `t('footer.note')`. Bump after a notable ship (new section, major
+bugfix, schema change, deploy). Commit e.g. `refactor(footer): bump version to vX.Y.Z`.
 
-### Stats final screen — Stage B: verdict hero + goals-by-round (2026-06-16)
-- **Verdict hero (`stats.js`):** `heroHTML()` now dispatches — `model.verdict ? verdictHeroHTML() : aggregateHeroHTML()`. The verdict hero shows the champion (trophy + gold-outlined flag + name) and a **2/3/4 podium** (runner-up / 3rd / 4th) above the same 4 count-up tiles (extracted to `heroTilesHTML()`, shared by both heroes). **Gated on the REAL final:** `computeVerdict()` reads `getBracketTree().nodesByRef.get('FINAL')` and returns `null` unless `result.status==='finished' && !simulated && winner` — so a user's **simulated** champion never leaks into the verdict (`decide()` sets the real winner first, so `simulated:false` ⇒ real). Third/fourth come from `tree.third` the same way, independently (podium degrades gracefully if only the final is in). Until the final is really finished it falls back to the existing **aggregate "tournament in progress" hero**, so an early merge stays correct (current 17/104 data shows the aggregate hero — verified).
-- **`stats.js` now imports `getBracketTree` from `bracket.js`** — the 4th intentional circular import with `app.js` (safe: only called at render runtime, and `bracket.js` evaluates before `stats.js` in `app.js`'s import order).
-- **Goals-by-round chart (`goalsByRoundHTML`, in the Overview section after goals-by-stage):** finer companion to goals-by-stage — the group stage is split into its **3 matchdays** (derived per group by `computeGroupMatchdays`: sort each group's 6 fixtures by kickoff, chunk into pairs → MD1/2/3; **`matches.json` has no matchday field**) plus each knockout round on its own. `ROUND_ORDER = ['MD1','MD2','MD3', ...STAGE_ORDER]`. **Hidden until ≥2 rounds have data** (`order.length < 2 → ''`) so early on it doesn't show a lone bar duplicating goals-by-stage's "Group" bar (current data = only MD1 → chart hidden, verified). The model gained `byRound` + `verdict`.
-- **New i18n keys** (EN+PT): `stats.goalsByRound`, `stats.matchday` ("Matchday"/"Rodada"), `stats.verdictTitle`, `stats.runnerUp`, `stats.thirdPlace`, `stats.fourthPlace`. **New CSS** in `stats.css`: `.stats-verdict` + `.verdict-champion/-trophy/-flag/-name/-crown/-podium/-place/-rank/-place-name/-place-label`.
-- **Verified (preview 8126, branch):** real 17/104 → aggregate hero + goals-by-round hidden, console clean; **faked all-104-finished** (+ a valid `thirdPlaceAssignment`, injected via `preview_eval`, restored by reload) → verdict hero (champion + 2/3/4 podium, tiles 276 goals / 2.65 avg / 6 / 55) + goals-by-round with all 9 buckets (MD1–3 + R32→Final); EN↔PT relabels the verdict + round chart and survives re-render; no regression after restore.
-- **Next:** Stage C — final ranking 1–48 (phase-reached → pts → GD → GF → id chain), favorite-row highlight (`getFavorites` + `favchange`), team record cards (biggest rout → modal, champion's path, form). Awaiting approval.
+### Commit convention (standardized 2026-06-15)
+Every `/update-worldcup` run = **two commits** (full spec in `how-refresh-data.md`):
+1. **Data commit** (`results.json` + `DATA_VERSION`, + `bracket-config.json` on the 3rd-place day):
+   - 1 game → `data: update DD/MM/YYYY HH:MM HOMExAWAY HxA`
+   - N games → `data: update DD/MM/YYYY — N jogos` + one body line per game.
+   - Penalties (knockout only): suffix `(pen HxA)`.
+2. **Docs commit:** `docs: log daily refresh DD/MM/YYYY` (`.agents/` + TODO).
 
-### Stats final screen — Stage C: final ranking, favorites, team records (2026-06-17)
-- **Canonical final ranking 1–48 (`stats.js`):** each `teamStats` row gets a `.rank` from `assignRanks()` → `computeRankTiers()`: primary key is the deepest stage REACHED from REAL knockout results (champion 0 → runner-up 1 → 3rd 2 → 4th 3 → QF 4 → R16 5 → R32 6 → group 7), then points → GD → GF → id. **Real results only** — a simulated pick never moves the ranking (same `!simulated && status==='finished'` gate as the verdict). During the group stage everyone is tier 7 → the ranking is the global points table; post-knockout the champion is #1 even with fewer points than the runner-up (tier dominates — verified with the fake: NED #1 @4pts above COL #2 @5pts).
-- **`#` column is now the canonical rank AND a sortable header** (the default sort on load). The `#` cell always shows the team's canonical rank (stable identity) regardless of the active column sort; clicking another column re-sorts the rows but `#` keeps the rank, and clicking `#` returns to the canonical order. Non-rank sorts fall back to `a.rank - b.rank` as the stable tiebreak. Default changed `sortKey 'gf'→'rank'`, `sortDir 'desc'→'asc'`.
-- **Favorite-team row highlight (gold):** `tableHTML` adds `row-fav` when `getFavorites()` includes the team — gold inset-left border on the sticky `#` cell + a gold row tint. `initStats` listens for `favchange` → `renderTeamTable()` only (no model rebuild; favorites aren't in the model). No stars in the stats table (highlight-only, like the bracket).
-- **Team record cards (Teams section, after the leaders band):** `computeRecords()` derives — **biggest win** (largest margin, tie→most goals; a `<button>` → `openMatchModal`), **longest win streak** (≥2 consecutive wins by any team, chronological; hidden below 2 → currently hidden at 19/104), and **champion's path** (the champion's R32→Final route with scores, each row → `openMatchModal`; gated on the verdict, so absent pre-final). Each card degrades away individually when its data is null (§0.1).
-- **stats.js now imports `getFavorites` (storage.js) + `openMatchModal` (modal.js)** — modal.js is the 5th intentional circular import via app.js (render-time only). Record-card / champion-path clicks are wired in `render()` over `[data-record-match]` (elements recreated each render → no listener stacking).
-- **New i18n keys** (EN+PT): `tip.rank`, `stats.rankCol`, `stats.biggestWin`, `stats.winStreak`, `stats.championPath`. **New CSS:** `.row-fav` (after the hover rules so it wins specificity), `.stats-records-grid`/`.record-card`/`.record-*`, `.champ-path`/`.champ-path-row`.
-- **Branch hygiene:** before this stage, merged `master`→`feature/stats-final-screen` (commit `beac605`) to bring matches 18 (IRQ 1–4 NOR) + 19 (ARG 3–0 ALG), `DATA_VERSION` rev4, and deploy.yml; `app.js` auto-merged cleanly (master's DATA_VERSION string + my Stage A loadData rewrite — adjacent lines, no conflict).
-- **Verified (preview 8126, branch, 19/104 real):** console clean; default sort = rank (Germany #1 by GD during groups); `#` sortable + stays canonical when sorting other columns; biggest-win card → modal (GER 7–1 CUW); favorite GER → gold row; streak/champion-path hidden (graceful). **Faked all-104-finished:** champion NED #1, runner-up COL #2, 3rd HAI, 4th CAN, QF losers #5–8; champion's-path card with all 5 rounds (clickable); streak card appears. EN↔PT relabels records/path/rank-tooltip and survives re-render; mobile 375px keeps sticky #/team + legend; real state restored.
-- **Deferred (noted):** home/away splits + a per-match W/D/L form column → Stage J/later (the plan's §C "splits"/detailed form).
-- **Next:** Stage D — auto record-cards (match/tournament records not already shown by Stage C) + "format-48 debuts" band (104 matches, R32 as a new round, best-3rd mechanic, first 48-team champion). Awaiting approval.
+Rules: `DD/MM/YYYY` + `HH:MM` are the match's **UTC** kickoff (as in `matches.json`); codes = 3
+uppercase letters; separator lowercase `x`. `.agents/` is excluded from the FTP deploy → keeping it
+a separate commit keeps the data commit's diff clean.
 
-### Stats final screen — Stage D: Records section + format-48 debuts (2026-06-17)
-- **New `records` sub-nav section is live** (`SECTIONS` `records` flipped to `available: () => true`, `body: recordsSectionHTML`). Sub-nav now shows **Overview · Teams · Records** (players/comparator/archive still dark). The section is always available — its anchor content (the debuts band) is meaningful from match 0.
-- **Match-record cards consolidated into Records** (cleaner C/D split): **`biggestWin` moved out of the Teams section into Records**; Teams now holds only team-level cards (win streak, champion path). Records shows **biggest win** (margin) + **highest-scoring match** (most combined goals; tie→bigger margin), both `<button>` → `openMatchModal`. **Dedup:** the high-score card is suppressed when it's the same match as biggest win (they coincide early, diverge later) — verified (real data: both = GER 7–1 m9 → 1 card; forcing a 6–5 → both cards).
-- **`computeRecords` gained `highestScoringMatch`.** New render fns `recordsSectionHTML` + `highScoreCardHTML` + `formatDebutsHTML`.
-- **"Format debuts" band (`formatDebutsHTML`):** the firsts of the 48-team era — 48 teams, 104 matches (up from 64), 12 groups, "Round of 32" (a new knockout round, via `translatePhase`), 8 best third-placed teams advance, and **first champion of the 48-team era** (lights up post-final from `model.verdict`). Mostly static format facts + the one dynamic champion fact; counts come from `getData()`/model, not hardcoded.
-- **New i18n keys** (EN+PT): `stats.recordsTitle`, `stats.highScoreMatch`, `stats.formatDebutsTitle`, `stats.debutTeams/debutMatches/debutGroups/debutR32/debutThird/debutChampion`. **New CSS:** `.stats-subhead`, `.debut-band`/`.debut-fact`/`.debut-value`/`.debut-value-sm`/`.debut-label`.
-- **Verified (preview 8126, branch, 19/104 real):** console clean; 3 chips (Overview/Teams/Records); Records = biggest-win card (high-score deduped) + debuts band (48/104/12/R32/8, no champion); Teams record cards now 0 (biggest-win moved). **Faked all-104-finished:** champion fact "Netherlands" appears in the band; forcing a distinct top-scoring match (6–5) shows both record cards. EN↔PT relabels section/cards/band ("16 avos de final" via translatePhase), survives re-render; mobile 375px band stacks 1-col; real state restored.
-- **Next:** Stage E — 104-match results archive in-tab (accordion by phase, filters/sort, row → `openMatchModal`, reusing schedule.js patterns + `resolveBracketTeams` for knockout labels). At the gate I'll confirm full archive vs. keeping the "See all matches → Matches tab" link. Awaiting approval.
+### Deploy — Hostinger via FTP (GitHub Actions, 2026-06-14)
+- `.github/workflows/deploy.yml`: every `push` to `master` (or `workflow_dispatch`) deploys via
+  `SamKirkland/FTP-Deploy-Action@v4.3.5` (`protocol: ftps`, `port: 21`, `local-dir: ./`,
+  `server-dir: worldcup2026/`).
+- **origin** = `https://github.com/LucasKalil-Programador/world-2026-hub.git` (branch `master`).
+  Push via Windows credential manager (**gh CLI is NOT installed** on this machine).
+- **Secrets** (repo → Settings → Secrets → Actions): `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`
+  (from Hostinger hPanel). Without them the workflow fails.
+- **Gotcha:** the Hostinger FTP account logs in **already inside `public_html`**, so `server-dir` is
+  relative to it — do **not** prefix `public_html/` (causes `public_html/public_html/...`). Final
+  path: `public_html/worldcup2026/`. If FTPS is rejected, switch `protocol` to `ftp`.
+- `exclude` removes `.git*`, `.github/`, `.agents/`, `README.md`, `how-*.md`, `*-en.md` specs — only
+  `index.html` + `assets/` + `data/` reach the site. New `data/` / `manifest.json` / `assets/icons/`
+  files **are** deployed. Incremental sync state (`.ftp-deploy-sync-state.json`) lives only on the
+  server — don't commit it.
 
-### Stats final screen — Stage E SKIPPED by decision (2026-06-17, Option B)
-- **The in-tab 104-match results archive will NOT be built.** User decision (Option B over a full archive / a lighter one): keep the existing **"See all matches →" footer link** (`#stats-see-matches` → `navigateTo('matches')`) and let the **Matches tab remain the single surface** for browsing matches.
-- **Rationale:** the Matches tab (`schedule.js`) already lists all 104 with filters (date/group/phase/team/stadium), search, sort, occurrence toggle, "My matches", and card→modal. An in-tab archive would duplicate it for little gain and add the heaviest section (104 rows) to maintain.
-- **State:** the `archive` entry in `SECTIONS` stays `available: () => false` / `body: () => ''` (no chip, no DOM) — leave it as a dormant slot, don't delete the registry line. **No code change** was made for this decision. If ever revisited, the lighter "phase-accordion, results-only" variant (Option C) was the recommended shape.
-- **Next:** Stage F — team comparator (A-vs-B selector + diverging mirrored bars; players side stays dark until Stage H). Awaiting approval.
+### Real-data migration (DONE 2026-06-12)
+All 6 `data/*.json` hold real WC2026 data (sources: Wikipedia per-group + knockout articles,
+cross-checked vs ESPN/FOX/olympics.com). **Stadiums trimmed 30 → 16**; cities use FIFA host-city
+names ("New York/New Jersey", "San Francisco Bay Area", "Boston") — `matches.json` and
+`stadiums.json` must match exactly. **bracket-config app-order ↔ FIFA mapping:** R32-1..16 = FIFA
+matches 74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87 (so the app's sequential
+pairing reproduces the official R16/QF/SF progression). Re-verify near Jul 6: **match 94** (R16,
+Lumen Field) kickoff was single-source (Wikipedia 17:00 PDT vs an ESPN summary implying 14:00 PDT).
 
-### Stats final screen — Stage F: team comparator (2026-06-17)
-- **New `comparator` sub-nav section** (`SECTIONS` `comparator` → `available: (m) => m.finishedCount > 0`, `body: comparatorSectionHTML`). Sub-nav now: **Overview · Teams · Records · Comparator** (gated so the chip appears once ≥1 match is played).
-- **A-vs-B team comparator with diverging mirrored bars:** two `<select>`s (alphabetical, all 48 teams, reuse `.filter-control`), default to the **top-2 ranked** teams; the choice survives langchange (module-level `cmpA`/`cmpB`, like the table sort). On `change`, only the bars panel re-renders (`refreshComparator()` → `#cmp-panel`), keeping select focus and replaying the grow animation. Bars: A grows leftward from the center metric label, B rightward; each row scales to `max(a,b,1)` so the longer bar = higher value; the higher side's number is gold (`.lead`). Metrics (`CMP_METRICS`, all non-negative so mirroring reads cleanly): P, W, GF, GA, CS, Pts (GD excluded — it's GF/GA derived and can be negative). A=gold gradient, B=blue gradient; `cmp-grow` scaleX animation with origin at the center edge, off under `prefers-reduced-motion`.
-- **Players side deferred to Stage H (graceful degradation, NOT the plan's literal "teams/players toggle"):** a disabled "Players" toggle would be a visible dead control = violates §0 ("missing data → removed from DOM, no placeholder"). So Stage F ships the **teams comparator only**; the Teams/Players toggle appears in Stage H when `players.json` lands. Documented deviation.
-- **New i18n keys** (EN+PT): `stats.comparatorTitle`, `stats.cmpTeamA`, `stats.cmpTeamB` (`navComparator` already existed). **New CSS:** `.cmp-controls`/`.cmp-select`/`.cmp-vs`/`.cmp-panel`/`.cmp-head`/`.cmp-team`/`.cmp-row`/`.cmp-val(.lead)`/`.cmp-track(.a/.b)`/`.cmp-bar(.a/.b)` + `@keyframes cmp-grow`.
-- **Verified (preview 8126, branch, 19/104 real):** console clean; 4 chips; default GER vs SWE (top-2 ranked); bars scale right (GP 7→100% / 5→71%); changing B→USA updates the header ("Germany vs United States") and re-scales (GP 7→100% / 4→57%); EN↔PT relabels title/metrics and **selection persists** across langchange; mobile 375px selects side-by-side + rows fit (no overflow). Screenshots desktop+mobile.
-- **Next:** Stage G — Layer 2 cheap data (attendance, **`cards`→{y,r} migration**, `decidedIn`, team `ranking`/`wcDebut`/`confederation`, stadium coords; backfill `stats`). **SCHEDULE LATE / near end of Cup** — the `cards` migration is a breaking change for `modal.js` + `stats.js` (`aggregateTeams` reads `s.cards.home`) and would conflict with master's daily `cards` writes. Awaiting approval (and likely deferral).
+---
 
-### Stats final screen — Stage J round 1 (release polish) + merge to master (2026-06-17)
-- **Release polish pass over A–F** (E skipped): **i18n audit** — no hardcoded user-facing strings in `stats.js` (all via `t()`); **a11y** — the 4 sub-nav sections are `aria-label`led + `tabindex=-1`, the table has a caption + 11 `aria-label`led sort buttons + `aria-sort`, comparator selects + record-card buttons are `aria-label`led, sub-nav is a `<nav>`; **reduced-motion** — chart bars, comparator `cmp-grow`, and count-ups are all gated; **cross-tab regression** — home/matches/groups/bracket/stadiums/stats all render with content, console clean. **No code fixes were needed** (per-stage work was already clean). Added a **Stats bullet to README**.
-- **Deferred to the actual deploy:** the Lighthouse run (needs a deployed URL) and a final `DATA_VERSION` bump. **Caveat (pre-existing, accepted):** the stats screen is **code** (HTML/CSS/JS), and the project only cache-busts `data/*.json` via `DATA_VERSION` — JS/CSS are not versioned (no build step), so on Hostinger (no cache headers) returning visitors may serve stale assets until their browser re-fetches. True for every code deploy; new visitors / hard-refresh see it at once.
-- **Merge to `master`:** the pure-UI build (A–F) + this polish was merged to `master` for release. Sequence used: merge latest `master`→branch first (resolve conflicts on the branch, never on master), re-verify, then `master` ← branch (`--no-ff`). **Pushing to origin** (which triggers the Hostinger FTP deploy via `deploy.yml`) is the user's explicit final go — production.
-- **Remaining (TODO §7):** Stage G (Layer-2 schema, schedule late — conflicts with daily refreshes), H (players + the deferred comparator Teams/Players toggle), I (editorial), and **a second polish J round 2** over those new features.
+## Stats Screen (`feature/stats-final-screen`)
 
-### Stats sub-nav polish — inner track + edge fades + spy-suppress (2026-06-17)
-Two fixes on the stats sub-nav, committed directly on `master` (finalizing the release):
-- **Edge fades (mirror the header tabs):** the chips now live in an inner **`.stats-subnav-track`** (the scroll container) inside the `.stats-subnav` pill. The fade `mask-image` is applied to the **track, not the pill**, so the pill's background + rounded ends stay crisp while only the chips fade at the edges. `.stats-subnav` is now `overflow:hidden` (clips the track to the pill radius); `.stats-subnav-track` is `position:relative` + `overflow-x:auto`. `updateSubnavFades(nav)` toggles `.fade-left`/`.fade-right` on the pill from the **track's** scroll metrics — called on track scroll, window resize (module-level `subnavResizeHandler`), `setActiveChip`, and init. All sub-nav JS that reads/sets horizontal scroll now targets the **track** (`scrollLeft`/`scrollWidth`), not the nav.
-- **Scrollspy "jump" on chip click fixed:** clicking a chip set the active chip immediately, but the page-scroll spy then fired mid-animation (viewport still over the old section) and flipped active back → forward (a visible jump). Now a chip click sets `suppressSpyUntil = Date.now() + 700` (0 under reduced-motion = instant scroll) and `updateSpy()` early-returns while suppressed, so the clicked chip owns the active state until the smooth scroll settles, then the spy resumes. Verified: clicking Teams from Overview stays Teams through the scroll; manual scroll still tracks (records mid-page, comparator at the true bottom via the existing bottom-override).
+Full post-Cup stats screen built from **`.agents/stats-screen-plan.md`** (stages A–J). The pure-UI
+build (**A–D + F**, E skipped) **+ J round 1 polish** was **merged to `master` 2026-06-17** and is
+live. `master` keeps the partial screen + daily refreshes. Live sub-nav chips: **Overview · Teams ·
+Records · Comparator**. Data-layer stages (G/H/I) + a second J polish remain for near/after the Cup.
 
-### How to update real-world data (scores, schedule)
-Follow `how-refresh-data.md` (project root). In short:
-1. Edit `data/results.json` (scores/status) or `data/matches.json` (schedule, rare).
-2. Once group stage ends: fill `data/bracket-config.json` → `thirdPlaceAssignment` (slot → group letter). Nothing else changes.
+### Plan & first-order requirement
+Plan generated 2026-06-14 via a 5-sub-agent workflow; scope = **4 data layers** (✅ existing · 🟡🧩
+cheap additions · 🔴 player data · 📝 editorial). **First-order requirement — graceful degradation:**
+when a datum is missing, the UI must not break **nor reveal to the end user that anything is missing**
+— no `—`, no empty cards, no "coming soon". A datum/section renders only when complete enough to be
+authoritative; otherwise it is **removed from the DOM** (not hidden). Sub-nav chips of empty sections
+disappear too; `loadData()` tolerates a missing optional file (empty default, not an exception).
 
-### Real-data migration (2026-06-12)
-- `how-update.md` (project root) is the full runbook for replacing mock `data/*.json` with real World Cup 2026 data: file-by-file schemas, order of operations (stadiums → teams → groups → bracket-config.round32 → matches → results → thirdPlaceAssignment), and a cross-file integrity checklist (group membership, id ranges, bracketRef uniqueness, stadium name/city matches).
-- Flags one open decision: `stadiums.json` has 30 entries (original bid shortlist) vs. the 16 venues actually used by the real tournament — confirm with user whether to trim before/while editing `matches.json`.
+### Stage A — degradation engine + scaffolding
+- **Fault-tolerant `loadData()`:** the 6 core files still **throw** on failure (fatal); 6 optional
+  layers (`players`, `player-events`, `awards`, `keeper-stats`, `curiosities`, `all-time-baselines`)
+  load via `loadOptional(name, fallback)` → absent/404 returns the empty default **silently**, warns
+  only on a present-but-malformed file. Core + optional fetch concurrently.
+- **Section-gating — `SECTIONS` registry in `stats.js`:** each section `{ id, navKey,
+  available(model), body(model) }` renders (and shows its chip) only when `available` holds; else it
+  is **omitted from the DOM entirely** and the nav never points at emptiness.
+- **Sticky scrollspy sub-nav:** hero + `<nav.stats-subnav>` (anchor chips) + one section per
+  available section + footer. Chips are `<a href="#stats-{id}">` but **`preventDefault` +
+  `scrollIntoView`** — they **NEVER set `location.hash`** (the tab router listens on `hashchange`; a
+  real `#stats-teams` would route to an unknown tab → bounce to Home). Scrollspy is **position-based**
+  (rAF-throttled `scroll` reading `getBoundingClientRect`) + an explicit "at page bottom → last
+  section" rule (an IntersectionObserver band left a short final section unlit).
+- **`--header-h` CSS var** kept live by `trackHeaderHeight()` (`ResizeObserver` on the variable-height
+  sticky header). Sub-nav sticks at `top: var(--header-h)`; sections use `scroll-margin-top`.
+- **Media fallback (§0.3):** `flagImg(team,w,h)` emits the flag with `data-monogram="<id>"`; a
+  one-time capture-phase `error` listener replaces a broken flag with a 3-letter `<span.flag-fallback>`
+  — never a broken-image icon.
 
-### Real-data migration DONE (2026-06-12)
-- **All 6 `data/*.json` files now hold real WC2026 data.** Sources: Wikipedia per-group + knockout-stage articles (primary; local kickoff times with explicit UTC offsets), cross-checked vs ESPN/NBC/FOX/olympics.com/lumenfield.com. Full smoke test + desktop/mobile layout pass, console clean.
-- **Stadiums trimmed 30 → 16** (user decision). Cities use FIFA host-city names ("New York/New Jersey", "San Francisco Bay Area", "Boston"), not suburb names (East Rutherford, Santa Clara, Foxborough) — `matches.json` and `stadiums.json` must keep matching exactly.
-- **Match ids:** group matches 1–72 are *chronological by UTC kickoff* (≠ 6-per-group blocks); knockout ids 73–104 are FIFA's official match numbers.
-- **bracket-config app-order ↔ FIFA mapping:** R32-1..16 = FIFA matches 74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87 (ordering chosen so the app's sequential pairing reproduces the official R16/QF/SF progression).
-- **Third-place slots → allowed groups** (for filling `thirdPlaceAssignment` after the group stage, per official draw): slot 1 (M74) A/B/C/D/F · slot 2 (M77) C/D/F/G/H · slot 3 (M81) B/E/F/I/J · slot 4 (M82) A/E/H/I/J · slot 5 (M79) C/E/F/H/I · slot 6 (M80) E/H/I/J/K · slot 7 (M85) E/F/G/I/J · slot 8 (M87) D/E/I/J/L. Each group letter may appear in only one slot.
-- **Results as of 2026-06-12:** ids 1–3 finished (MEX 2–0 RSA, KOR 2–1 CZE, CAN 1–1 BIH); USA–PAR (id 4) kicked off 01:00 UTC Jun 13 — first thing to update next session.
+### Stage B — verdict hero + goals-by-round
+- `heroHTML()` → `model.verdict ? verdictHeroHTML() : aggregateHeroHTML()`. The verdict hero (champion
+  + 2/3/4 podium, shared count-up tiles) is **gated on the REAL final:** `computeVerdict()` reads
+  `getBracketTree().nodesByRef.get('FINAL')` and returns `null` unless
+  `status==='finished' && !simulated && winner` (a user's simulated champion never leaks). Falls back
+  to the aggregate "in progress" hero until the final is really finished.
+- **Goals-by-round chart** (Overview): group stage split into 3 matchdays (`computeGroupMatchdays`:
+  sort each group's 6 fixtures by kickoff, chunk into pairs — `matches.json` has no matchday field)
+  plus each knockout round. Hidden until ≥2 rounds have data.
 
-### Daily refresh (2026-06-13)
-- **Results updated through match id 6** (matchday 1 complete):
-  - id 4: USA 4–1 PAR (Group D) — confirmed FIFA + Yahoo/ESPN
-  - id 5: QAT 1–1 SUI (Group B) — confirmed FOX Sports + ESPN (Khoukhi 94th-min header)
-  - id 6: BRA 1–1 MAR (Group C) — confirmed FOX Sports + NBC Sports (Saibari for MAR, Vinicius Jr. for BRA)
-- Verified standings in Groups view: Group B shows Qatar/Switzerland each 1 pt; Group C shows Brazil/Morocco each 1 pt; Group D confirms USA 3 pts (W 4-1), Paraguay 0 pts.
-- **Single-source caveat:** R16 match 94 (Jul 6, Lumen Field) time 17:00 PDT per Wikipedia; one ESPN summary implied 14:00 PDT. Re-verify when R16 nears.
-- Next: matches 7–8 scheduled Jun 14 (HAI–SCO, AUS–TUR, both Group stage). Continue daily routine per `how-refresh-data.md`.
+### Stage C — final ranking 1–48, favorites, team records
+- **Canonical ranking 1–48 (`assignRanks` → `computeRankTiers`):** primary key is the deepest stage
+  **reached** from REAL knockout results (champion 0 → … → group 7), then points → GD → GF → id.
+  **Real results only** (same `!simulated && finished` gate as the verdict). During groups everyone is
+  tier 7 → it's the global points table; post-knockout the champion is #1 even with fewer points.
+- **`#` column = canonical rank AND the default sortable header.** The `#` cell always shows the
+  canonical rank regardless of active sort; non-rank sorts fall back to `a.rank - b.rank`.
+- **Favorite-team row highlight (gold):** `row-fav` when `getFavorites()` includes the team;
+  `favchange` re-renders the table only (favorites aren't in the model). Highlight-only, no stars.
+- **Team record cards (Teams):** longest win streak (≥2, hidden below) + champion's path (gated on
+  verdict). `stats.js` imports `getFavorites` (storage.js) + `openMatchModal` (modal.js).
 
-### Daily refresh (2026-06-14)
-- **Results updated through match id 7** (HAI–SCO):
-  - id 7: HAI 0–1 SCO (Group C) — confirmed Outlook India + VAVEL USA (McGinn 28')
-- Verified standings in Groups view: Group C now shows Scotland 1W 3pts, Brazil/Morocco 1D 1pt each, Haiti 1L 0pts.
-- Next: matches 8+ scheduled Jun 14 (AUS–TUR onwards). Continue daily routine.
+### Stage D — Records section + format-48 debuts
+- `records` section is **always available** (`body: recordsSectionHTML`). Sub-nav = Overview · Teams ·
+  Records. **Match-record cards live here:** biggest win (margin) + highest-scoring match (combined
+  goals); high-score card **deduped** when it's the same match as biggest win. (`biggestWin` moved out
+  of Teams into Records for a clean C/D split.)
+- **"Format debuts" band:** firsts of the 48-team era (48 teams, 104 matches, 12 groups, "Round of 32"
+  via `translatePhase`, 8 best thirds advance, first 48-team champion — lights up post-final from
+  `model.verdict`). Counts come from `getData()`/model, not hardcoded.
 
-### Daily refresh (2026-06-14 — stats backfill)
-- **Stats added to matches 1–7:**
-  - id 1 (MEX 2–0 RSA): possession 60/40, shots 16/2, cards 1/4 — sources: Yahoo Sports box score, ESPN
-  - id 2 (KOR 2–1 CZE): possession 62/38, shots 16/4, cards 1/0 — sources: ESPN, Opta Analyst
-  - id 3 (CAN 1–1 BIH): possession 61/39, shots 13/8, cards 1/3 — sources: ESPN, VAVEL USA
-  - id 4 (USA 4–1 PAR): possession 65/35, shots 16/9, cards 1/5 — sources: ESPN, Opta Analyst
-  - id 5 (QAT 1–1 SUI): possession 44/56, shots 8/11, cards 2/1 — sources: ESPN, Opta Analyst (possession adjusted to 100%)
-  - id 6 (BRA 1–1 MAR): already had stats from prior session (possession 51/49, shots 12/14, cards 2/0)
-  - id 7 (HAI 0–1 SCO): possession 48/52, shots 1/2, cards 1/0 — sources: ESPN, Sofascore
-- Verified in preview: all seven matches now display stats in modal (confirmed via preview_eval). Possession, shots, and card counts render correctly in both EN and PT.
-- No new match results to add (matches 8+ still scheduled).
-- Next: continue daily routine when matches 8+ complete.
+### Stage E — SKIPPED (Option B, 2026-06-17)
+The in-tab 104-match results archive will **not** be built. The Matches tab (`schedule.js`) already
+lists all 104 with filters/search/sort/occurrence/"My matches"/modal — an in-tab archive would
+duplicate it. The footer keeps a **"See all matches →"** link (`#stats-see-matches` →
+`navigateTo('matches')`). The `archive` entry stays `available:()=>false` / `body:()=>''` — a dormant
+slot, **don't delete the registry line**. If revisited, the lighter "phase-accordion, results-only"
+variant (Option C) was the recommended shape.
 
-### Daily refresh (2026-06-14 — match 8)
-- **Results updated through match id 8** (AUS–TUR):
-  - id 8: AUS 2–0 TUR (Group D) — confirmed VAVEL USA + FOX Sports (Irankunda 27', Metcalfe 75')
-  - Stats added: possession 28/72, shots 9/30, cards 0/1 — sources: ESPN, Outlook India, VAVEL USA
-- Match played at BC Place, Vancouver. Australia defended deep with 28% possession but converted two chances; Akgun (TUR) yellow card 86'
-- Verified in preview: match 8 displays in Groups view with correct stats modal
-- Next: continue with remaining matches (9+) on Jun 14 schedule
+### Stage F — team comparator
+- `comparator` section, `available:(m)=>m.finishedCount > 0`. Two `<select>`s (alphabetical, 48
+  teams) default to the **top-2 ranked**; choice survives langchange (module-level `cmpA`/`cmpB`). On
+  change, only the bars panel re-renders. **Diverging mirrored bars** scaled to `max(a,b,1)`; higher
+  side's number gold. Metrics `CMP_METRICS` are all non-negative (P, W, GF, GA, CS, Pts — **GD
+  excluded**, it can be negative). `cmp-grow` scaleX animation, off under `prefers-reduced-motion`.
+- **Players side deferred to Stage H** (graceful degradation, not the plan's literal Teams/Players
+  toggle — a disabled toggle would be a visible dead control). Teams comparator only for now.
 
-### Daily refresh (2026-06-14 — match 9)
-- **Results updated through match id 9** (GER–CUW):
-  - id 9: GER 7–1 CUW (Group E) — confirmed FIFA match centre + ESPN + FOX Sports (Nmecha 6', Schlotterbeck 38', Havertz 45'+5'p & 88', Musiala 47', N.Brown 68', Undav 78', Comenencia 21')
-  - Stats added: possession 65/35, shots 27/8, cards 0/0 — sources: ESPN match centre (clean match, no disciplinary action)
-- Germany dominant performance at NRG Stadium, Houston. Possession and shot dominance translated to decisive victory.
-- Verified in preview: match 9 displays with correct score and stats modal; Groups view updated
-- DATA_VERSION bumped to 2026-06-14-rev2
-- Next: continue with remaining matches (10+) on Jun 14 schedule
+### Stage J round 1 — release polish + merge to master (2026-06-17)
+Polish over A–F: i18n audit (no hardcoded strings), a11y (sections `aria-label`led + `tabindex=-1`,
+table caption + sort buttons + `aria-sort`, sub-nav is a `<nav>`), reduced-motion gating, cross-tab
+regression — **no code fixes were needed**. README got a Stats bullet. **Deferred to the actual
+deploy:** the Lighthouse run + a final `DATA_VERSION` bump. **Merge sequence:** merge latest
+`master`→branch (resolve conflicts on the branch, never on master), re-verify, then `master ← branch
+--no-ff`. Pushing to origin (which triggers the deploy) is the user's explicit final go.
 
-### Daily refresh (2026-06-14 — matches 10–11)
-- **Results updated through match id 11:**
-  - id 10: NED 2–2 JPN (Group F) — confirmed ESPN + NBC/Yahoo + FIFA (Van Dijk & Summerville for NED; Nakamura & Kamada 89' for JPN). Stats: possession 60/40, shots 10/10, cards 3/0 (NED: Van de Ven 90+1', Summerville 61', Depay 83'; JPN none) — ESPN + Newsbytes/Sofascore + FOX boxscore.
-  - id 11: CIV 1–0 ECU (Group E) — confirmed ESPN + Outlook India/Yahoo (Amad Diallo 90', assist Singo). Stats: possession 48/52, shots 13/11, cards 3/1 (CIV: Kessie 38', Fofana 76', Doue 88'; ECU: Porozo 62') — ESPN + Yahoo + FOX boxscore.
-- Verified in preview: both modals show correct possession/shots/cards (EN/PT), console clean. Group E now Germany 3pts (7-1) + Ivory Coast 3pts (1-0); Group F Japan & Netherlands 1pt each (2-2).
-- DATA_VERSION bumped to 2026-06-14-rev3.
-- Match 12 (SWE–TUN, 2026-06-15 02:00 UTC) had not kicked off yet — left scheduled. `thirdPlaceAssignment` untouched (group stage not over).
-- Next: continue with matches 12+ on Jun 15 schedule.
+### Sub-nav polish — inner track + edge fades + spy-suppress (2026-06-17, on master)
+- **Edge fades** mirror the header tabs: chips live in an inner `.stats-subnav-track` (the scroll
+  container); the fade `mask-image` is on the **track**, so the pill's background/rounded ends stay
+  crisp. `.stats-subnav` is `overflow:hidden`; `updateSubnavFades(nav)` toggles `.fade-left/-right`
+  from the **track's** scroll metrics. All sub-nav scroll JS targets the track, not the nav.
+- **Scrollspy "jump" on chip click fixed:** a chip click sets `suppressSpyUntil = Date.now()+700`
+  (0 under reduced-motion) and `updateSpy()` early-returns while suppressed, so the clicked chip owns
+  the active state until the smooth scroll settles.
 
-### Daily refresh (2026-06-15 — match 12)
-- **Results updated through match id 12** (SWE–TUN):
-  - id 12: SWE 5–1 TUN (Group F) — confirmed FIFA match centre + ESPN + Bolavip (Ayari 7' & 90'+6', Isak 30', Gyökeres 59', Svanberg 84' for SWE; Omar Rekik 43' for TUN). Played at Estadio BBVA, Monterrey.
-  - Stats added: possession 49/51, shots 17/5, cards 0/1 — sources: ESPN matchstats (possession + total shots 17/5; ESPN "shots on goal" 7/2 = on target, NOT used) + Sofascore/VAVEL (only booking = Rani Khedira yellow 54' for TUN → SWE 0, TUN 1).
-- Verified in preview: m12 modal shows 49%/17/0 vs 51%/5/1 (PT), console clean. Group F standings now Sweden 3pts (5-1, +4) leading; Japan & Netherlands 1pt each (2-2); Tunisia 0pts (1-5, -4).
-- DATA_VERSION bumped to **2026-06-15-rev1**.
-- This run rode together with the smart-hero feature commit (see "Hero cronômetro inteligente" entry) — both pending push/deploy at user's call.
-- Next: match 13 (ESP–CPV, Group H, 2026-06-15 16:00 UTC) and onwards still scheduled. `thirdPlaceAssignment` untouched (group stage not over).
+### Partial stats tab built during the Cup (foundation, 2026-06-14)
+The 6th `stats` tab was first shipped incrementally as the evolving foundation of the post-Cup plan
+(same tab/module; post-Cup sections "light up" later). Files: `assets/js/stats.js` +
+`assets/css/stats.css`. Philosophy (decided via /grill-me): current-to-date aggregates, **only
+`status==='finished'`** (consistent with `computeStandings`); "X of 104" is framing, not a gap.
+`aggregateTeams()` is its own tournament-wide aggregation (group + knockout); optional per-game
+`stats` enters with per-game gating. Memoized model (`let model`), re-render of labels on `langchange`.
 
-### Daily refresh (2026-06-15 — match 13)
-- **Results updated through match id 13** (ESP–CPV):
-  - id 13: ESP 0–0 CPV (Group H) — confirmed ESPN ("Spain 0-0 Cape Verde Final Score") + FOX Sports + FIFA match centre. Empate histórico: Cabo Verde (estreante na Copa) segura a Espanha; GK Vozinha (40 anos) com 8 defesas, trave em chute de F. Torres.
-  - Stats added: possession 74/26, shots 27/6, cards 1/1 — sources: posse 74% + chutes 27-6 (FIFA match centre + resumo final, 804 vs 304 passes); cartões 1/1 (FOX live blog: Pedri 90+3' ESP, Sidny Lopes Cabral 75' CPV; sem vermelhos).
-- Verified in preview: Group H agora Spain & Cape Verde 1pt cada (0-0), Saudi Arabia/Uruguay 0; modal do jogo 13 mostra 74%/27/1 vs 26%/6/1 (PT) com a nota "stats em breve" sumida; hero da home avançou pro jogo 14 (BEL–EGY, Group G) com countdown; console limpo.
-- **DATA_VERSION bumped to 2026-06-15-rev2** (segunda edição do mesmo dia, após o rev1 do match 12 + smart-hero).
-- Next: match 14 (BEL–EGY, Group G, 2026-06-15 19:00 UTC) e seguintes ainda `scheduled`. `thirdPlaceAssignment` intacto (13/72 jogos de grupo concluídos).
+---
 
-### Daily refresh (2026-06-15 — match 15)
-- **Results updated through match id 15** (KSA–URU):
-  - id 15: KSA 1–1 URU (Group H) — confirmed Outlook India + ESPN + FOX Sports + Opta/TheAnalyst (Abdulelah Al-Amri 41' para a Arábia; Maxi Araújo 80' empata para o Uruguai de Bielsa). Jogado no Hard Rock Stadium, Miami.
-  - Stats added: possession 33/67, shots 7/28, cards 1/0 — fontes: posse 67% Uruguai (TheAnalyst, maior posse uruguaia em Copas desde 1966) → 33/67; finalizações 7/28 (TheAnalyst — Uruguai com 28 totais, 22 só no 2º tempo; ESPN listou 23/21 mas inconsistente com o domínio, descartado); cartões 1/0 (FOX live blog: amarelo Al-Amri 44' KSA, Uruguai sem cartões).
-- **Nota:** o match 14 (BEL 1–1 EGY, Group G — posse 54/46, chutes 15/14, cartões 4/3) já estava `finished` no results.json no início deste run (editado num rev3 do mesmo dia, sem entrada de log própria); este refresh cobre o 15.
-- Verified in preview (rev4): modal do jogo 15 mostra 33%/7/1 vs 67%/28/0 (PT) com a nota "stats em breve" sumida; console limpo. Group H agora com Spain/Cape Verde/Saudi Arabia/Uruguay todos com 1pt (dois 0-0… na verdade ESP-CPV 0-0 e KSA-URU 1-1, 4 times empatados em 1pt).
-- **DATA_VERSION bumped to 2026-06-15-rev4.**
-- Next: match 16 (IRN–NZL, Group G, 2026-06-16 01:00 UTC) e seguintes ainda `scheduled`. `thirdPlaceAssignment` intacto (15/72 jogos de grupo concluídos).
-
-### Daily refresh (2026-06-16 — match 16)
-- **Results updated through match id 16** (IRN–NZL):
-  - id 16: IRN 2–2 NZL (Group G) — confirmed ESPN + Al Jazeera + Sofascore (Elijah Just 7' & 54' for New Zealand; Ramin Rezaeian 32' & Mohammad Mohebi 64' for Iran). Played at SoFi Stadium, Los Angeles.
-  - Stats added: possession 48/52, shots 4/8, cards 1/0 — sources: ESPN (possession + shots); Sofascore (Ehsan Hajsafi yellow 89' for Iran, no yellows for NZL documented).
-- Verified in preview (rev1): match 16 modal displays correct score 2-2 with stats 48%/4/1 vs 52%/8/0 (PT); console clean. Group G now has Belgium, Egypt, Iran, New Zealand all competing with early results.
-- **DATA_VERSION bumped to 2026-06-16-rev1.**
-- Next: match 17 (FRA–SEN, Group I, 2026-06-16 19:00 UTC) onwards still `scheduled`. `thirdPlaceAssignment` untouched (16/72 group stage matches completed).
-
-### Daily refresh (2026-06-16 — match 17)
-- **Results updated through match id 17** (FRA–SEN):
-  - id 17: FRA 3–1 SEN (Group I) — confirmed ESPN + Al Jazeera + NBC Sports + FOX Sports (Kylian Mbappé 66' & 90+6' for France; Bradley Barcola 82' for France; Ibrahim Mbaye 90+5' for Senegal). Played at MetLife Stadium, New York/New Jersey.
-  - Stats added: possession 54/46, shots 11/6, cards 0/0 — sources: ESPN (possession + shots on goal 8/2); NBC Sports live blog + Al Jazeera (no disciplinary cards shown in match).
-- Verified in preview (rev2): match 17 data loads correctly with score 3-1, stats 54%/11/0 vs 46%/6/0 (PT); console clean. Group I standings updated with France 3 pts (3-1 win).
-- **DATA_VERSION bumped to 2026-06-16-rev2.**
-- Match 18 (IRQ–NOR, Group I, 2026-06-16 22:00 UTC) not yet kicked off. `thirdPlaceAssignment` untouched (17/72 group stage matches completed).
-
-### Commit convention — standardized (2026-06-15)
-
-- **Problema:** cada run do `/update-worldcup` deixava o `/git-semantic-commit` inventar um subject diferente (`data: update match 13 result and stats`, `data: update match 12 …`, etc.) — sem padrão. O usuário fez o último commit à mão num formato limpo (`data: update 15/06/2026 18:00 BELxEGY 1x1`) e pediu pra padronizar a partir dele.
-- **Padrão definido (full em `how-refresh-data.md` → "Commit convention (standardized)"):** cada refresh = **2 commits**.
-  1. **Data commit** (`results.json` + `DATA_VERSION`, + `bracket-config.json` no dia do third-place):
-     - 1 jogo → `data: update DD/MM/YYYY HH:MM HOMExAWAY HxA`
-     - N jogos → subject `data: update DD/MM/YYYY — N jogos` + 1 linha de corpo por jogo (`HH:MM HOMExAWAY HxA`).
-     - Pênaltis (só mata-mata): sufixo `(pen HxA)`.
-  2. **Docs commit:** `docs: log daily refresh DD/MM/YYYY` (mexidas em `.agents/` + TODO).
-- **Regras:** `DD/MM/YYYY`+`HH:MM` são a data/kickoff **UTC** do jogo (igual `matches.json`); códigos = 3 letras maiúsculas; separadores `x` minúsculo. `.agents/` fica fora do deploy FTP → mantê-lo em commit separado deixa o data commit (o que muda o site) com diff limpo.
-- **Por quê 2 commits e não 1:** decisão do usuário (2026-06-15) — separa o que vai pro ar (data) do log interno (docs).
-
-### Daily refresh runbook (2026-06-12)
-- **`how-refresh-data.md` (project root) is the runbook for all updates during the tournament** — read it before touching any `data/*.json` from now on. It defines: daily `results.json` routine (scores/status, two-source rule, penalties only on ids 73–104), the one-time `thirdPlaceAssignment` fill (~Jun 27–28, slot → allowed-groups table), and the frozen files (stadiums/teams/groups/round32/assets/code — never edit).
-- `how-update.md` stays as the schema reference for the (completed) mock → real migration; `how-refresh-data.md` supersedes it for day-to-day work.
-
-### CI/CD — deploy automático para Hostinger via FTP (2026-06-14)
-- **GitHub Actions** em `.github/workflows/deploy.yml`: a cada `push` em `master` (ou `workflow_dispatch` manual) envia o site pra Hostinger usando `SamKirkland/FTP-Deploy-Action@v4.3.5`.
-- **Remote GitHub:** `origin` = `https://github.com/LucasKalil-Programador/world-2026-hub.git` (branch `master`). Push via credential manager do Windows (gh CLI NÃO está instalado nesta máquina).
-- **Secrets necessários no repo** (Settings → Secrets and variables → Actions): `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` — vêm do hPanel da Hostinger (Files → FTP Accounts). Sem eles o workflow falha.
-- **Config do workflow:** `protocol: ftps`, `port: 21`, `local-dir: ./`, `server-dir: worldcup2026/`. **Gotcha confirmado 2026-06-14:** a conta FTP da Hostinger faz login JÁ DENTRO de `public_html`, então o `server-dir` é relativo a ele — NÃO prefixar `public_html/` (causa `public_html/public_html/worldcup2026`). O destino final no disco é `public_html/worldcup2026/`. `exclude` remove do deploy: `.git*`, `.github/`, `.agents/`, `README.md`, `how-*.md`, specs `*-en.md` — só `index.html` + `assets/` + `data/` chegam ao site.
-- **Sync incremental:** a action mantém `.ftp-deploy-sync-state.json` no servidor; só reenvia arquivos alterados. Não comitar esse arquivo (vive só no servidor).
-- **Gotcha:** se a Hostinger não aceitar FTPS explícito, trocar `protocol` para `ftp`. Se o site ficar em subpasta, lembrar do gotcha #7 (paths relativos) — já está OK no projeto.
-
-### Stadium SVG cleanup (2026-06-14)
-- **All 16 `assets/images/stadiums/*.svg` stripped of the card chrome**: removed the `.card` background rect, top/bottom accent bars, `name`/`city`/`cap` `<text>` elements, divider `<line>`s, and the now-unused `.card`/`.name`/`.city`/`.cap`/`.div` style rules — `stadiums.js` already renders name/city/capacity as HTML, so the SVG no longer duplicates them.
-- **`viewBox` cropped to just the `<g>` illustration** (~10px padding) per file, and the fixed `width="300" height="400"` attrs removed so the SVG's intrinsic aspect ratio matches its `viewBox` — needed for `.stadium-img { aspect-ratio: ...; object-fit: cover }` to crop correctly instead of showing a letterboxed 3:4 image.
-- **White rectangular shapes still visible at the top of some cards (BBVA, Lumen, BMO) are intentional** — they're each stadium's press-box/scoreboard tower (`class="void"`, connected to the bowl by thin lines), not leftover text artifacts. Don't remove them.
-- If adding a new stadium SVG, follow this trimmed structure: `<svg viewBox="...">` (no width/height) → `<defs><style>` with only `struct/thin/hair/concrete/stands/canopy/void/pitch/pline/acc/accs/green/ribs/louver` classes + `frit` pattern → single `<g>` with the illustration, cropped tightly. Aim for a viewBox aspect ratio near 4:3 (~1.2-1.3), to match `.stadium-img`'s `aspect-ratio: 4/3`.
-
-### Stadium card image aspect ratio (2026-06-14)
-- **`.stadium-img` (in `assets/css/style.css`) uses `aspect-ratio: 4/3`**, not `16/9`. The 16 cropped stadium SVG viewBoxes have natural ratios ~1.07-1.32 (avg ~1.25), much closer to 4:3 (1.333) than 16:9 (1.778) — `16/9` forced `object-fit: cover` to crop ~28% of the image height, slicing through rounded-rect/curved illustration paths (visible as a "diagonal" cut on NRG). `4/3` shows each illustration nearly whole across all 16 cards, including the BBVA/Lumen/BMO press-box towers and the Mercedes-Benz pinwheel.
-
-### Data cache-busting via DATA_VERSION (2026-06-14)
-- **`assets/js/app.js` `loadData()` appends `?v=${DATA_VERSION}`** to every `data/*.json` fetch (`DATA_VERSION` constant near the top of the file, currently `'2026-06-13-rev1'`). Fixes production browsers/Hostinger caching stale `results.json` after a daily refresh — `cache: 'reload'` only helps the developer's own browser, not real visitors.
-- **Must be bumped on every data refresh** — added as step 4 of the daily routine in `how-refresh-data.md`. Format `YYYY-MM-DD-revN`; increment `revN` for same-day re-edits.
-
-### Stats screen — planning (2026-06-14)
-- **Plano completo em `.agents/stats-screen-plan.md`** (pós-Copa "tela de estatísticas finais"). Gerado via workflow de 5 sub-agentes (Times/Individuais/Partidas/Curiosidades/UX). **Nada implementado ainda** — só planejamento, aprovado pelo usuário.
-- **Escopo aprovado: as 4 camadas** — ✅ dados existentes · 🟡🧩 acréscimos baratos (attendance, cartões y/r, ranking/wcDebut/confederation em teams.json, coords em stadiums.json, backfill do `stats`) · 🔴 dados de jogadores (`players.json` + log de eventos + `awards.json`) · 📝 editorial (`curiosities.json`).
-- **REQUISITO DE 1ª ORDEM — degradação graciosa:** quando um dado não existir, a UI **não pode quebrar nem deixar visível ao usuário final que falta algo**. Regra: dado/seção só renderiza com cobertura completa; senão é **removido do DOM** (não placeholder/"—"/"em breve"); chips de sub-nav de seções vazias também somem; `loadData()` deve tolerar fetch de arquivo novo ausente (default vazio, não exceção).
-- **Decisões técnicas planejadas:** novo 6º tab `stats` → `#panel-stats` + `assets/js/stats.js` + `assets/css/stats.css` (segue padrão por-view + import circular com app.js); sub-nav = `<nav>` de âncoras com scrollspy (NÃO um 2º tablist); **sem chart-lib** (SVG/CSS inline, respeita budget <300KB); render preguiçoso por seção; modelo de stats memoizado, re-render só de labels no `langchange`. Roadmap A–J com portões de aprovação (A–F entregam a tela só com dados de hoje; G/H/I acendem camadas 2/3/4).
-
-### Stats tab — PARCIAL durante a copa (2026-06-14, Etapa A+B)
-- **Nova 6ª aba `stats`** implementada de forma incremental (plano em `C:\Users\Lucas\.claude\plans\contexto-o-planejamento-foamy-brook.md`). É a **fundação evolutiva** do plano pós-copa (`.agents/stats-screen-plan.md`) — mesmo tab/módulo; seções pós-copa "acendem" depois.
-- **Arquivos novos:** `assets/js/stats.js` + `assets/css/stats.css`. Integração: `stats.css` linkado no `<head>`; botão+painel `panel-stats`/`#stats-root` no `index.html`; `'stats'` adicionado a `TABS` em `app.js`; `initStats()` chamado no `try` de `init()`; chaves `nav.stats` + `stats.*` (EN/PT) em `i18n.js`.
-- **Filosofia (decidida via /grill-me):** agregados correntes "até agora", **só `status==='finished'`** (consistente com `computeStandings`); "X de 104" é moldura, não lacuna. `stats` opcional (posse/chutes/cartões) entra com **gating por-jogo** (`aggregateTeams` ignora jogo sem o campo). Sem polling — recomputa no load + re-render de labels no `langchange` (modelo memoizado em `let model`).
-- **Implementado nesta etapa (A+B):** `aggregateTeams()` (agregação torneio-wide, grupo+mata-mata, própria — `computeStandings` é só por-grupo); hero "pulso" com tiles count-up (IntersectionObserver dispara a animação quando o painel abre, reduced-motion-safe); Overview (jogos/decididas/empates) + chart "gols por fase" (só fases com ≥1 jogo — sem barras zeradas de R32+); link "ver partidas" → `navigateTo('matches')`. Verificado: 27 gols/3.00 média/margem 6/3 clean sheets, EN↔PT, mobile 2×2, console limpo.
-- **Seção "Estatísticas por time" (2026-06-14, +/grill-me):** tabela paginada das **48 seleções, 6 páginas fixas de 8** (`PAGE_SIZE`/`COLUMNS` no topo de `stats.js`). 10 colunas ordenáveis (J/V/E/D/GP/GC/SG/Pts/G·J/CS; rótulos curtos reusam `standings.*`, os 2 novos têm `title`). Clique no header faz **toggle desc↔asc** (seta + `aria-sort`), default **GP desc** ao abrir; desempate fixo SG→GP→nome; trocar coluna ou re-ordenar volta à pág. 1. Coluna # = **rank global** 1–48. Times sem jogo = zeros reais (não lacuna), caem ao fim. Faixa **top-3 leaders** (melhor ataque=GP / defesa=GC entre quem jogou / mais clean sheets) acima — `computeLeaders` só considera `played>0`. Estado `sortKey`/`sortDir`/`teamPage` é módulo-level e **sobrevive ao langchange** (como o zoom do bracket); ordenação/paginação re-renderizam só `#stats-teams-table` (não re-disparam count-ups). Mobile: `.stats-table-wrap` scroll-x com `#`+`Seleção` `position:sticky` (left 0 / 2.5rem). Verificado: sort/toggle/troca-de-coluna/paginação/EN↔PT/mobile-sticky, console limpo.
-- **Falta (etapas D–G, aguardando aprovação):** líderes posse/chutes/disciplina; recordes auto (maior goleada→modal); comparador time-vs-time; polimento. **Sem** arquivo de resultados (linka p/ Matches). `penalties` ainda não existe em results.json → card de pênaltis só renderiza quando ≥1 disputa ocorrer.
-
-### Tooltips de header + legenda (2026-06-14, +/grill-me)
-- **Tooltips nas siglas das tabelas** (Stats "Estatísticas por time" **e** as 12 tabelas de Grupos). Decidido via /grill-me: tooltip custom glass (não `title` nativo), **nome + definição onde ajuda**, e **legenda compacta só no mobile**.
-- **`initTooltips()` em `app.js`** (chamado no `init()`): um único balão `.app-tooltip` `position:fixed`, via **delegação de eventos** em `document` (`mouseover`/`focusin` mostram, `mouseout`/`focusout`/`scroll` escondem). Sobrevive a re-renders das tabelas e **nunca é cortado** por overflow/stacking (motivo de não usar `::after` dentro do `.stats-table-wrap` que tem `overflow-x:auto`). Centraliza sobre o elemento, faz clamp na viewport e **flip pra baixo** se não couber acima.
-- **Como dar tooltip a um header:** adicionar classe `has-tip` + `data-tip="<texto>"` + `aria-label="<sigla> — <texto>"` (o aria-label cobre leitor de tela, já que o balão é visual). Textos em `i18n.js` no namespace **`tip.*`** (EN/PT), reusados pelas duas tabelas (`tip.played/won/drawn/lost/gf/ga/gd/pts/gpg/cs`).
-- **Legenda mobile:** `<p class="stats-legend">` com pares `<b>sigla</b> = texto` — `display:none` no desktop, `flex` em `≤600px` (estilo em `stats.css`). Uma por tabela: `legendHTML()` em `stats.js` (usa `COLUMNS`) e em `groups.js` (lista fixa das 8 colunas). Cobre o touch, onde o hover não dispara.
-- CSS do tooltip/legenda vive em `stats.css` (carregado global, então `.has-tip`/`.app-tooltip`/`.stats-legend` valem também na aba Grupos).
+## Patterns & How-tos
 
 ### How to add a UI label
-1. Add the key to both `en` and `pt` dicts in `assets/js/i18n.js`.
-2. Use `t("key")` at the render site — never hardcode the string.
+1. Add the key to **both** `en` and `pt` dicts in `assets/js/i18n.js`.
+2. Use `t("key")` at the render site — never hardcode UI text in HTML/JS. (Data values — team/stadium
+   names, cities — come from JSON and are **not** translated.)
 
 ### How to add a new localStorage preference
-1. Extend the `wc2026_prefs` object shape (document the new field here).
+1. Extend the `wc2026_prefs` shape (document the new field here).
 2. Read/write only via `storage.js` `get`/`set`.
 
-### How to add a step summary after finishing a build step
-1. Mark the step `[x] ~~...~~` in `.agents/TODO.md`.
-2. Append any new decisions/gotchas here (never rewrite existing entries).
+### Tooltips + mobile legend (2026-06-14)
+- Table-header abbreviations (Stats team table + the 12 Groups tables) get a **custom glass tooltip**
+  (not native `title`). `initTooltips()` in `app.js`: a single `position:fixed` `.app-tooltip` via
+  event delegation on `document` (so it survives re-renders and is never clipped by `overflow-x:auto`
+  containers); clamps to viewport, flips below if it doesn't fit above.
+- **Give a header a tooltip:** add `has-tip` + `data-tip="<text>"` + `aria-label="<abbr> — <text>"`;
+  texts in `i18n.js` namespace `tip.*` (EN/PT), reused by both tables.
+- **Mobile legend:** `<p class="stats-legend">` (`display:none` desktop, `flex` ≤600px) — covers
+  touch where hover doesn't fire. `legendHTML()` in `stats.js` / `groups.js`. CSS lives in
+  `stats.css` (loaded globally, so it also applies to Groups).
+
+### How to add a stadium SVG
+Follow the trimmed structure of the 16 existing ones (chrome stripped 2026-06-14 — `stadiums.js`
+renders name/city/capacity as HTML, so the SVG must **not** duplicate them): `<svg viewBox="...">`
+(**no** `width`/`height`) → `<defs><style>` with only the
+`struct/thin/hair/concrete/stands/canopy/void/pitch/pline/acc/accs/green/ribs/louver` classes +
+`frit` pattern → a single `<g>` illustration cropped tightly (~10px padding). Aim for a viewBox aspect
+ratio near **4:3** (~1.2–1.3) to match `.stadium-img { aspect-ratio: 4/3; object-fit: cover }` in
+`style.css` (4:3, not 16:9 — the SVGs' natural ratios are ~1.07–1.32, and 16:9 cropped ~28% of
+height, slicing the illustrations). The white tower shapes on some cards (`class="void"`) are the
+press-box/scoreboard — intentional, don't remove.
+
+### PWA — installable (Tier 1, 2026-06-16)
+Scope shipped = **Tier 1** (manifest + icons + meta tags) — meets every install criterion; **no JS
+changed**. Files: `manifest.json` (root), `favicon.ico` (root), `assets/icons/` (icon.svg master +
+192/512 PNGs any + maskable + apple-touch 180 + favicon-16/32). `index.html` `<head>` got the PWA
+block (manifest link, `<meta theme-color #081421>`, favicons, apple-mobile-web-app-* meta). Manifest:
+`name "World Cup 2026 Hub"` / `short_name "WC 2026 Hub"`, `display:standalone`, colors `#081421`
+(`--bg-primary`), `start_url:"."` + `scope:"./"` **relative** (gotcha #2). Named `manifest.json` (not
+`.webmanifest`) for safe MIME on Hostinger. **To change the icon:** edit the SVG(s) and re-run the
+ImageMagick rasterize commands (`magick -background none icon.svg -resize NxN ...`; favicon.ico =
+16+32). **Tier 2 (service worker / offline) is deliberately deferred** — see `issues.md`; if built it
+**must exclude `data/*.json`** from the cache or it breaks the 90s poll + `DATA_VERSION`.
+
+### Responsive header — 2 bands + scrollable tabs (2026-06-15)
+Single-row flip (`.tabs { flex:0 1 auto; margin-inline:auto }`) moved from `@media (min-width:768px)`
+→ **`@media (min-width:1100px)`** (single row needs ~950px of content; below that the controls
+overflowed). Below 1100px: **two stable bands** (band 1 = logo + controls, band 2 = scrollable tabs).
+Edge fades via `mask-image` toggled by `updateTabFades()`; active tab kept visible via
+`scrollActiveTabIntoView()` (uses `scrollLeft`, **not** `scrollIntoView`, to avoid scrolling the
+page). The time button collapses to a 🕐 icon at ≤420px (a11y intact via `data-i18n-aria`). This
+supersedes the old "768–1439 single-row header" note.
+
+### How to record a decision (after finishing a unit of work)
+1. Tick the item in `.agents/TODO.md`.
+2. Append the new decision/gotcha/pattern to the right section here (don't rewrite existing entries;
+   don't add dated refresh logs — those go in git + the Current State rolling window).
 3. Rewrite `project-map.md` if structure/functions changed.
-4. Stop and wait for user approval before the next step.
 
 ---
 
-## Success metrics
+## Current State
 
-- Lighthouse > 90; first render < 2s; total JS < 300KB.
-- Spec §18 acceptance criteria all checked (tracked in README checklist, step 11).
+**Updated 2026-06-17.** Data: **results through match 23/104** (23 of 72 group-stage matches
+finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
+`DATA_VERSION = 2026-06-17-rev3`. `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
+done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped).
 
----
+### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-17 (rev1–rev3)** — matches 18–23: IRQ 1–4 NOR, ARG 3–0 ALG, AUT 3–1 JOR, POR 1–1 COD,
+  ENG 4–2 CRO, GHA 1–0 PAN.
+- **2026-06-16 (rev1–rev2)** — matches 16–17: IRN 2–2 NZL, FRA 3–1 SEN.
+- **2026-06-15 (rev1–rev4)** — matches 12–15: SWE 5–1 TUN, ESP 0–0 CPV, BEL 1–1 EGY, KSA 1–1 URU.
 
-## Communication
+### Pending / next
+- **`thirdPlaceAssignment` fill** once the group stage ends (~Jun 27) — slot→group table above.
+- **Lighthouse > 90** run (needs a deployed URL) + a final `DATA_VERSION` bump at deploy.
+- **Post-Cup home state** — when the Final goes `over` the hero is empty; build a champion/epilogue
+  state (likely converges with the Stats screen).
+- **Stats Stage G** (Layer-2 cheap data — `cards`→{y,r} migration is breaking for `modal.js` +
+  `stats.js`; **schedule LATE**, conflicts with daily `results.json` edits), **Stage H** (players +
+  the deferred comparator Teams/Players toggle), **Stage I** (editorial), **Stage J round 2** polish.
+- **PWA Tier 2** (service worker + offline) — deferred; must exclude `data/*.json` (see `issues.md`).
 
-- User communicates in English/Portuguese mix; docs in English per conventions.
-- **Ask before each build step** — never chain into the next step without explicit go-ahead.
+### Success metrics
+Lighthouse > 90; first render < 2s; total JS < 300KB (74 KB measured at build). Spec §18 acceptance
+criteria all checked (README checklist).
 
-### App version management (2026-06-17)
-- **Single source of truth:** `assets/js/i18n.js` line 9 — `const APP_VERSION = 'v1.0.1'`
-- **Footer display:** both EN and PT footers now show the version (template literals); removed "all data lives in JSON files" message
-- **When to bump:** after notable feature ships (stats stages, major bugfix, schema change, deploy to production)
-- **How to bump:** edit line 9, commit with `refactor(footer): bump version to vX.Y.Z`, push
-- **Why:** makes versioning explicit and easy to track; enables future release notes / changelog automation
+### Communication
+User communicates in an English/Portuguese mix; docs in English where practical (retained PT passages
+kept as written). **Ask before each build step** — never chain into the next without explicit go-ahead.

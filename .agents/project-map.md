@@ -16,8 +16,10 @@ worldcup2026/
 │   ├── project-map.md                    This file
 │   ├── project-memory.md                 Context, decisions, gotchas
 │   ├── stats-screen-plan.md              Plan for the post-tournament "final stats" screen
-│   │                                       (NOT implemented — planning only, 2026-06-14)
-│   └── TODO.md                           12-step build checklist
+│   │                                       (stages A–D+F+J merged to master; G/H/I pending)
+│   ├── issues.md                         Deferred optimization proposals (event-driven
+│   │                                       scheduling, PWA Tier 2; live-refresh = shipped pointer)
+│   └── TODO.md                           12-step build checklist + stats stages
 │
 ├── .github/workflows/
 │   └── deploy.yml                        CI: FTP deploy to Hostinger on push to master

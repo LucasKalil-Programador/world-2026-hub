@@ -179,7 +179,17 @@ the data commit (the one that actually changes the live site) a clean diff.
 
 ## After finishing
 
-Per project convention, append a short dated line to `.agents/project-memory.md`
-("results updated through match id N on YYYY-MM-DD") and tick anything completed
-in `.agents/TODO.md` §6. Confirm `DATA_VERSION` in `assets/js/app.js` was bumped
-to today's date (step 4 above) before committing with the two commits above.
+Update `.agents/project-memory.md` → **Current State** section (do **not** append a new dated
+section — that habit bloated the file and duplicated git):
+
+1. Refresh the header line: data through match id N, finished count, `DATA_VERSION`, `APP_VERSION`.
+2. Update the **"Recent refreshes (rolling — keep the last 3)"** list: add today's entry at the top
+   and **delete the oldest** so only the last 3 dated entries remain. Each entry is one compact line
+   (`DD/MM or YYYY-MM-DD (revN) — matches X–Y: HOME H–A AWAY, …`); per-match sources live in the git
+   commit, not here.
+3. Adjust **Pending / next** if a milestone was reached (e.g. `thirdPlaceAssignment` filled).
+4. Tick anything completed in `.agents/TODO.md` §6.
+
+Confirm `DATA_VERSION` in `assets/js/app.js` was bumped to today's date (step 4 above) before
+committing with the two commits above. Only **durable** new facts (a new gotcha, a decision) go into
+the other sections of `project-memory.md` — never a daily refresh log.
