@@ -15,7 +15,7 @@ import { initStats } from './stats.js';
 
 let data = null;
 
-const DATA_VERSION = '2026-06-17-rev2';
+const DATA_VERSION = '2026-06-17-rev3';
 
 // Optional data layers for the post-tournament stats screen (players, awards,
 // editorial — see .agents/stats-screen-plan.md §0.2). They don't exist yet, so
