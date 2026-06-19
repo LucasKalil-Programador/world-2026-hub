@@ -451,12 +451,14 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-18.** Data: **results through match 26/104** (26 of 72 group-stage matches
+**Updated 2026-06-19.** Data: **results through match 28/104** (28 of 72 group-stage matches
 finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped).
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-19 (rev1)** — match 28: MEX 1–0 KOR (Luis Romo 50'; ESPN+FOX confirmed; stats ESPN box
+  poss 42/58, shots 8/8, cards 0/2 from FOX named KOR yellows — Lee Kang-in 4', Paik Seung-ho 58').
 - **2026-06-18 (rev1–rev3)** — matches 24–26: UZB 1–3 COL, CZE 1–1 RSA, SUI 4–1 BIH (all 4 goals
   came 74'+; FIFA/FOX still cached at 0–0 — score confirmed via ESPN report + Wikipedia minutes;
   card count 1/3 from FOX named bookings, ESPN box lagged at 0/1).
