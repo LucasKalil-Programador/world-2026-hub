@@ -377,6 +377,31 @@ was removed 2026-06-18). **Merge sequence:** merge latest
   (0 under reduced-motion) and `updateSpy()` early-returns while suppressed, so the clicked chip owns
   the active state until the smooth scroll settles.
 
+### Leader cards — tied-team carousel (2026-06-19)
+The Team-statistics "leader" cards (Best attack / Best defense / Most clean sheets) became a
+**config-driven set of 6** and each now **rotates through ALL teams tied on its headline metric**
+(was: only the single top team). New cards: **Most wins**, **Most goals conceded**, **Best goal
+difference** (GD value shows a `+` sign when positive).
+- **Tie grouping is by the headline metric ALONE** (decided via /grill-me) — `gf` / `ga` / `cleanSheets`
+  / `won` / `ga` / `gd` — *not* the secondary tiebreakers, so e.g. all teams level on goals-for share
+  one card. Within the group the existing `cmp` (with tiebreakers) sets order, so the **first team
+  shown is unchanged** from before. Driven by the `LEADER_CARDS` array in `stats.js`; `computeLeaders`
+  now returns `[{ id, labelKey, metric, group: Row[] }]` (was an object of single rows).
+- **Carousel UX:** auto-advance every `ROTATE_MS = 3500`; **pauses on hover/focus**, **disabled under
+  `prefers-reduced-motion`** (arrows still work). ◀▶ arrows are **circular** (wrap-around); a manual
+  click effectively restarts the cadence (it resumes fresh on pointer/focus-leave). Indicator =
+  **dots** (one per tied team, active = gold) up to `DOTS_MAX = 8`; **above 8 the dots become an
+  `"i / n"` counter** (keeps the card compact — e.g. early-Cup Best defense routinely has 8 teams at
+  GA 0). A **1-team group renders the plain static card, identical to before** (no arrows/dots/timer).
+- **Timer lifecycle (cf. gotcha #6):** `setupLeaderCarousels(root)` runs at the end of `render()`;
+  intervals are tracked in module-level `leaderTimers` and **cleared at the top of `render()`**
+  (`clearLeaderTimers()`) so a `langchange`/`datachange` re-render never leaves a timer firing on
+  detached DOM. `favchange` does not touch these cards, so their carousels survive it untouched. Only
+  the flag+name swap on rotate — the big value is shared by the whole tied group, so it never changes.
+- i18n keys added (EN+PT): `stats.mostWins`, `stats.mostConceded`, `stats.bestGoalDiff`,
+  `stats.leaderPrev`, `stats.leaderNext`. CSS: `.leader-stage/.leader-nav/.leader-dots/.leader-dot/
+  .leader-counter` in `stats.css`.
+
 ### Partial stats tab built during the Cup (foundation, 2026-06-14)
 The 6th `stats` tab was first shipped incrementally as the evolving foundation of the post-Cup plan
 (same tab/module; post-Cup sections "light up" later). Files: `assets/js/stats.js` +
@@ -453,8 +478,10 @@ supersedes the old "768–1439 single-row header" note.
 
 **Updated 2026-06-19.** Data: **results through match 28/104** (28 of 72 group-stage matches
 finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
-Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.1`. Build: all 12 steps + real-data migration
-done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped).
+Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.2`. Build: all 12 steps + real-data migration
+done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
+leader cards now rotate through tied teams + 3 new metric cards (Most wins / Most goals conceded /
+Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
 - **2026-06-19 (rev1)** — match 28: MEX 1–0 KOR (Luis Romo 50'; ESPN+FOX confirmed; stats ESPN box

@@ -72,8 +72,12 @@ worldcup2026/
 │   │   ├── stats.js                      ★ Stats tab: tournament-to-date aggregates (finished
 │   │   │                                   matches only); verdict-or-aggregate hero + overview + goals-by-stage/round +
 │   │   │                                   48-team table ranked 1–48 by stage-reached (sortable, # = canonical rank) +
-│   │   │                                   favorite-row highlight + team record cards (win streak,
-│   │   │                                   champion path) + Records section (biggest win/high-scoring
+│   │   │                                   favorite-row highlight + 6 leader cards (LEADER_CARDS:
+│   │   │                                   best attack/defense, most clean sheets/wins/conceded, best
+│   │   │                                   GD) that rotate through teams TIED on the metric
+│   │   │                                   (setupLeaderCarousels: auto 3.5s, pause hover/focus, arrows
+│   │   │                                   + dots/counter, timers cleared each render) + team record
+│   │   │                                   cards (win streak, champion path) + Records section (biggest win/high-scoring
 │   │   │                                   match → modal, format-48 debuts band) + team comparator
 │   │   │                                   (A-vs-B diverging bars). SECTIONS registry (graceful-
 │   │   │                                   degradation gate: section + chip render only if available,
