@@ -6,7 +6,7 @@
 import { getPrefs, setPref } from './storage.js';
 
 // App version for footer display — bump this after any notable changes
-const APP_VERSION = 'v1.0.1';
+const APP_VERSION = 'v1.0.2';
 
 const dicts = {
   en: {
@@ -159,6 +159,11 @@ const dicts = {
     'stats.bestAttack': 'Best attack',
     'stats.bestDefense': 'Best defense',
     'stats.mostCleanSheets': 'Most clean sheets',
+    'stats.mostWins': 'Most wins',
+    'stats.mostConceded': 'Most goals conceded',
+    'stats.bestGoalDiff': 'Best goal difference',
+    'stats.leaderPrev': 'Previous team',
+    'stats.leaderNext': 'Next team',
     'stats.biggestWin': 'Biggest win',
     'stats.winStreak': 'Longest win streak',
     'stats.championPath': "Champion's path",
@@ -329,6 +334,11 @@ const dicts = {
     'stats.bestAttack': 'Melhor ataque',
     'stats.bestDefense': 'Melhor defesa',
     'stats.mostCleanSheets': 'Mais clean sheets',
+    'stats.mostWins': 'Mais vitórias',
+    'stats.mostConceded': 'Mais gols sofridos',
+    'stats.bestGoalDiff': 'Melhor saldo de gols',
+    'stats.leaderPrev': 'Time anterior',
+    'stats.leaderNext': 'Próximo time',
     'stats.biggestWin': 'Maior goleada',
     'stats.winStreak': 'Maior sequência de vitórias',
     'stats.championPath': 'Caminho do campeão',

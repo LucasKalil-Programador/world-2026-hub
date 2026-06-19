@@ -362,16 +362,31 @@ function computeChampionPath(verdict) {
   return path.length ? path : null;
 }
 
-// Highlight leaders consider only teams that have played, so a 0-game team's
-// empty record never counts as "best defense". Null before any match finishes.
+// Leader cards in the Teams section. Each rotates through the teams TIED on its
+// headline metric — grouped by that metric's value ALONE (decision 2026-06-19),
+// so e.g. every team level on goals-for shares the "Best attack" card. `cmp`
+// orders within the group (leader first), so the team shown first is unchanged.
+const LEADER_CARDS = [
+  { id: 'bestAttack',      labelKey: 'stats.bestAttack',      metric: 'gf',          cmp: (a, b) => b.gf - a.gf || b.gd - a.gd },
+  { id: 'bestDefense',     labelKey: 'stats.bestDefense',     metric: 'ga',          cmp: (a, b) => a.ga - b.ga || b.cleanSheets - a.cleanSheets || b.gd - a.gd },
+  { id: 'mostCleanSheets', labelKey: 'stats.mostCleanSheets', metric: 'cleanSheets', cmp: (a, b) => b.cleanSheets - a.cleanSheets || a.ga - b.ga },
+  { id: 'mostWins',        labelKey: 'stats.mostWins',        metric: 'won',         cmp: (a, b) => b.won - a.won || b.gd - a.gd || b.gf - a.gf },
+  { id: 'mostConceded',    labelKey: 'stats.mostConceded',    metric: 'ga',          cmp: (a, b) => b.ga - a.ga || a.gd - b.gd },
+  { id: 'bestGoalDiff',    labelKey: 'stats.bestGoalDiff',    metric: 'gd',          cmp: (a, b) => b.gd - a.gd || b.gf - a.gf },
+];
+
+// Each card carries the FULL tied group (same value on its headline metric),
+// ordered by the card's tiebreakers; the carousel rotates through it. Only teams
+// that have played count (a 0-game team's empty record never "leads"). Null
+// before any match finishes → the whole leaders strip degrades away.
 function computeLeaders(teamStats) {
   const played = teamStats.filter((row) => row.played > 0);
   if (!played.length) return null;
-  return {
-    bestAttack: [...played].sort((a, b) => b.gf - a.gf || b.gd - a.gd)[0],
-    bestDefense: [...played].sort((a, b) => a.ga - b.ga || b.cleanSheets - a.cleanSheets || b.gd - a.gd)[0],
-    mostCleanSheets: [...played].sort((a, b) => b.cleanSheets - a.cleanSheets || a.ga - b.ga)[0],
-  };
+  return LEADER_CARDS.map(({ id, labelKey, metric, cmp }) => {
+    const sorted = [...played].sort(cmp);
+    const best = sorted[0][metric];
+    return { id, labelKey, metric, group: sorted.filter((row) => row[metric] === best) };
+  });
 }
 
 // ---------------------------------------------------------------- render
@@ -391,6 +406,7 @@ export function initStats() {
 
 function render() {
   if (!model) model = buildStatsModel();
+  clearLeaderTimers(); // drop any carousel intervals from the previous render
   const root = document.getElementById('stats-root');
   const sections = SECTIONS.filter((section) => section.available(model));
   root.innerHTML =
@@ -423,6 +439,7 @@ function render() {
     cmpBEl.addEventListener('change', () => { cmpB = cmpBEl.value; refreshComparator(); });
   }
   setupCountUps(root);
+  setupLeaderCarousels(root);
   setupSubNav(root, sections);
 }
 
@@ -900,28 +917,111 @@ function legendHTML(columns) {
   return `<p class="stats-legend">${pairs}</p>`;
 }
 
+const ROTATE_MS = 3500;   // auto-advance cadence for tied-leader carousels
+const DOTS_MAX = 8;       // above this many tied teams, dots give way to "i / n"
+
 function leadersHTML() {
   const leaders = model.leaders;
   if (!leaders) return '';
-  const cards = [
-    { label: t('stats.bestAttack'), row: leaders.bestAttack, value: leaders.bestAttack.gf },
-    { label: t('stats.bestDefense'), row: leaders.bestDefense, value: leaders.bestDefense.ga },
-    { label: t('stats.mostCleanSheets'), row: leaders.mostCleanSheets, value: leaders.mostCleanSheets.cleanSheets },
-  ];
-  return `<div class="stats-leaders">${cards.map(leaderCardHTML).join('')}</div>`;
+  return `<div class="stats-leaders">${leaders.map(leaderCardHTML).join('')}</div>`;
 }
 
-function leaderCardHTML({ label, row, value }) {
+function leaderValueText(metric, value) {
+  return metric === 'gd' && value > 0 ? `+${value}` : `${value}`;
+}
+
+function leaderTeamHTML(row) {
   const team = getData().teamById.get(row.teamId);
+  return `${flagImg(team, 30, 20)}<span class="leader-name">${team.name}</span>`;
+}
+
+// A leader card. Single-team group → a plain static card (identical to before).
+// A tie → arrows + an indicator (dots up to DOTS_MAX, else an "i / n" counter);
+// setupLeaderCarousels() wires the rotation. The big value is shared by the whole
+// group (all tied on the metric), so only the flag+name swap as it rotates.
+function leaderCardHTML({ id, labelKey, metric, group }) {
+  const label = t(labelKey);
+  const value = leaderValueText(metric, group[0][metric]);
+  if (group.length < 2) {
+    return `
+      <div class="leader-card glass">
+        <span class="leader-label">${label}</span>
+        <div class="leader-team">${leaderTeamHTML(group[0])}</div>
+        <span class="leader-value">${value}</span>
+      </div>`;
+  }
+  const indicator = group.length <= DOTS_MAX
+    ? `<div class="leader-dots" aria-hidden="true">${group.map((_, i) =>
+        `<span class="leader-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
+    : `<span class="leader-counter" aria-hidden="true">1 / ${group.length}</span>`;
   return `
-    <div class="leader-card glass">
+    <div class="leader-card glass" data-leader="${id}" role="group" aria-label="${label}">
       <span class="leader-label">${label}</span>
-      <div class="leader-team">
-        ${flagImg(team, 30, 20)}
-        <span class="leader-name">${team.name}</span>
+      <div class="leader-stage">
+        <button type="button" class="leader-nav leader-prev" aria-label="${t('stats.leaderPrev')}">&lsaquo;</button>
+        <div class="leader-team">${leaderTeamHTML(group[0])}</div>
+        <button type="button" class="leader-nav leader-next" aria-label="${t('stats.leaderNext')}">&rsaquo;</button>
       </div>
       <span class="leader-value">${value}</span>
+      ${indicator}
     </div>`;
+}
+
+// Tied-leader carousels. Timers are tracked module-level and cleared at the top
+// of render() so a re-render (langchange/datachange) never leaves an interval
+// firing on detached DOM (cf. gotcha #6 — never double-schedule).
+let leaderTimers = [];
+function clearLeaderTimers() {
+  for (const id of leaderTimers) clearInterval(id);
+  leaderTimers = [];
+}
+
+// Auto-advance pauses on hover/focus and is disabled entirely under
+// prefers-reduced-motion (arrows still work). A manual arrow click restarts the
+// cadence implicitly: while the pointer/focus is on the card it stays paused, and
+// leaving the card starts a fresh full interval.
+function setupLeaderCarousels(root) {
+  const leaders = model.leaders;
+  if (!leaders) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const leader of leaders) {
+    if (leader.group.length < 2) continue; // single team: static, no timer
+    const card = root.querySelector(`.leader-card[data-leader="${leader.id}"]`);
+    if (!card) continue;
+    const teamHost = card.querySelector('.leader-team');
+    const dots = card.querySelectorAll('.leader-dot');
+    const counter = card.querySelector('.leader-counter');
+    const group = leader.group;
+    let idx = 0;
+    let timer = null;
+    let paused = false;
+    const show = (i) => {
+      idx = (i + group.length) % group.length;
+      teamHost.innerHTML = leaderTeamHTML(group[idx]);
+      dots.forEach((dot, di) => dot.classList.toggle('active', di === idx));
+      if (counter) counter.textContent = `${idx + 1} / ${group.length}`;
+    };
+    const stop = () => {
+      if (!timer) return;
+      clearInterval(timer);
+      leaderTimers = leaderTimers.filter((x) => x !== timer);
+      timer = null;
+    };
+    const start = () => {
+      if (reduce || paused || timer) return;
+      timer = setInterval(() => show(idx + 1), ROTATE_MS);
+      leaderTimers.push(timer);
+    };
+    const pause = () => { paused = true; stop(); };
+    const resume = () => { paused = false; start(); };
+    card.querySelector('.leader-prev')?.addEventListener('click', () => show(idx - 1));
+    card.querySelector('.leader-next')?.addEventListener('click', () => show(idx + 1));
+    card.addEventListener('mouseenter', pause);
+    card.addEventListener('mouseleave', resume);
+    card.addEventListener('focusin', pause);
+    card.addEventListener('focusout', resume);
+    start();
+  }
 }
 
 function sortedTeamStats() {

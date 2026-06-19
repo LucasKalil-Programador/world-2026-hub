@@ -220,6 +220,7 @@
   gap: 0.5rem;
   padding: 1.1rem 1rem;
   text-align: center;
+  position: relative; /* anchor for the full-height side click areas */
 }
 
 .leader-label {
@@ -246,6 +247,80 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--accent-gold-soft);
+}
+
+/* tied-leader carousel: arrows pinned to the card edges (so they never shift
+   with the team-name width), dots/counter below */
+.leader-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* keep the team clear of the full-height side click areas */
+  padding-inline: 2.75rem;
+}
+
+/* each arrow is a full-height strip down the card side: clicking anywhere on the
+   lateral navigates. The chevron glyph stays small, centered in the strip (≈ the
+   team row, since the card's vertical centre sits on it). */
+.leader-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.leader-prev { left: 0; }
+.leader-next { right: 0; }
+
+.leader-nav:hover,
+.leader-nav:focus-visible {
+  opacity: 1;
+  color: var(--accent-gold);
+}
+
+.leader-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-top: -0.15rem; /* tuck the smaller dots closer to the value */
+}
+
+.leader-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--glass-border);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.leader-dot.active {
+  background: var(--accent-gold);
+  transform: scale(1.25);
+}
+
+.leader-counter {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leader-dot { transition: none; }
 }
 
 /* horizontal scroll on narrow screens; rank + team columns stay frozen */
