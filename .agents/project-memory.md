@@ -476,7 +476,7 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-19.** Data: **results through match 28/104** (28 of 72 group-stage matches
+**Updated 2026-06-19.** Data: **results through match 30/104** (30 of 72 group-stage matches
 finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.2`. Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
@@ -484,15 +484,21 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-19 (rev2)** — matches 29–30: USA 2–0 AUS, SCO 0–1 MAR (both 2-source confirmed
+  FIFA/olympics/ESPN/NBC). Stats: 29 (poss 62/38, shots 10/5, cards 3/4) and 30 (poss 41/59,
+  shots 6/12, cards 2/1) — card/shot counts corrected by the user after ESPN box lagged. Matches 31
+  (BRA×HAI, 00:30 UTC) and 32 (TUR×PAR, 03:00 UTC) had **not kicked off** at run time — left
+  `scheduled` (an early web search wrongly returned BRA 1–0; corrected, never trust unconfirmed
+  future-match scores).
 - **2026-06-19 (rev1)** — match 28: MEX 1–0 KOR (Luis Romo 50'; ESPN+FOX confirmed; stats ESPN box
   poss 42/58, shots 8/8, cards 0/2 from FOX named KOR yellows — Lee Kang-in 4', Paik Seung-ho 58').
 - **2026-06-18 (rev1–rev3)** — matches 24–26: UZB 1–3 COL, CZE 1–1 RSA, SUI 4–1 BIH (all 4 goals
   came 74'+; FIFA/FOX still cached at 0–0 — score confirmed via ESPN report + Wikipedia minutes;
   card count 1/3 from FOX named bookings, ESPN box lagged at 0/1).
-- **2026-06-17 (rev1–rev3)** — matches 18–23: IRQ 1–4 NOR, ARG 3–0 ALG, AUT 3–1 JOR, POR 1–1 COD,
-  ENG 4–2 CRO, GHA 1–0 PAN.
 
 ### Pending / next
+- **Matches 31 (BRA×HAI, 2026-06-20 00:30 UTC) & 32 (TUR×PAR, 03:00 UTC)** — not yet played; capture
+  next refresh.
 - **`thirdPlaceAssignment` fill** once the group stage ends (~Jun 27) — slot→group table above.
 - **Lighthouse > 90** run (needs a deployed URL).
 - **Post-Cup home state** — when the Final goes `over` the hero is empty; build a champion/epilogue
