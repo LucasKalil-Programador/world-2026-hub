@@ -534,7 +534,7 @@
     "status": "finished",
     "stats": {
       "possession": { "home": 55, "away": 45 },
-      "shots": { "home": 9, "away": 24 },
+      "shots": { "home": 6, "away": 14 },
       "cards": { "home": 1, "away": 2 }
     }
   },
@@ -545,8 +545,8 @@
     "status": "finished",
     "stats": {
       "possession": { "home": 54, "away": 46 },
-      "shots": { "home": 13, "away": 9 },
-      "cards": { "home": 0, "away": 0 }
+      "shots": { "home": 14, "away": 9 },
+      "cards": { "home": 1, "away": 1 }
     }
   },
   {
@@ -556,7 +556,7 @@
     "status": "finished",
     "stats": {
       "possession": { "home": 46, "away": 54 },
-      "shots": { "home": 4, "away": 8 },
+      "shots": { "home": 14, "away": 21 },
       "cards": { "home": 1, "away": 2 }
     }
   },
@@ -566,8 +566,8 @@
     "awayScore": 2,
     "status": "finished",
     "stats": {
-      "possession": { "home": 68, "away": 32 },
-      "shots": { "home": 22, "away": 7 },
+      "possession": { "home": 69, "away": 31 },
+      "shots": { "home": 22, "away": 9 },
       "cards": { "home": 0, "away": 3 }
     }
   },

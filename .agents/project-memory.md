@@ -476,30 +476,35 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-19.** Data: **results through match 30/104** (30 of 72 group-stage matches
-finished; group stage in progress). `thirdPlaceAssignment` still all `null` (fill ~Jun 27).
+**Updated 2026-06-24.** Data: **results through match 52/104** (52 of 72 group-stage matches
+finished; **Groups B & C complete**; group stage still in progress). `thirdPlaceAssignment` still
+all `null` (fill ~Jun 27–28, once all 72 group matches are finished).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.2`. Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
 leader cards now rotate through tied teams + 3 new metric cards (Most wins / Most goals conceded /
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-24** — matches 49–52 (Groups B & C final round): SUI 2–1 CAN, BIH 3–1 QAT, SCO 0–3 BRA,
+  MAR 4–2 HAI (all 2-source confirmed FIFA/ESPN/FOX/olympics/Yahoo). **BIH×QAT resolved to 3–1** over
+  an Al Jazeera "3-2" headline (ESPN report + box + FIFA all 3–1). Stats added to all four: 49 (poss
+  55/45, shots 9/24 — CAN out-shot SUI 24-9 chasing the game late, per ESPN box; cards 1/2: Xhaka 31'
+  / Larin 31', Millar 87'), 50 (poss 54/46, shots 13/9, cards 0/0), 51 (poss 46/54, shots 4/8, cards
+  1/2: Christie 89' / Danilo 62', Fabinho 82' — assembled from per-event feeds, no clean box), 52
+  (poss 68/32 — derived from 545/258 pass split + a 69% cite; shots 22/7; cards 0/3: Placide & Nazon
+  79', Casimir 90+3'). Groups B & C now complete; thirdPlaceAssignment NOT yet due (53–72 still open).
 - **2026-06-19 (rev2)** — matches 29–30: USA 2–0 AUS, SCO 0–1 MAR (both 2-source confirmed
   FIFA/olympics/ESPN/NBC). Stats: 29 (poss 62/38, shots 10/5, cards 3/4) and 30 (poss 41/59,
-  shots 6/12, cards 2/1) — card/shot counts corrected by the user after ESPN box lagged. Matches 31
-  (BRA×HAI, 00:30 UTC) and 32 (TUR×PAR, 03:00 UTC) had **not kicked off** at run time — left
-  `scheduled` (an early web search wrongly returned BRA 1–0; corrected, never trust unconfirmed
-  future-match scores).
+  shots 6/12, cards 2/1) — card/shot counts corrected by the user after ESPN box lagged.
 - **2026-06-19 (rev1)** — match 28: MEX 1–0 KOR (Luis Romo 50'; ESPN+FOX confirmed; stats ESPN box
   poss 42/58, shots 8/8, cards 0/2 from FOX named KOR yellows — Lee Kang-in 4', Paik Seung-ho 58').
-- **2026-06-18 (rev1–rev3)** — matches 24–26: UZB 1–3 COL, CZE 1–1 RSA, SUI 4–1 BIH (all 4 goals
-  came 74'+; FIFA/FOX still cached at 0–0 — score confirmed via ESPN report + Wikipedia minutes;
-  card count 1/3 from FOX named bookings, ESPN box lagged at 0/1).
 
 ### Pending / next
-- **Matches 31 (BRA×HAI, 2026-06-20 00:30 UTC) & 32 (TUR×PAR, 03:00 UTC)** — not yet played; capture
-  next refresh.
-- **`thirdPlaceAssignment` fill** once the group stage ends (~Jun 27) — slot→group table above.
+- **Matches 53–54 (Group A final round: CZE×MEX, RSA×KOR, both 2026-06-25 01:00 UTC)** then 55–58
+  (Groups E/F, 2026-06-25 20:00 & 23:00 UTC) — next refresh. Group-stage final matches run through
+  match 72 (2026-06-28 02:00 UTC); R32 (ids 73–88) starts 2026-06-28.
+- **`thirdPlaceAssignment` fill** once **all 72** group matches are finished (~Jun 27–28) —
+  slot→group table above. Not due yet (Groups B & C done, but A/D/E/F/G/H/I/J/K/L still have games).
 - **Lighthouse > 90** run (needs a deployed URL).
 - **Post-Cup home state** — when the Final goes `over` the hero is empty; build a champion/epilogue
   state (likely converges with the Stats screen).
