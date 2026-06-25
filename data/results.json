@@ -529,27 +529,47 @@
   },
   {
     "matchId": 49,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 2,
+    "awayScore": 1,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 55, "away": 45 },
+      "shots": { "home": 9, "away": 24 },
+      "cards": { "home": 1, "away": 2 }
+    }
   },
   {
     "matchId": 50,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 3,
+    "awayScore": 1,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 54, "away": 46 },
+      "shots": { "home": 13, "away": 9 },
+      "cards": { "home": 0, "away": 0 }
+    }
   },
   {
     "matchId": 51,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 0,
+    "awayScore": 3,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 46, "away": 54 },
+      "shots": { "home": 4, "away": 8 },
+      "cards": { "home": 1, "away": 2 }
+    }
   },
   {
     "matchId": 52,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 4,
+    "awayScore": 2,
+    "status": "finished",
+    "stats": {
+      "possession": { "home": 68, "away": 32 },
+      "shots": { "home": 22, "away": 7 },
+      "cards": { "home": 0, "away": 3 }
+    }
   },
   {
     "matchId": 53,
