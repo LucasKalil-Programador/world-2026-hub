@@ -476,15 +476,25 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-24.** Data: **results through match 52/104** (52 of 72 group-stage matches
-finished; **Groups B & C complete**; group stage still in progress). `thirdPlaceAssignment` still
-all `null` (fill ~Jun 27–28, once all 72 group matches are finished).
+**Updated 2026-06-28.** Data: **results through match 72/104** (all 72 group-stage matches
+finished — **group stage COMPLETE**; knockout R32 ids 73–88 are next). `thirdPlaceAssignment`
+**FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.2`. Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
 leader cards now rotate through tied teams + 3 new metric cards (Most wins / Most goals conceded /
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-28** — **group stage COMPLETE + `thirdPlaceAssignment` filled.** Matches 53–72 were
+  entered/committed directly by the user (see git log, commits through `8c89b8f`); this run filled the
+  one-time third-place allocation in `bracket-config.json`. Final group standings (app tiebreak Pts→GD→GF→id)
+  give the **8 best thirds = groups B,D,E,F,I,J,K,L** (out: IRN/G, KOR/A, SCO/C, URU/H — SEN/I edges
+  IRN/G 3pts GD+2 vs GD0). Allocation taken from FIFA's official combination table (Wikipedia
+  `Template:2026_FIFA_World_Cup_third-place_table`, row B,D,E,F,I,J,K,L): `1A–3E 1B–3J 1D–3B 1E–3D
+  1G–3I 1I–3F 1K–3L 1L–3K` → **slots {1:D, 2:F, 3:B, 4:I, 5:E, 6:K, 7:J, 8:L}**. Verified in preview:
+  all 16 R32 resolve with real teams, no same-group clashes (GER×PAR, FRA×SWE, USA×BIH, BEL×SEN,
+  MEX×ECU, ENG×COD, SUI×ALG, COL×GHA + the 8 winner/runner-up ties). **round32 structure cross-checked
+  vs official bracket (M73–M88) — exact match**, incl. winner-B-faces-a-third (not winner C).
 - **2026-06-24** — matches 49–52 (Groups B & C final round): SUI 2–1 CAN, BIH 3–1 QAT, SCO 0–3 BRA,
   MAR 4–2 HAI (all 2-source confirmed FIFA/ESPN/FOX/olympics/Yahoo). **BIH×QAT resolved to 3–1** over
   an Al Jazeera "3-2" headline (ESPN report + box + FIFA all 3–1). Stats added to all four: 49 (poss
@@ -496,15 +506,13 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
 - **2026-06-19 (rev2)** — matches 29–30: USA 2–0 AUS, SCO 0–1 MAR (both 2-source confirmed
   FIFA/olympics/ESPN/NBC). Stats: 29 (poss 62/38, shots 10/5, cards 3/4) and 30 (poss 41/59,
   shots 6/12, cards 2/1) — card/shot counts corrected by the user after ESPN box lagged.
-- **2026-06-19 (rev1)** — match 28: MEX 1–0 KOR (Luis Romo 50'; ESPN+FOX confirmed; stats ESPN box
-  poss 42/58, shots 8/8, cards 0/2 from FOX named KOR yellows — Lee Kang-in 4', Paik Seung-ho 58').
 
 ### Pending / next
-- **Matches 53–54 (Group A final round: CZE×MEX, RSA×KOR, both 2026-06-25 01:00 UTC)** then 55–58
-  (Groups E/F, 2026-06-25 20:00 & 23:00 UTC) — next refresh. Group-stage final matches run through
-  match 72 (2026-06-28 02:00 UTC); R32 (ids 73–88) starts 2026-06-28.
-- **`thirdPlaceAssignment` fill** once **all 72** group matches are finished (~Jun 27–28) —
-  slot→group table above. Not due yet (Groups B & C done, but A/D/E/F/G/H/I/J/K/L still have games).
+- **Knockout R32 (ids 73–88) — starts 2026-06-28 19:00 UTC** (M73 = R32-3 RSA×CAN at SoFi). These are
+  the next results to refresh; remember `penalties` may apply on ids 73–104 (KO only). R16 ids 89–96
+  from 2026-07-04.
+- **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
+  table; bracket verified. No longer pending.
 - **Lighthouse > 90** run (needs a deployed URL).
 - **Post-Cup home state** — when the Final goes `over` the hero is empty; build a champion/epilogue
   state (likely converges with the Stats screen).
