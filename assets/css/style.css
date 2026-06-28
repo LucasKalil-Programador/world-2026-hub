@@ -785,6 +785,65 @@ button {
   }
 }
 
+/* best third-placed teams table (shown once all 12 groups finish) */
+.third-place {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem 1.2rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(16, 36, 59, 0.55);
+}
+
+.third-place-note {
+  margin: 0 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.third-place-keys {
+  margin-bottom: 0.7rem;
+}
+
+.legend-dot.out {
+  background: var(--text-secondary);
+  opacity: 0.45;
+}
+
+.third-place-scroll {
+  overflow-x: auto;
+}
+
+.standings-table .col-group {
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.third-place-table tr.row-third td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent-gold);
+}
+
+.third-place-table tr.row-out td {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.third-place-table tr.cut {
+  border-top: 2px dashed rgba(255, 255, 255, 0.22);
+}
+
+.third-place-table .col-status {
+  width: 1.6rem;
+}
+
+.third-place-table .qual-yes {
+  color: var(--accent-gold);
+  font-weight: 700;
+}
+
+.third-place-table .qual-no {
+  color: var(--text-secondary);
+}
+
 /* ------------------------------------------------------ stadiums */
 
 .stadiums-grid {

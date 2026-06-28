@@ -6,7 +6,7 @@
 import { getPrefs, setPref } from './storage.js';
 
 // App version for footer display — bump this after any notable changes
-const APP_VERSION = 'v1.0.2';
+const APP_VERSION = 'v1.0.3';
 
 const dicts = {
   en: {
@@ -73,6 +73,11 @@ const dicts = {
     'standings.legendTop2': 'Advance to the Round of 32',
     'standings.legendThird': 'In contention for best third place',
     'standings.inProgress': 'In progress',
+    'standings.thirdTitle': 'Best third-placed teams',
+    'standings.thirdNote': '8 of 12 advance to the Round of 32 — ranked by points, then goal difference, then goals for.',
+    'standings.group': 'Group',
+    'standings.qualified': 'Qualified',
+    'standings.eliminated': 'Eliminated',
     'stadiums.capacity': 'Capacity',
     'stadiums.viewMatches': 'View matches',
     'status.scheduled': 'Scheduled',
@@ -248,6 +253,11 @@ const dicts = {
     'standings.legendTop2': 'Avançam aos 16 avos de final',
     'standings.legendThird': 'Na briga por melhor 3º lugar',
     'standings.inProgress': 'Em andamento',
+    'standings.thirdTitle': 'Melhores terceiros colocados',
+    'standings.thirdNote': '8 de 12 avançam aos 16 avos de final — ordenados por pontos, depois saldo de gols, depois gols pró.',
+    'standings.group': 'Grupo',
+    'standings.qualified': 'Classificado',
+    'standings.eliminated': 'Eliminado',
     'stadiums.capacity': 'Capacidade',
     'stadiums.viewMatches': 'Ver partidas',
     'status.scheduled': 'Agendada',

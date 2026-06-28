@@ -52,6 +52,24 @@ export function isGroupFinished(letter) {
     .every((m) => resultByMatchId.get(m.id)?.status === 'finished');
 }
 
+function allGroupsFinished() {
+  return Object.keys(getData().groups).every(isGroupFinished);
+}
+
+// Best third-placed teams: each group's 3rd-placed row, ranked across all 12
+// groups by the same criteria as within a group (points → GD → GF → id). The top
+// 8 advance to the Round of 32. This only ranks the thirds for display — the
+// slot→group allocation itself lives in bracket-config.json (filled from FIFA's
+// official combination table), not derived here.
+export function computeThirdPlaceRanking() {
+  const standings = computeStandings();
+  return Object.entries(standings)
+    .map(([letter, rows]) => ({ ...rows[2], group: letter }))
+    .sort((a, b) =>
+      b.points - a.points || b.gd - a.gd || b.gf - a.gf || a.teamId.localeCompare(b.teamId))
+    .map((row, i) => ({ ...row, rank: i + 1, qualified: i < 8 }));
+}
+
 // -------------------------------------------------------------- render
 
 export function initGroups() {
@@ -71,7 +89,81 @@ function render() {
     <div class="groups-grid">
       ${Object.entries(standings).map(([letter, rows]) => groupCardHTML(letter, rows)).join('')}
     </div>
+    ${allGroupsFinished() ? thirdPlaceSectionHTML() : ''}
     ${legendHTML()}`;
+}
+
+// Best-third ranking table — rendered only once all 12 groups are finished (the
+// ranking is meaningless mid-stage). Reuses the .standings-table styling, the
+// header tooltips and the favorite-row highlight from the group cards.
+function thirdPlaceSectionHTML() {
+  const ranking = computeThirdPlaceRanking();
+  const headers = ['played', 'won', 'drawn', 'lost', 'gf', 'ga', 'gd', 'pts']
+    .map((key) => {
+      const tip = t(`tip.${key}`);
+      const goals = key === 'gf' || key === 'ga' ? 'col-goals ' : '';
+      return `<th class="${goals}has-tip" scope="col" data-tip="${tip}" aria-label="${t(`standings.${key}`)} — ${tip}">${t(`standings.${key}`)}</th>`;
+    })
+    .join('');
+
+  return `
+    <section class="third-place glass" aria-labelledby="third-place-title">
+      <header class="group-card-header">
+        <h3 id="third-place-title">${t('standings.thirdTitle')}</h3>
+      </header>
+      <p class="third-place-note">${t('standings.thirdNote')}</p>
+      <p class="standings-legend third-place-keys">
+        <span class="legend-item"><span class="legend-dot third"></span>${t('standings.qualified')}</span>
+        <span class="legend-item"><span class="legend-dot out"></span>${t('standings.eliminated')}</span>
+      </p>
+      <div class="third-place-scroll">
+        <table class="standings-table third-place-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th class="col-team" scope="col">${t('standings.team')}</th>
+              <th class="col-group has-tip" scope="col" data-tip="${t('standings.group')}" aria-label="${t('standings.group')}">${t('standings.group')}</th>
+              ${headers}
+              <th class="col-status" scope="col" aria-label="${t('standings.qualified')}"></th>
+            </tr>
+          </thead>
+          <tbody>${ranking.map(thirdRowHTML).join('')}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function thirdRowHTML(entry, index) {
+  const team = getData().teamById.get(entry.teamId);
+  const fav = getFavorites().includes(team.id);
+  const cls = [
+    entry.qualified ? 'row-third' : 'row-out',
+    index === 8 ? 'cut' : '',
+    fav ? 'fav-row' : '',
+  ].filter(Boolean).join(' ');
+  const status = entry.qualified
+    ? `<span class="qual-yes" aria-label="${t('standings.qualified')}">✓</span>`
+    : `<span class="qual-no" aria-label="${t('standings.eliminated')}">—</span>`;
+  return `
+    <tr class="${cls}">
+      <td>${entry.rank}</td>
+      <td class="col-team">
+        <img class="flag" src="${flagSrc(team)}" alt="" width="22" height="15" loading="lazy">
+        <span>${team.name}</span>
+        <button class="fav-btn ${fav ? 'active' : ''}" data-fav="${team.id}"
+                aria-pressed="${fav}" aria-label="${t('fav.toggle')} ${team.name}">${fav ? '★' : '☆'}</button>
+      </td>
+      <td class="col-group">${entry.group}</td>
+      <td>${entry.played}</td>
+      <td>${entry.won}</td>
+      <td>${entry.drawn}</td>
+      <td>${entry.lost}</td>
+      <td class="col-goals">${entry.gf}</td>
+      <td class="col-goals">${entry.ga}</td>
+      <td>${entry.gd > 0 ? '+' : ''}${entry.gd}</td>
+      <td class="col-pts">${entry.points}</td>
+      <td class="col-status">${status}</td>
+    </tr>`;
 }
 
 // Abbreviation key shown only on small screens (where the header hover tooltips
