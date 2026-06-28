@@ -82,6 +82,14 @@ automated tests / linter (explicit spec constraint).
 - **Tiebreak:** points → goal difference → goals for → team id alphabetical (stable fallback).
 - `computeStandings()` (per-group, finished only) and `isGroupFinished()` are exported and reused by
   `bracket.js` / `stats.js` (no recompute).
+- **Best third-placed teams table (2026-06-28).** `computeThirdPlaceRanking()` (exported) takes each
+  group's 3rd row (`standings[letter][2]`), ranks the 12 across groups by the same key (Pts → GD → GF →
+  id) and flags the top 8 `qualified`. Rendered as a full-width section **below** the 12 group cards in
+  the Grupos tab, **gated on `allGroupsFinished()`** (meaningless mid-stage → omitted from the DOM).
+  Reuses `.standings-table` styling, header tooltips and the favorite-row highlight; gold `.row-third`
+  + ✓ for the 8 that advance, muted `.row-out` + — for 9–12, a dashed `.cut` line between 8 and 9. It
+  only **ranks** the thirds for display — the slot→group allocation still lives in
+  `bracket-config.json` (FIFA combination table), never derived from this ranking.
 
 ### Bracket (`bracket.js`)
 - **Tree is language-neutral**: slots are `{ teamId }` or `{ ph: {kind,…} }`; placeholder text is
@@ -486,7 +494,8 @@ supersedes the old "768–1439 single-row header" note.
 **Updated 2026-06-28.** Data: **results through match 72/104** (all 72 group-stage matches
 finished — **group stage COMPLETE**; knockout R32 ids 73–88 are next). `thirdPlaceAssignment`
 **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
-Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.2`. Build: all 12 steps + real-data migration
+Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
+(bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
 leader cards now rotate through tied teams + 3 new metric cards (Most wins / Most goals conceded /
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
