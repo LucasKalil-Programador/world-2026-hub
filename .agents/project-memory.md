@@ -128,6 +128,13 @@ automated tests / linter (explicit spec constraint).
   1-match render is DOM-identical to before. One persistent **1s `heroTick`**; signature
   `"id:state"` (joined for the set) → full `renderHero()` on change, else just `updateCountdown()`.
   `renderHero` is idempotent and re-arms the timer (`if (heroTimer) return`).
+- **Hero resolves teams via `resolveBracketTeams(match)`** (not raw `match.homeTeam`), so knockout
+  featured matches show real teams/flags once resolved and a placeholder label otherwise — same path as
+  schedule cards/modal. `heroTeamHTML(slot)` takes a `{team,label}` slot. **Bug fixed 2026-06-28:** the
+  hero previously read `match.homeTeam/awayTeam` directly; harmless during the group stage (those fields
+  exist) but the moment the next match became an R32 game (ids 73+, which carry only `bracketRef`) the
+  home hero showed "A definir vs A definir". Watch for this class of bug anywhere that reads
+  `match.homeTeam` raw instead of resolving.
 - Live score shown only if `result.homeScore/awayScore` are non-null; no elapsed-time clock
   (would be inaccurate on a static site). Badge "Bola rolando!" = key `hero.inProgress` (renamed from
   `hero.kickoff`); `hero.live` still used by schedule/modal. **Scope: hero only** — Matches/Modal/
