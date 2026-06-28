@@ -8,7 +8,7 @@ import { initSchedule } from './schedule.js';
 import { initGroups } from './groups.js';
 import { initStadiums } from './stadiums.js';
 import { initModal } from './modal.js';
-import { initBracket, invalidateBracket } from './bracket.js';
+import { initBracket, invalidateBracket, resolveBracketTeams } from './bracket.js';
 import { initStats } from './stats.js';
 
 // ---------------------------------------------------------------- data
@@ -298,13 +298,15 @@ function heroSignature(featured, now) {
     .join('|');
 }
 
-function heroTeamHTML(teamId) {
-  const team = data.teamById.get(teamId);
-  if (!team) return `<div class="hero-team"><span class="hero-team-name">${t('app.tbd')}</span></div>`;
+// Accepts a resolved slot ({ team, label }) from resolveBracketTeams, so the hero
+// works for knockout matches (which carry bracketRef, not teams) the same way the
+// schedule cards and modal do — falls back to the slot's label when unresolved.
+function heroTeamHTML(slot) {
+  if (!slot.team) return `<div class="hero-team"><span class="hero-team-name">${slot.label}</span></div>`;
   return `
     <div class="hero-team">
-      <img class="flag flag-lg" src="${flagSrc(team)}" alt="" width="64" height="43">
-      <span class="hero-team-name">${team.name}</span>
+      <img class="flag flag-lg" src="${flagSrc(slot.team)}" alt="" width="64" height="43">
+      <span class="hero-team-name">${slot.team.name}</span>
     </div>`;
 }
 
@@ -331,11 +333,12 @@ function heroMatchupHTML(match, now, multi) {
     ? `${match.stadium}, ${match.city}`
     : `${formatMatchTime(match, stadium)} · ${match.stadium}, ${match.city}`;
 
+  const slots = resolveBracketTeams(match);
   return `
     <div class="hero-matchup">
-      ${heroTeamHTML(match.homeTeam)}
+      ${heroTeamHTML(slots.home)}
       ${center}
-      ${heroTeamHTML(match.awayTeam)}
+      ${heroTeamHTML(slots.away)}
     </div>
     <p class="hero-meta">${meta}</p>`;
 }
