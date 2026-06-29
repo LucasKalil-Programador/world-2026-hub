@@ -491,9 +491,9 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-28.** Data: **results through match 72/104** (all 72 group-stage matches
-finished — **group stage COMPLETE**; knockout R32 ids 73–88 are next). `thirdPlaceAssignment`
-**FILLED** (8 best thirds → R32 — see the rolling refresh list below).
+**Updated 2026-06-29.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
+(RSA 0–1 CAN)** and **76 (BRA 2–1 JPN)** finished; remaining R32 ids 74, 75, 77–88 are next.
+`thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
 (bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
@@ -501,6 +501,12 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-29** — **R32 begins.** Match 76 (R32-9, BRA C1 × JPN F2): **BRA 2–1 JPN** (Sano 29',
+  Casemiro 56', Martinelli 90+6') — 2-source confirmed FIFA/ESPN/Yahoo/NBC/olympics. Stats added:
+  poss 69/31 (ESPN; backed by the 630:267 successful-pass split), shots 19/5 (VAVEL total; ESPN
+  7/2 on target = 37%/40%), cards 2/3 (BRA: Casemiro, Danilo; JPN: Sano, Kamada, Suzuki — no reds).
+  Regulation win, **no penalties**. Match 73 (RSA 0–1 CAN) was already entered. Next R32: id 74
+  (R32-1, 29/06 20:30 UTC) onward.
 - **2026-06-28** — **group stage COMPLETE + `thirdPlaceAssignment` filled.** Matches 53–72 were
   entered/committed directly by the user (see git log, commits through `8c89b8f`); this run filled the
   one-time third-place allocation in `bracket-config.json`. Final group standings (app tiebreak Pts→GD→GF→id)
@@ -519,14 +525,12 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   1/2: Christie 89' / Danilo 62', Fabinho 82' — assembled from per-event feeds, no clean box), 52
   (poss 68/32 — derived from 545/258 pass split + a 69% cite; shots 22/7; cards 0/3: Placide & Nazon
   79', Casimir 90+3'). Groups B & C now complete; thirdPlaceAssignment NOT yet due (53–72 still open).
-- **2026-06-19 (rev2)** — matches 29–30: USA 2–0 AUS, SCO 0–1 MAR (both 2-source confirmed
-  FIFA/olympics/ESPN/NBC). Stats: 29 (poss 62/38, shots 10/5, cards 3/4) and 30 (poss 41/59,
-  shots 6/12, cards 2/1) — card/shot counts corrected by the user after ESPN box lagged.
 
 ### Pending / next
-- **Knockout R32 (ids 73–88) — starts 2026-06-28 19:00 UTC** (M73 = R32-3 RSA×CAN at SoFi). These are
-  the next results to refresh; remember `penalties` may apply on ids 73–104 (KO only). R16 ids 89–96
-  from 2026-07-04.
+- **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 76 (BRA 2–1 JPN). Next: id 74
+  (R32-1, 29/06 20:30 UTC, Gillette/Boston) then 75, 77–88. Remember `penalties` may apply on ids
+  73–104 (KO only — append `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30 score).
+  R16 ids 89–96 from 2026-07-04.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
   table; bracket verified. No longer pending.
 - **Lighthouse > 90** run (needs a deployed URL).
