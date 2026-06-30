@@ -492,8 +492,8 @@ supersedes the old "768–1439 single-row header" note.
 ## Current State
 
 **Updated 2026-06-30.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
-(RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)** and **76
-(BRA 2–1 JPN)** finished; remaining R32 ids 77–88 are next.
+(RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)**, **76
+(BRA 2–1 JPN)** and **78 (CIV 1–2 NOR)** finished; remaining R32 ids 77, 79–88 are next.
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
 (bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
@@ -502,6 +502,12 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-30 (b)** — **R32 id 78 (R32-10, CIV E2 × NOR I2): CIV 1–2 NOR.** Nusa 39', Diallo 74',
+  Haaland 86' (Norway's first-ever WC knockout win) — 2-source confirmed ESPN(gid 760490)/Outlook/
+  CBS/Yahoo/FOX. Stats: poss 47/53, shots 5/4 (ESPN match box; the auto search-summary's 44/56 + 6/5
+  is the lower-confidence figure — used the page box). Cards **0/1** (only NOR Nusa 45' yellow on
+  Sofascore; clean game, 6/7 fouls). Regulation, **no penalties**. Winner propagated: NOR → R16-5 vs
+  BRA (verified). Next R32: id 77 (R32-2, 30/06 21:00 UTC), then 79–88.
 - **2026-06-30** — **R32 continues — two penalty shootouts.** Match 74 (R32-1, GER E1 × PAR 3rd-D):
   **GER 1–1 PAR, PAR win 4–3 on pens** (Enciso 42', Havertz 54'; Tah's ET header VAR-ruled out, then
   skied the decisive pen) — 2-source confirmed ESPN(gid 760489)/FOX/CBS/France24/Opta. Stats: poss
@@ -519,21 +525,11 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   7/2 on target = 37%/40%), cards 2/3 (BRA: Casemiro, Danilo; JPN: Sano, Kamada, Suzuki — no reds).
   Regulation win, **no penalties**. Match 73 (RSA 0–1 CAN) was already entered. Next R32: id 74
   (R32-1, 29/06 20:30 UTC) onward.
-- **2026-06-28** — **group stage COMPLETE + `thirdPlaceAssignment` filled.** Matches 53–72 were
-  entered/committed directly by the user (see git log, commits through `8c89b8f`); this run filled the
-  one-time third-place allocation in `bracket-config.json`. Final group standings (app tiebreak Pts→GD→GF→id)
-  give the **8 best thirds = groups B,D,E,F,I,J,K,L** (out: IRN/G, KOR/A, SCO/C, URU/H — SEN/I edges
-  IRN/G 3pts GD+2 vs GD0). Allocation taken from FIFA's official combination table (Wikipedia
-  `Template:2026_FIFA_World_Cup_third-place_table`, row B,D,E,F,I,J,K,L): `1A–3E 1B–3J 1D–3B 1E–3D
-  1G–3I 1I–3F 1K–3L 1L–3K` → **slots {1:D, 2:F, 3:B, 4:I, 5:E, 6:K, 7:J, 8:L}**. Verified in preview:
-  all 16 R32 resolve with real teams, no same-group clashes (GER×PAR, FRA×SWE, USA×BIH, BEL×SEN,
-  MEX×ECU, ENG×COD, SUI×ALG, COL×GHA + the 8 winner/runner-up ties). **round32 structure cross-checked
-  vs official bracket (M73–M88) — exact match**, incl. winner-B-faces-a-third (not winner C).
 
 ### Pending / next
 - **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
-  75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN). Next: ids 78 (R32-10, 30/06 17:00 UTC, AT&T/Dallas)
-  & 77 (R32-2, 30/06 21:00 UTC, MetLife), then 79–88. `penalties` apply on ids 73–104 (KO only — append
+  75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 78 (CIV 1–2 NOR). Next: id 77 (R32-2, 30/06 21:00 UTC,
+  MetLife), then 79–88. `penalties` apply on ids 73–104 (KO only — append
   `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30 score). R16 ids 89–96 from 2026-07-04.
   **Note:** the 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — re-confirm if a clean box surfaces.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
