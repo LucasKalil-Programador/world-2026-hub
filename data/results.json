@@ -804,15 +804,27 @@
   },
   {
     "matchId": 74,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 1,
+    "awayScore": 1,
+    "status": "finished",
+    "penalties": { "home": 3, "away": 4 },
+    "stats": {
+      "possession": { "home": 76, "away": 24 },
+      "shots": { "home": 21, "away": 7 },
+      "cards": { "home": 2, "away": 2 }
+    }
   },
   {
     "matchId": 75,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 1,
+    "awayScore": 1,
+    "status": "finished",
+    "penalties": { "home": 2, "away": 3 },
+    "stats": {
+      "possession": { "home": 30, "away": 70 },
+      "shots": { "home": 6, "away": 11 },
+      "cards": { "home": 0, "away": 1 }
+    }
   },
   {
     "matchId": 76,
