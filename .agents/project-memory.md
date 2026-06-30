@@ -491,8 +491,9 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-29.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
-(RSA 0–1 CAN)** and **76 (BRA 2–1 JPN)** finished; remaining R32 ids 74, 75, 77–88 are next.
+**Updated 2026-06-30.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
+(RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)** and **76
+(BRA 2–1 JPN)** finished; remaining R32 ids 77–88 are next.
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
 (bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
@@ -501,6 +502,17 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-06-30** — **R32 continues — two penalty shootouts.** Match 74 (R32-1, GER E1 × PAR 3rd-D):
+  **GER 1–1 PAR, PAR win 4–3 on pens** (Enciso 42', Havertz 54'; Tah's ET header VAR-ruled out, then
+  skied the decisive pen) — 2-source confirmed ESPN(gid 760489)/FOX/CBS/France24/Opta. Stats: poss
+  76/24 (FotMob; Opta cites GER 75.4%), shots 21/7 (FotMob), cards 2/2 (FOX bookings: GER Havertz,
+  Musiala; PAR Cubas, Galarza — no reds). Match 75 (R32-4, NED F1 × MAR C2): **NED 1–1 MAR, MAR win
+  3–2 on pens** (Gakpo 72', Diop 90+1'; Saibari decisive pen) — 2-source confirmed FotMob(jps8z)/ESPN
+  (gid 760488)/Outlook/SI. Stats: poss 30/70 (FotMob **and** ESPN agree), shots 6/11 (FotMob; ESPN
+  on-target 2/5), cards **0/1** — **single-source/low-confidence**: only Diop 47' yellow surfaced on
+  Sofascore; the physical 120'+ tie likely had more, card section was JS-unextractable elsewhere.
+  Penalties on KO ids only. Both winners propagated & verified in bracket (PAR→R16-1, MAR→R16-2 vs
+  CAN). Next R32: ids 77, 78 (30/06), then 79–88.
 - **2026-06-29** — **R32 begins.** Match 76 (R32-9, BRA C1 × JPN F2): **BRA 2–1 JPN** (Sano 29',
   Casemiro 56', Martinelli 90+6') — 2-source confirmed FIFA/ESPN/Yahoo/NBC/olympics. Stats added:
   poss 69/31 (ESPN; backed by the 630:267 successful-pass split), shots 19/5 (VAVEL total; ESPN
@@ -517,20 +529,13 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   all 16 R32 resolve with real teams, no same-group clashes (GER×PAR, FRA×SWE, USA×BIH, BEL×SEN,
   MEX×ECU, ENG×COD, SUI×ALG, COL×GHA + the 8 winner/runner-up ties). **round32 structure cross-checked
   vs official bracket (M73–M88) — exact match**, incl. winner-B-faces-a-third (not winner C).
-- **2026-06-24** — matches 49–52 (Groups B & C final round): SUI 2–1 CAN, BIH 3–1 QAT, SCO 0–3 BRA,
-  MAR 4–2 HAI (all 2-source confirmed FIFA/ESPN/FOX/olympics/Yahoo). **BIH×QAT resolved to 3–1** over
-  an Al Jazeera "3-2" headline (ESPN report + box + FIFA all 3–1). Stats added to all four: 49 (poss
-  55/45, shots 9/24 — CAN out-shot SUI 24-9 chasing the game late, per ESPN box; cards 1/2: Xhaka 31'
-  / Larin 31', Millar 87'), 50 (poss 54/46, shots 13/9, cards 0/0), 51 (poss 46/54, shots 4/8, cards
-  1/2: Christie 89' / Danilo 62', Fabinho 82' — assembled from per-event feeds, no clean box), 52
-  (poss 68/32 — derived from 545/258 pass split + a 69% cite; shots 22/7; cards 0/3: Placide & Nazon
-  79', Casimir 90+3'). Groups B & C now complete; thirdPlaceAssignment NOT yet due (53–72 still open).
 
 ### Pending / next
-- **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 76 (BRA 2–1 JPN). Next: id 74
-  (R32-1, 29/06 20:30 UTC, Gillette/Boston) then 75, 77–88. Remember `penalties` may apply on ids
-  73–104 (KO only — append `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30 score).
-  R16 ids 89–96 from 2026-07-04.
+- **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
+  75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN). Next: ids 78 (R32-10, 30/06 17:00 UTC, AT&T/Dallas)
+  & 77 (R32-2, 30/06 21:00 UTC, MetLife), then 79–88. `penalties` apply on ids 73–104 (KO only — append
+  `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30 score). R16 ids 89–96 from 2026-07-04.
+  **Note:** the 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — re-confirm if a clean box surfaces.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
   table; bracket verified. No longer pending.
 - **Lighthouse > 90** run (needs a deployed URL).
