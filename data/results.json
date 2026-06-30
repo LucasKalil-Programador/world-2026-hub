@@ -6,16 +6,7 @@
     "awayScore": null,
     "status": "scheduled"
   },
-  {
-    "matchId": 78,
-    "homeScore": 1,
-    "awayScore": 2,
-    "status": "finished",
-    "stats": {
-      "possession": { "home": 47, "away": 53 },
-      "shots": { "home": 5, "away": 4 },
-      "cards": { "home": 0, "away": 1 }
-    }
+  {"matchId":78,"homeScore":1,"awayScore":2,"status":"finished","stats":{"possession":{"home":47,"away":53},"shots":{"home":5,"away":4},"cards":{"home":0,"away":1}}
   },
   {
     "matchId": 79,
