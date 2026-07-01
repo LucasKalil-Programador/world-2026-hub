@@ -491,9 +491,10 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-06-30.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
+**Updated 2026-07-01.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
 (RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)**, **76
-(BRA 2–1 JPN)** and **78 (CIV 1–2 NOR)** finished; remaining R32 ids 77, 79–88 are next.
+(BRA 2–1 JPN)**, **77 (FRA 3–0 SWE)**, **78 (CIV 1–2 NOR)** and **79 (MEX 2–0 ECU)** finished;
+remaining R32 ids 80–88 are next.
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
 (bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
@@ -502,6 +503,20 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-07-01** — **R32 ids 77 & 79.** Match 77 (R32-2, FRA I1 × SWE F3): **FRA 3–0 SWE** —
+  Mbappé 45', 74' (his 6th of the tournament, level with Messi's career WC tally), Barcola 53' — 2-source
+  confirmed ESPN(gid 760492)/FIFA match centre/Al Jazeera/FOX/RTE. Stats: poss 61/39 (FotMob; ESPN's
+  page didn't expose a possession stat), shots 11/6 (ESPN match box — used over FotMob's much higher
+  25/8 figure, which looked like a different attempt-counting method), cards **0/0** — checked ESPN
+  boxscore + playbyplay, FOX, Al Jazeera live blog, RTE, Yahoo recap; none reported any booking, so
+  treated as a clean game rather than an unconfirmed gap. Regulation, no penalties. Winner propagated:
+  FRA → R16-1 vs PAR (verified in bracket). Match 79 (R32-11, MEX A1 × ECU E3): **MEX 2–0 ECU** —
+  Quiñones 22', Jiménez 31'; Ecuador's Hincapié sent off 90+5' (covering his mouth during a dispute
+  with Giménez, a new directive this tournament) — 2-source confirmed ESPN(gid 760491)/FIFA match
+  centre/Al Jazeera/Yahoo/CBS. Stats: poss 43/57, shots 9/7, cards 0/3 (2 yellow + Hincapié's red) —
+  all from the ESPN match box, red card cross-confirmed by the Yahoo live blog. Regulation, no
+  penalties. Mexico (co-host) reached R16 for the first time in the format; winner propagated to R16-2
+  (verified in bracket). Next R32: ids 80–88.
 - **2026-06-30 (b)** — **R32 id 78 (R32-10, CIV E2 × NOR I2): CIV 1–2 NOR.** Nusa 39', Diallo 74',
   Haaland 86' (Norway's first-ever WC knockout win) — 2-source confirmed ESPN(gid 760490)/Outlook/
   CBS/Yahoo/FOX. Stats: poss 47/53, shots 5/4 (ESPN match box; the auto search-summary's 44/56 + 6/5
@@ -519,17 +534,11 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   Sofascore; the physical 120'+ tie likely had more, card section was JS-unextractable elsewhere.
   Penalties on KO ids only. Both winners propagated & verified in bracket (PAR→R16-1, MAR→R16-2 vs
   CAN). Next R32: ids 77, 78 (30/06), then 79–88.
-- **2026-06-29** — **R32 begins.** Match 76 (R32-9, BRA C1 × JPN F2): **BRA 2–1 JPN** (Sano 29',
-  Casemiro 56', Martinelli 90+6') — 2-source confirmed FIFA/ESPN/Yahoo/NBC/olympics. Stats added:
-  poss 69/31 (ESPN; backed by the 630:267 successful-pass split), shots 19/5 (VAVEL total; ESPN
-  7/2 on target = 37%/40%), cards 2/3 (BRA: Casemiro, Danilo; JPN: Sano, Kamada, Suzuki — no reds).
-  Regulation win, **no penalties**. Match 73 (RSA 0–1 CAN) was already entered. Next R32: id 74
-  (R32-1, 29/06 20:30 UTC) onward.
 
 ### Pending / next
 - **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
-  75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 78 (CIV 1–2 NOR). Next: id 77 (R32-2, 30/06 21:00 UTC,
-  MetLife), then 79–88. `penalties` apply on ids 73–104 (KO only — append
+  75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 77 (FRA 3–0 SWE), 78 (CIV 1–2 NOR), 79 (MEX 2–0 ECU).
+  Next: ids 80–88. `penalties` apply on ids 73–104 (KO only — append
   `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30 score). R16 ids 89–96 from 2026-07-04.
   **Note:** the 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — re-confirm if a clean box surfaces.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination

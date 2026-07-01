@@ -7,7 +7,7 @@
     "status": "finished",
     "stats": {
       "possession": { "home": 61, "away": 39 },
-      "shots": { "home": 11, "away": 6 },
+      "shots": { "home": 25, "away": 8 },
       "cards": { "home": 0, "away": 0 }
     }
   },
@@ -20,8 +20,8 @@
     "status": "finished",
     "stats": {
       "possession": { "home": 43, "away": 57 },
-      "shots": { "home": 9, "away": 7 },
-      "cards": { "home": 0, "away": 3 }
+      "shots": { "home": 15, "away": 7 },
+      "cards": { "home": 0, "away": 4 }
     }
   },
   {
