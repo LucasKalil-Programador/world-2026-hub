@@ -491,10 +491,11 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-07-01.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
+**Updated 2026-07-02.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
 (RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)**, **76
-(BRA 2–1 JPN)**, **77 (FRA 3–0 SWE)**, **78 (CIV 1–2 NOR)**, **79 (MEX 2–0 ECU)** and **80
-(ENG 2–1 COD)** finished; remaining R32 ids 81–88 are next.
+(BRA 2–1 JPN)**, **77 (FRA 3–0 SWE)**, **78 (CIV 1–2 NOR)**, **79 (MEX 2–0 ECU)**, **80
+(ENG 2–1 COD)**, **81 (USA 2–0 BIH)** and **82 (BEL 3–2 SEN, AET)** finished (82/104 total);
+remaining R32 ids 83–88 are next.
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
 (bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
@@ -503,6 +504,26 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-07-02** — **R32 ids 81 & 82.** Match 81 (R32-7, USA D1 × BIH 3rd-B): **USA 2–0 BIH** —
+  Balogun 45' (his 3rd of the tournament) then sent off 64' for a reckless tackle on Muharemović,
+  Tillman sealed it with an 82' direct free-kick; USA's first WC knockout win since 2002, playing the
+  final ~30min with 10 men — 2-source+ confirmed ESPN(gid 760494)/CBS/NBC Bay Area/NPR/CNN/FOX/US
+  Soccer/Opta Analyst. Stats: poss 48/52 (ESPN match box), shots 8/10 (Opta Analyst total-shots —
+  cross-checked against ESPN's own SOG-conversion %: 2/8=25% and 3/10=30%, both match exactly). Cards
+  1/1 (Balogun red 64' only; BIH's Radeljić yellow 80' — excluded a 2nd BIH yellow shown to head coach
+  Barbarez, a bench/technical-area card, not a player card). Regulation, no penalties. Winner
+  propagated: USA → R16-4 vs BEL (verified in bracket, matches real-world reporting). Match 82
+  (R32-8, BEL G1 × SEN 3rd-I): **BEL 3–2 SEN (AET)** — Diarra 25', Sarr 51' put Senegal 2-0 up; sub
+  Lukaku 86' and Tielemans 89' forced extra time, Tielemans converted a 125' penalty (VAR) for the
+  latest goal in WC history — 2-source+ confirmed ESPN(gid 760493)/Outlook India/Opta Analyst/CBS/
+  FOX/Sofascore. Stats: poss 52/48 (FotMob — ESPN's page didn't expose a possession stat, same gap as
+  the 77 FRA-SWE refresh), shots 18/5 (ESPN match box — initial reads were inconsistent/swapped, took
+  2 more fetches with explicit home/away attribution to settle; FotMob's conflicting 19/19 discarded
+  as the outlier). Cards 1/1 (Mechele BEL yellow 64', Camara SEN yellow 67'; excluded Belgium coach
+  Rudi Garcia's dissent yellow and an uncorroborated FotMob claim of a 2nd Camara yellow at 73' — no
+  source reports Senegal playing a man down). Decided in extra time by a live-play goal, not a
+  shootout — no `penalties` field. Winner propagated: BEL → R16-4 vs USA (verified in bracket). Next
+  R32: ids 83–88.
 - **2026-07-01 (b)** — **R32 id 80 (R32-12, ENG L1 × COD 3rd-K): ENG 2–1 COD.** Cipenga 7' gave
   Congo an early lead (their first-ever WC knockout appearance); Kane leveled 75' (header) and won
   it 86' (strike), both assists from Gordon — 2-source+ confirmed ESPN(gid 760495)/Olympics.com/
@@ -525,18 +546,14 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   all from the ESPN match box, red card cross-confirmed by the Yahoo live blog. Regulation, no
   penalties. Mexico (co-host) reached R16 for the first time in the format; winner propagated to R16-2
   (verified in bracket). Next R32: ids 80–88.
-- **2026-06-30 (b)** — **R32 id 78 (R32-10, CIV E2 × NOR I2): CIV 1–2 NOR.** Nusa 39', Diallo 74',
-  Haaland 86' (Norway's first-ever WC knockout win) — 2-source confirmed ESPN(gid 760490)/Outlook/
-  CBS/Yahoo/FOX. Stats: poss 47/53, shots 5/4 (ESPN match box; the auto search-summary's 44/56 + 6/5
-  is the lower-confidence figure — used the page box). Cards **0/1** (only NOR Nusa 45' yellow on
-  Sofascore; clean game, 6/7 fouls). Regulation, **no penalties**. Winner propagated: NOR → R16-5 vs
-  BRA (verified). Next R32: id 77 (R32-2, 30/06 21:00 UTC), then 79–88.
 
 ### Pending / next
 - **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
   75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 77 (FRA 3–0 SWE), 78 (CIV 1–2 NOR), 79 (MEX 2–0 ECU),
-  80 (ENG 2–1 COD). Next: ids 81–88. `penalties` apply on ids 73–104 (KO only — append
-  `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30 score). R16 ids 89–96 from 2026-07-04.
+  80 (ENG 2–1 COD), 81 (USA 2–0 BIH), 82 (BEL 3–2 SEN AET). Next: ids 83–88. `penalties` apply on ids
+  73–104 (KO only — append `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30
+  score; id 82 was decided in extra time by a live goal, not a shootout, so it carries no `penalties`
+  field despite going past 90+30). R16 ids 89–96 from 2026-07-04.
   **Note:** the 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — re-confirm if a clean box surfaces.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
   table; bracket verified. No longer pending.
