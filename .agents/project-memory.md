@@ -99,9 +99,12 @@ automated tests / linter (explicit spec constraint).
   match (group or knockout); reused by schedule cards, modal, and search/team filters (so knockout
   matches become searchable/filterable once resolved). `getBracketTree()` → `{ rounds, third,
   nodesByRef, champion }`.
-- **CSS connectors depend on an equal-height invariant:** all columns share height with `flex:1`
+- ~~**CSS connectors depend on an equal-height invariant:** all columns share height with `flex:1`
   slots, so pair children sit at 25%/75% and the next node at 50%; pure-CSS stubs meet exactly.
-  Column gap = 2 × stub (44px desktop / 36px ≤767). **Breaking equal height breaks the lines.**
+  Column gap = 2 × stub (44px desktop / 36px ≤767). **Breaking equal height breaks the lines.**~~
+  **RETIRED 2026-07-03** by the wallchart redesign — see "Bracket redesign (2026-07-03)" below;
+  connectors are now SVG paths generated from the same JS geometry as the cards, so no CSS
+  invariant exists anymore.
 - **Simulation:** `decide()` applies only real finished results; `applySimulation()` overlays user
   picks afterwards and **never overrides a real result** (so `simulated:false` ⇒ real). Stale entries
   (winner no longer resolved) are silently ignored. Eligible nodes (both teams resolved, real result
@@ -114,6 +117,67 @@ automated tests / linter (explicit spec constraint).
 - **Share/import:** `?prediction=base64(simulation)` via `getShareableLink()` /
   `loadPredictionFromURL()`; stripped from the URL (`history.replaceState`) whether applied or not;
   unknown refs rejected wholesale. **Challenge** card scores sim vs real finished knockout results.
+
+### Bracket redesign — center-out wallchart (2026-07-03, Step 1 of 4)
+Full redesign spec settled via /grill-me: **two switchable chart layouts** (center-out wallchart =
+default, radial = Step 3) + a **mobile round pager** default ≤767px (Step 2), stadium-night art
+direction, lean escalating cards, fit-whole-chart initial framing, gold-real/blue-sim champion
+celebration (Step 4), built **directly on master** (deploy still gated on user-approved push).
+Step 1 (shipped): wallchart replaces the old left-to-right columns.
+- **`computeWallchartLayout()` in `bracket.js` is the single geometry source:** absolute px
+  positions for every card/title/champion box (`GEO` constants; R32 1–8 left half, 9–16 right,
+  later nodes at feeder midpoints) **and** the SVG bezier connectors + champion stem derived from
+  the same numbers — cards and lines cannot drift apart. Tree/sim/share/challenge logic untouched;
+  DOM contract preserved (`data-ref`, `data-match-id`, delegation, keyboard activation).
+- **Fit-to-chart zoom:** geometry is computed (never DOM-measured); a `ResizeObserver` on
+  `#bracket-wrap` computes `view.fit` when the panel becomes visible (hidden panel = clientWidth 0)
+  and re-fits on resize unless the user zoomed. **Zoom label "100%" = fit**, reset returns to fit,
+  clamp = [fit, 2]. The wrap carries an inline `aspect-ratio: W/H` from the engine so the fit view
+  is never letterboxed (capped `max-height: min(80vh, 840px)`).
+- **Cards:** lean two-row + microline (`.bk-meta`: kickoff via `kickoffShort()` honoring the
+  Local/Stadium toggle — bracket now listens to `timemodechange`; LIVE pulse; FT = `t('bracket.ft')`,
+  new i18n key EN/PT). Tier classes `bk-r32…bk-final` escalate size/heat; the Final hero card also
+  shows venue (`.bk-venue`). Champion box: `has-champion` gold; **`is-sim` = blue + SIM chip**
+  (a simulated champion must never read as real — same rule as the stats verdict; previously the
+  old champion box showed sim champions in gold).
+- **Path highlight** now also lights SVG connectors: a path turns gold when **both** its
+  `data-from`/`data-to` endpoints are in `pathRefs()`; the champion stem carries FINAL→FINAL.
+- **Motion:** cards rise + connectors draw (`pathLength="1"` + dash animation), staggered by round,
+  all inside `@media (prefers-reduced-motion: no-preference)`; replays on each tab open (display:none
+  restarts CSS animations) — intentional "chart assembles" effect.
+- ~~**Interim states until later steps:** mobile ≤767 shows the pinch-zoom wallchart (pager = Step 2);
+  no view toggle yet (registry lands with the second view).~~ Superseded same day — Steps 2+3 below.
+
+### Bracket redesign — Steps 2+3: view toggle, rounds pager, radial "orbit" (2026-07-03)
+- **View toggle:** segmented `Fases | Chaveamento | Radial` in the toolbar; explicit choice persists
+  in `wc2026_prefs.bracketView`; with no stored pref the default follows the breakpoint (≤767px →
+  rounds pager, else wallchart; a `matchMedia('change')` listener re-renders while unset). Zoom
+  controls render only for chart views. `render()` dispatches: pager / `chartHTML` →
+  `wallchartInnerHTML` | `radialInnerHTML`. Switching chart layouts resets to a fresh fit
+  (`view.layoutId` check in `initInteractions`).
+- **Rounds pager — button navigation ONLY (user decision):** the first build used a scroll-snap
+  swipe track; the user rejected horizontal scrolling, so pages are plain sections toggled with
+  `hidden` by the chips (`initPager` ~15 lines, no ResizeObserver/height-clamp needed). Grid is
+  **max 2 columns** (≥700px) — 3–4 columns made cards too narrow (user feedback). Opens on the
+  first round with an unfinished match (`firstOpenPage`); `pagerIndex` survives re-renders. Cards
+  (`.bk-pcard`) carry venue·city + status row and reuse `teamRowHTML` + the same
+  `data-ref`/`data-match-id` delegation (modal + sim editor work unchanged).
+- **Radial = "orbit" view, redesigned to a user-supplied reference image** (circular predictions
+  bracket with the trophy at center). NOT rectangular cards: **circular flag tokens** on concentric
+  rings — outer ring = 32 entrants, each ring inward = a round's **winner slots** (a match's winner
+  slot doubles as the next match's participant), trophy centerpiece (= the FINAL's winner slot,
+  champion flag + name when decided, sim-blue when simulated), third-place = small labeled pair
+  below the circle. `TGEO` radii chosen so adjacent/consecutive rings never collide (validated with
+  an automated pairwise-overlap eval in preview — keep doing that after any radius change).
+  **Semantics:** elbow route lines (radial segment + bend dot) turn **gold = real advancement**,
+  **dashed blue = simulated pick**; eliminated entrants grey out (`tk-out`), TBD slots are striped
+  discs (`tk-tbd`); names/scores live in the shared app tooltip (`has-tip`/`data-tip`, delegation
+  in app.js `initTooltips`) and the modal. **Sim affordance lives on the winner slot** (`opts.slot`,
+  not `opts.winner` — a TBD slot is exactly the simulatable one; that inversion was a shipped-then-
+  fixed bug). Path highlight generalized: `showPath` lights ANY `[data-ref]` element + `.bk-le`
+  endpoints; hover/focus delegation uses `closest('[data-ref]')`.
+- **Toolbar gotcha:** `.bracket-tools-left` holds 6 controls — needs `flex-wrap: wrap` or it forces
+  ~500px of page overflow at 375px (found via body scrollWidth sweep on mobile).
 
 ### Modal (`modal.js`)
 - **Native `<dialog>` + `showModal()`** → focus trap, Esc, `::backdrop` come free. Backdrop click =
@@ -209,6 +273,11 @@ automated tests / linter (explicit spec constraint).
    viewport emulation desyncs the capture surface. At emulated widths > native, navigate via
    `preview_eval` + `navigateTo()` and verify geometry via eval/inspect; trust screenshots only at
    widths ≤ native. `preview_resize preset: desktop` resets it.
+9. **`aspect-ratio` + `min-height` can transfer size INTO width** (bracket wallchart, 2026-07-03) —
+   on a box with `width: auto`, a violated `min-height` transfers back through the ratio and widens
+   the element past its container (on mobile the 220px min became 585px of page overflow). Fix: give
+   the box a definite width (`width: 100%`); then the ratio only drives height and min/max-height
+   clamp it without transfer.
 
 ---
 
@@ -491,7 +560,12 @@ supersedes the old "768–1439 single-row header" note.
 
 ## Current State
 
-**Updated 2026-07-02.** Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
+**Updated 2026-07-03.** **Bracket redesign Steps 1–3 shipped on master (not yet pushed):** the
+Knockout tab has 3 switchable views — center-out wallchart (desktop default), radial "orbit" (flag
+tokens per the user's reference image), rounds pager (mobile default, button-only navigation, ≤2
+columns). See Architecture → "Bracket redesign" (both entries). Pending: Step 4 champion
+celebration + polish pass + version bump to v1.1.0.
+Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
 (RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)**, **76
 (BRA 2–1 JPN)**, **77 (FRA 3–0 SWE)**, **78 (CIV 1–2 NOR)**, **79 (MEX 2–0 ECU)**, **80
 (ENG 2–1 COD)**, **81 (USA 2–0 BIH)** and **82 (BEL 3–2 SEN, AET)** finished (82/104 total);

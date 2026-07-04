@@ -41,7 +41,11 @@ worldcup2026/
 │   ├── css/
 │   │   ├── style.css                     ★ Palette variables, glassmorphism base, layout,
 │   │   │                                   components — mobile-first
-│   │   ├── bracket.css                   Bracket columns, connectors, highlight states
+│   │   ├── bracket.css                   Knockout views: stadium-night stage, wallchart cards
+│   │   │                                   (heat toward the Final) + SVG connectors, radial orbit
+│   │   │                                   tokens (tk-* states, route lines), rounds-pager cards
+│   │   │                                   + chips, view switch, path highlight, sim/challenge
+│   │   │                                   styles; all motion gated by reduced-motion
 │   │   ├── stats.css                     Stats tab: hero "pulse", overview cards, goals-by-stage chart
 │   │   └── animations.css                Entry (fade-in, slide-up/left) + interaction
 │   │                                       (hover-scale/glow, pulse, line-draw)
@@ -65,7 +69,12 @@ worldcup2026/
 │   │   ├── groups.js                     Standings computation (3/1/0, GD, GF) + group tables
 │   │   ├── stadiums.js                   Stadium cards + "view matches" cross-link
 │   │   ├── bracket.js                    ★ Bracket tree resolution, resolveBracketTeams(),
-│   │   │                                   simulation, challenge score, share prediction
+│   │   │                                   simulation, challenge score, share prediction;
+│   │   │                                   3 switchable views (wc2026_prefs.bracketView):
+│   │   │                                   computeWallchartLayout() center-out wallchart,
+│   │   │                                   computeRadialLayout()+radialInnerHTML() orbit view
+│   │   │                                   (flag tokens on rings, trophy center), rounds pager
+│   │   │                                   (button-only); fit-to-chart zoom (fit = "100%")
 │   │   ├── modal.js                      Match detail modal (ARIA dialog)
 │   │   ├── storage.js                    localStorage wrapper — wc2026_* keys, auto-JSON
 │   │   ├── i18n.js                       EN/PT-BR dicts + t(key), lang toggle

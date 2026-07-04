@@ -98,6 +98,25 @@ champion path, debuts champion) once the final lands. The **data-layer stages (G
 
 ---
 
+## 8. Bracket redesign (2026-07-03, spec settled via /grill-me — see project-memory)
+
+Two switchable chart layouts (wallchart default + radial) + mobile round pager; stadium-night art
+direction; built directly on master, one approval gate per step.
+
+- [x] ~~Step 1 — Foundation + wallchart: center-out layout engine (`computeWallchartLayout()`),
+  SVG connectors + path highlight, stadium-night backdrop, tiered cards with microlines,
+  fit-to-chart zoom (fit = "100%"), sim/challenge/share preserved~~ (2026-07-03)
+- [x] ~~Step 2 — Mobile round pager (default ≤767px) + view-toggle infrastructure~~ (2026-07-03;
+  reworked same day per user feedback: **button navigation only** — scroll-snap swiping removed —
+  and max 2 columns on desktop)
+- [x] ~~Step 3 — Radial layout (second chart view on the toggle)~~ (2026-07-03; redesigned to the
+  user's reference image: circular flag tokens on rings + trophy center = "orbit" view, gold real /
+  dashed-blue sim route lines, tooltips for names/scores)
+- [ ] Step 4 — Champion celebration (gold real / blue sim), polish pass (a11y/i18n/reduced-motion),
+  `APP_VERSION` → v1.1.0, README note
+
+---
+
 ## Quick final checklist
 
 ```
