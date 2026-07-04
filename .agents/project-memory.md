@@ -344,10 +344,10 @@ a separate commit keeps the data commit's diff clean.
 - **Gotcha:** the Hostinger FTP account logs in **already inside `public_html`**, so `server-dir` is
   relative to it — do **not** prefix `public_html/` (causes `public_html/public_html/...`). Final
   path: `public_html/worldcup2026/`. If FTPS is rejected, switch `protocol` to `ftp`.
-- `exclude` removes `.git*`, `.github/`, `.agents/`, `README.md`, `how-*.md`, `*-en.md` specs — only
-  `index.html` + `assets/` + `data/` reach the site. New `data/` / `manifest.json` / `assets/icons/`
-  files **are** deployed. Incremental sync state (`.ftp-deploy-sync-state.json`) lives only on the
-  server — don't commit it.
+- `exclude` removes `.git*`, `.github/`, `.agents/`, **`docs/`**, `README.md`, **`DEVELOPMENT.md`**,
+  `how-*.md`, `*-en.md` specs — only `index.html` + `assets/` + `data/` reach the site. New `data/` /
+  `manifest.json` / `assets/icons/` files **are** deployed. Incremental sync state
+  (`.ftp-deploy-sync-state.json`) lives only on the server — don't commit it.
 
 ### Real-data migration (DONE 2026-06-12)
 All 6 `data/*.json` hold real WC2026 data (sources: Wikipedia per-group + knockout articles,
@@ -549,6 +549,21 @@ Edge fades via `mask-image` toggled by `updateTabFades()`; active tab kept visib
 `scrollActiveTabIntoView()` (uses `scrollLeft`, **not** `scrollIntoView`, to avoid scrolling the
 page). The time button collapses to a 🕐 icon at ≤420px (a11y intact via `data-i18n-aria`). This
 supersedes the old "768–1439 single-row header" note.
+
+### Docs — README showcase + DEVELOPMENT.md split (2026-07-04)
+The root README was reframed (via /grill-me) from a dev/maintenance guide into a **non-technical
+showcase** (English): tagline, shields.io badges, prominent live-demo link
+(**https://lucaskalil.com/worldcup2026** — the public URL; not previously recorded anywhere),
+per-page **screenshot gallery** (Home/Matches/Groups/Knockout/Stadiums/Stats), and a plain-language
+"Under the hood" section. All the old technical content (run locally, project structure, JSON
+maintenance, local storage, deploy, acceptance criteria, roadmap) moved to a new **`DEVELOPMENT.md`**;
+the README's stale "mock data / GitHub Pages" framing was corrected to real-data + the real Hostinger
+deploy. Screenshots live in **`docs/screenshots/*.png`**, captured with **headless Edge**
+(`msedge --headless=new --window-size=1366,H --virtual-time-budget=6000 --lang=en-US --screenshot`,
+`--lang=en-US` forces the EN UI; served from Claude Preview `worldcup2026` on :8126) — repeat that to
+refresh them. **Deploy exclude updated** to drop `docs/` + `DEVELOPMENT.md` (docs never ship to the
+live site — see Deploy runbook). No app-code/version change (`APP_VERSION` untouched; docs are
+excluded from deploy).
 
 ### How to record a decision (after finishing a unit of work)
 1. Tick the item in `.agents/TODO.md`.

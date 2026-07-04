@@ -116,7 +116,16 @@ worldcup2026/
 │                                           awards.json, keeper-stats.json, curiosities.json,
 │                                           all-time-baselines.json — absent = silent empty default
 │
-├── README.md                             Setup, GitHub Pages deploy, JSON maintenance guide
+├── README.md                             ★ Non-technical SHOWCASE (2026-07-04): tagline, badges,
+│                                           live-demo link (lucaskalil.com/worldcup2026), per-page
+│                                           screenshot gallery, plain-language "Under the hood".
+│                                           Dev content lives in DEVELOPMENT.md now.
+├── DEVELOPMENT.md                        Developer guide (2026-07-04): run locally, project
+│                                           structure, JSON maintenance, local storage, deploy,
+│                                           acceptance criteria, roadmap — split out of the old README
+├── docs/screenshots/                     6 PNGs (home/matches/groups/bracket/stadiums/stats) for the
+│                                           README gallery — captured via headless Edge, EN UI, 1366px.
+│                                           Excluded from the FTP deploy (docs-only)
 ├── how-update.md                         Real-data migration runbook (mock → real — DONE 2026-06-12)
 ├── how-refresh-data.md                   ★ Daily refresh runbook during the tournament:
 │                                           results.json scores/status + one-time

@@ -1,155 +1,98 @@
-# World Cup 2026 Hub
+<div align="center">
 
-A static, single-page hub for the FIFA World Cup 2026 (Mexico · USA · Canada, 48 teams):
-full match schedule, live group standings, an interactive knockout bracket with a
-prediction/simulation mode, and a stadium guide. Built with vanilla HTML/CSS/JS —
-no backend, no framework, no build step. All content lives in JSON files.
+# 🏆 World Cup 2026 Hub
 
-**UI languages:** English / Português (toggle in the header, auto-detected on first visit).
+### Follow the entire FIFA World Cup 2026 in one beautiful place — the schedule, live group standings, an interactive knockout bracket you can predict, the stadiums, and full tournament stats.
+
+[![Live demo](https://img.shields.io/badge/Live_demo-lucaskalil.com%2Fworldcup2026-e6b800?style=for-the-badge)](https://lucaskalil.com/worldcup2026)
+
+![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-no_frameworks-f7df1e?style=flat-square)
+![Zero dependencies](https://img.shields.io/badge/Dependencies-zero-2ea44f?style=flat-square)
+![PWA](https://img.shields.io/badge/PWA-installable-5a0fc8?style=flat-square)
+![JavaScript size](https://img.shields.io/badge/JavaScript-~74_KB-00b4d8?style=flat-square)
+![Languages](https://img.shields.io/badge/UI-EN_%2F_PT-lightgrey?style=flat-square)
+
+<img src="docs/screenshots/home.png" alt="World Cup 2026 Hub home screen — the next match with a live countdown and a tournament overview" width="100%">
+
+</div>
 
 ---
 
-## Features
+## What is this?
 
-- **Schedule** — all 104 matches with filters (date, group, phase, team, stadium),
-  free-text search, date sorting, and a "My matches" favorites filter.
-- **Groups** — standings computed live from results (3/1/0 points, goal difference,
-  goals for), qualification highlights.
-- **Knockout bracket** — generated dynamically from standings + `bracket-config.json`;
-  hover highlights a match's full path; mouse-wheel/pinch zoom; drag to pan.
-- **Simulation mode** — pick winners and scores for unplayed knockout matches; picks
-  propagate through the rounds, persist locally, and never touch the JSON data.
-- **Bracket challenge** — once real knockout results land, your saved picks are scored
-  ("X of Y picks correct", per phase).
-- **Share prediction** — copy a link that carries your bracket picks (base64 in the URL).
-- **Favorites** — star teams anywhere; their matches get highlighted across the app.
-- **Time zones** — show kickoff times in your local time or the stadium's time.
-- **Add to calendar** — download any match as an RFC 5545 `.ics` file.
-- **Match modal** — details for every match, with space reserved for future stats.
-- **Stats** — a sub-navigated screen (Overview · Teams · Records · Comparator):
-  tournament-to-date aggregates and goals-by-stage/round charts; a verdict hero
-  (champion + podium) that takes over once the final is played; a final ranking
-  1–48 by stage reached; team record cards (biggest win, win streak, champion's
-  path); a "format debuts" band; and an A-vs-B team comparator. Sections appear
-  only when they have data (graceful degradation).
-- Responsive (mobile / tablet / desktop), keyboard-accessible, honors
-  `prefers-reduced-motion`.
+**World Cup 2026 Hub** is a fan-made website for the FIFA World Cup 2026 — the first tournament
+hosted across **Mexico, the USA and Canada**, with **48 teams** and **104 matches**.
 
-## Run locally
+It pulls the whole tournament onto a single, fast page: when the next match kicks off, how every
+group is shaping up, who advances, where the games are played, and how *you'd* fill out the knockout
+bracket. Results roll in as the tournament goes, and you can flip the entire interface between
+**English and Português** at any time.
 
-```sh
-python -m http.server
-# open http://localhost:8000
-```
+Nothing to install (although you can — see [Under the hood](#-under-the-hood-for-the-curious)), no
+sign-up, no ads. Just open it.
 
-Any static file server works. A server **is required** — opening `index.html` directly
-from disk fails because browsers block `fetch()` of local JSON files.
+> 🔗 **Try it now → [lucaskalil.com/worldcup2026](https://lucaskalil.com/worldcup2026)**
 
-## Deploy to GitHub Pages
+---
 
-1. Push this repository to GitHub.
-2. Repository **Settings → Pages → Source**: deploy from branch, `main` / root.
-3. Done — the site works under `https://<user>.github.io/<repo>/` because every
-   asset and data path in the code is **relative** (never start a path with `/`
-   when editing).
+## 🎬 Explore the pages
 
-## Project structure
+### 🏠 Home
+*The next match with a live countdown, plus the tournament at a glance.*
 
-```
-worldcup2026/
-├── index.html              SPA shell (header, tabs, hero, panels, modal root)
-├── assets/
-│   ├── css/                style.css · bracket.css · animations.css
-│   ├── js/                 app.js (entry) · schedule.js · groups.js · bracket.js
-│   │                       modal.js · stadiums.js · storage.js · i18n.js · calendar.js
-│   └── images/             flags/*.svg · stadiums/*.svg (placeholders)
-└── data/                   ← the only thing you edit to maintain the site
-    ├── teams.json          48 teams: { id, name, flag }
-    ├── groups.json         { "A": [4 team ids], … } × 12
-    ├── matches.json        104 matches (UTC times; knockout uses bracketRef)
-    ├── results.json        one entry per match: scores + status (+ penalties)
-    ├── stadiums.json       name, city, capacity, image, IANA timezone
-    └── bracket-config.json Round-of-32 slots + best-third assignment
-```
+<img src="docs/screenshots/home.png" alt="Home — next match (Paraguay vs France, Round of 16) with a countdown and overview cards" width="100%">
 
-## Maintaining the data
+### 📅 Matches
+*All 104 games in one place — search by team, city or stadium, filter by date, group, phase, team or venue, and flag your favourites with “My matches”.*
 
-> The current files contain **mock data** (real country names, fictional results)
-> so every feature can be exercised. Replace them with real data as the
-> tournament unfolds — no code changes needed.
+<img src="docs/screenshots/matches.png" alt="Matches — a searchable, filterable grid of all 104 fixtures with scores and venues" width="100%">
 
-### Updating a result
+### 📊 Groups
+*Live standings for all 12 groups, worked out automatically from the results — points, goal difference, goals scored — with clear markers for who qualifies (and who’s chasing a best-third-place spot).*
 
-Edit the match's entry in `data/results.json`:
+<img src="docs/screenshots/groups.png" alt="Groups — standings tables for all twelve groups A–L with qualification highlights" width="100%">
 
-```json
-{ "matchId": 74, "homeScore": 1, "awayScore": 1,
-  "penalties": { "home": 4, "away": 3 }, "status": "finished" }
-```
+### 🏆 Knockout bracket
+*The centrepiece. A gorgeous interactive bracket that fills itself in as teams advance. Hover a team to trace its whole path to the final, zoom and pan around, switch between three layouts — **and predict it yourself**: pick winners, watch the rounds re-draw, then see how your picks score against the real results. You can even share your bracket as a link.*
 
-- `status`: `scheduled` → `live` → `finished`. Standings and the bracket only
-  count `finished` matches.
-- `penalties` is optional — only for knockout draws.
+<img src="docs/screenshots/bracket.png" alt="Knockout — the center-out wallchart bracket with prediction and challenge features" width="100%">
 
-### Adding / changing matches
+### 🏟️ Stadiums
+*All 16 host venues across the three countries, each with its capacity and a jump straight to the matches played there.*
 
-`data/matches.json`. **All times are UTC** (the UI converts to local or stadium
-time). Group matches carry `homeTeam`/`awayTeam`; knockout matches carry a
-`bracketRef` (`R32-1`…`R32-16`, `R16-1`…, `QF-…`, `SF-…`, `THIRD-PLACE`, `FINAL`)
-and their teams are resolved automatically.
+<img src="docs/screenshots/stadiums.png" alt="Stadiums — cards for the sixteen host venues with capacity and match links" width="100%">
 
-### After the group stage: fill the third-place slots
+### 📈 Stats
+*A tournament stats screen: goals by stage and by round, records, a full 1–48 ranking and a head-to-head team comparator. Once the final is played, a champion “verdict” takes over the top of the page.*
 
-`data/bracket-config.json` is **the only file to edit** once the 8 best
-third-placed teams are known. Map each slot to a group letter:
+<img src="docs/screenshots/stats.png" alt="Stats — tournament-to-date totals, goals-by-stage and goals-by-round charts" width="100%">
 
-```json
-"thirdPlaceAssignment": { "1": "C", "2": "A", "3": null, … }
-```
+---
 
-A slot's team becomes `standings[group][3rd]`. Slots left `null` show a
-"Best 3rd #N" placeholder. The 16 `round32` entries define the bracket order
-(array position = bracket position) — they normally never change.
+## ✨ Under the hood (for the curious)
 
-### Teams, stadiums, images
+You don't need to be a developer to appreciate a few things that make this special:
 
-- `teams.json` — `flag` is a path relative to `assets/images/` (e.g. `flags/bra.svg`).
-- `stadiums.json` — `timezone` must be a valid IANA name (e.g. `America/Mexico_City`);
-  it drives the "stadium time" display and stays correct across DST.
-- Replace the placeholder SVGs in `assets/images/` with real artwork keeping the
-  same file names (or update the JSON paths).
+- **⚡ Loads in a blink.** The whole site is about **74 KB** of JavaScript — smaller than a single
+  phone photo — with **no frameworks and no libraries**. It's just clean, hand-written code.
+- **🔮 Predict the bracket.** Choose winners and the bracket redraws all the way to the final; your
+  picks are saved in your browser and can be handed to a friend as a link to compare.
+- **🔄 Always current.** New scores appear on their own — no need to refresh the page.
+- **📱 Works everywhere.** Phone, tablet or desktop, the layout adapts to fit.
+- **⬇️ Installable.** Add it to your home screen and it opens like a real app (it's a PWA).
+- **🌍 Two languages.** Every label is available in English and Portuguese, switchable on the fly.
+- **♿ Built to be usable by everyone.** Full keyboard navigation, screen-reader labels, and it
+  respects the system “reduce motion” setting.
 
-### UI labels (EN/PT)
+Curious how it's put together, or want to run it yourself? See **[DEVELOPMENT.md](DEVELOPMENT.md)**.
 
-Every UI string goes through `t(key)` — add new labels to **both** dictionaries
-in `assets/js/i18n.js`. Data values (team/stadium names) are not translated.
+---
 
-## Local storage
+<div align="center">
 
-| Key | Content |
-|---|---|
-| `wc2026_simulation` | `{ "R32-6": { "winner": "FRA", "score": "2-1" }, … }` |
-| `wc2026_favorites` | `["BRA", "MEX"]` |
-| `wc2026_prefs` | `{ "lang": "en"\|"pt", "timeMode": "local"\|"stadium", "lastTab": "bracket" }` |
+Made by **[Lucas Kalil](https://lucaskalil.com)** · Vanilla HTML, CSS & JavaScript.
 
-Clearing site data resets picks, favorites, and preferences — the JSON content
-is never modified by the app.
+<sub>A fan-made project for the love of the game. Not affiliated with, endorsed by, or sponsored by
+FIFA. All team and venue names belong to their respective owners.</sub>
 
-## Acceptance criteria (spec §18)
-
-- [x] All matches are loaded via JSON
-- [x] All results are loaded via JSON
-- [x] The bracket is generated dynamically (config + standings + winner pairing)
-- [x] Works on GitHub Pages (all paths relative, no server-side code)
-- [x] Works on desktop and mobile (≤767 / 768–1439 / 1440+ breakpoints)
-- [x] Allows knockout-stage simulation (persisted, never mutates JSON)
-- [x] Smooth animations (entry, hover, bracket line-draw; reduced-motion safe)
-- [x] No backend dependency — fully static, works offline after first load
-
-**Performance:** total JS ≈ 74 KB across 9 ES modules (budget: < 300 KB), no
-external dependencies, no blocking third-party requests.
-
-## Roadmap (spec §19)
-
-PWA install, dark/light theme, real-time statistics, results API, FIFA ranking,
-World Cup history, team comparison, push notifications.
+</div>
