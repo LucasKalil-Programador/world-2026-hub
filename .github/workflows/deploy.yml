@@ -41,7 +41,9 @@ jobs:
             **/.git*/**
             **/.github/**
             **/.agents/**
+            **/docs/**
             README.md
+            DEVELOPMENT.md
             how-update.md
             how-refresh-data.md
             world-cup-2026-hub-spec-en.md
