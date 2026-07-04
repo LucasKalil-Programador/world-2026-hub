@@ -5,10 +5,10 @@
 // third-place match. Unresolvable slots render as placeholders, unplayed
 // matches as TBD. Interactions land in step 8, simulation in step 9.
 
-import { getData, flagSrc } from './app.js';
+import { getData, flagSrc, matchDateUTC } from './app.js';
 import { get as storageGet, set as storageSet, getFavorites } from './storage.js';
 import { computeStandings, isGroupFinished } from './groups.js';
-import { t, translatePhase } from './i18n.js';
+import { t, translatePhase, getLocale } from './i18n.js';
 import { openMatchModal } from './modal.js';
 
 const ROUNDS = [
@@ -269,6 +269,11 @@ export function initBracket() {
   document.addEventListener('langchange', render);
   document.addEventListener('favchange', render);
   document.addEventListener('datachange', render); // tree already invalidated by the poll → rebuilds
+  document.addEventListener('timemodechange', render); // kickoff microlines follow the Local/Stadium toggle
+  // no explicit view choice → default follows the breakpoint (mobile = rounds pager)
+  window.matchMedia('(max-width: 767px)').addEventListener('change', () => {
+    if (!VIEW_IDS.includes(storageGet('prefs', {}).bracketView)) render();
+  });
   loadPredictionFromURL();
 
   const root = document.getElementById('bracket-root');
@@ -311,35 +316,264 @@ function challengeCardHTML(challenge) {
     </div>`;
 }
 
+// ------------------------------------------- wallchart layout engine
+// Center-out "wallchart": R32 1–8 flow left→center, 9–16 right→center,
+// with the Final + champion centerpiece in the middle column and the
+// third-place match beneath it. All positions are computed here (absolute
+// px inside the canvas); connectors are generated as SVG bezier paths from
+// the same numbers, so cards and lines can never drift apart. This engine
+// replaced the old flex-column + CSS-stub system (its equal-height
+// invariant could not express a mirrored right half).
+
+const GEO = {
+  gap: 42, // horizontal gap between adjacent columns
+  centerGap: 46, // SF column ↔ center column
+  rowGap: 20, // vertical gap between R32 cards
+  padX: 28,
+  padTop: 62, // leaves room for the round title row
+  padBottom: 30,
+  tiers: {
+    R32: { w: 184, h: 78 },
+    R16: { w: 196, h: 82 },
+    QF: { w: 208, h: 88 },
+    SF: { w: 220, h: 94 },
+    FINAL: { w: 264, h: 142 },
+    THIRD: { w: 208, h: 88 },
+  },
+  championH: 118,
+  championGap: 20, // champion box ↔ final card
+  thirdGap: 26, // final card ↔ third-place title
+  thirdTitleH: 22,
+};
+
+function refName(roundId, index) {
+  return roundId === 'FINAL' ? 'FINAL' : `${roundId}-${index + 1}`;
+}
+
+function computeWallchartLayout() {
+  const G = GEO;
+  const { R32: t32, R16: t16, QF: tQF, SF: tSF, FINAL: tF, THIRD: tT } = G.tiers;
+  const cards = new Map(); // ref → { x, y, w, h, tier, side }
+
+  // column x positions, left → right (right half mirrors the left)
+  const xL32 = G.padX;
+  const xL16 = xL32 + t32.w + G.gap;
+  const xLQF = xL16 + t16.w + G.gap;
+  const xLSF = xLQF + tQF.w + G.gap;
+  const xC = xLSF + tSF.w + G.centerGap;
+  const xRSF = xC + tF.w + G.centerGap;
+  const xRQF = xRSF + tSF.w + G.gap;
+  const xR16 = xRQF + tQF.w + G.gap;
+  const xR32 = xR16 + t16.w + G.gap;
+  const w = xR32 + t32.w + G.padX;
+  const h = G.padTop + 8 * t32.h + 7 * G.rowGap + G.padBottom;
+
+  for (let i = 0; i < 16; i += 1) {
+    const left = i < 8;
+    const row = left ? i : i - 8;
+    cards.set(refName('R32', i), {
+      x: left ? xL32 : xR32,
+      y: G.padTop + row * (t32.h + G.rowGap),
+      w: t32.w, h: t32.h, tier: 'R32', side: left ? 'L' : 'R',
+    });
+  }
+
+  // each later node sits at the vertical midpoint of its two feeders
+  const place = (roundId, prevId, count, tier, xLeft, xRight) => {
+    for (let i = 0; i < count; i += 1) {
+      const a = cards.get(refName(prevId, i * 2));
+      const b = cards.get(refName(prevId, i * 2 + 1));
+      const cy = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+      const left = i < count / 2;
+      cards.set(refName(roundId, i), {
+        x: left ? xLeft : xRight,
+        y: cy - tier.h / 2,
+        w: tier.w, h: tier.h, tier: roundId, side: left ? 'L' : 'R',
+      });
+    }
+  };
+  place('R16', 'R32', 8, t16, xL16, xR16);
+  place('QF', 'R16', 4, tQF, xLQF, xRQF);
+  place('SF', 'QF', 2, tSF, xLSF, xRSF);
+
+  const sf1 = cards.get('SF-1');
+  const sf2 = cards.get('SF-2');
+  const midY = (sf1.y + sf1.h / 2 + sf2.y + sf2.h / 2) / 2;
+  const final = { x: xC, y: midY - tF.h / 2, w: tF.w, h: tF.h, tier: 'FINAL', side: 'C' };
+  cards.set('FINAL', final);
+  const champion = {
+    x: xC, y: final.y - G.championGap - G.championH, w: tF.w, h: G.championH,
+  };
+  const thirdTitle = { x: xC + (tF.w - tT.w) / 2, y: final.y + tF.h + G.thirdGap, w: tT.w };
+  cards.set('THIRD-PLACE', {
+    x: thirdTitle.x, y: thirdTitle.y + G.thirdTitleH, w: tT.w, h: tT.h, tier: 'THIRD', side: 'C',
+  });
+
+  // connectors: two bezier flow lines into every non-R32 node
+  const links = [];
+  const addLink = (fromRef, toRef) => {
+    const a = cards.get(fromRef);
+    const b = cards.get(toRef);
+    const rightward = a.side === 'L'; // left half flows →, right half flows ←
+    const x1 = rightward ? a.x + a.w : a.x;
+    const x2 = rightward ? b.x : b.x + b.w;
+    const y1 = a.y + a.h / 2;
+    const y2 = b.y + b.h / 2;
+    const mx = (x1 + x2) / 2;
+    links.push({
+      from: fromRef, to: toRef, tier: b.tier,
+      d: `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`,
+    });
+  };
+  for (const [roundId, prevId, count] of [['R16', 'R32', 8], ['QF', 'R16', 4], ['SF', 'QF', 2], ['FINAL', 'SF', 1]]) {
+    for (let i = 0; i < count; i += 1) {
+      addLink(refName(prevId, i * 2), refName(roundId, i));
+      addLink(refName(prevId, i * 2 + 1), refName(roundId, i));
+    }
+  }
+  // glowing stem from the final card up into the champion box
+  const stemX = xC + tF.w / 2;
+  const stem = `M ${stemX} ${final.y} L ${stemX} ${champion.y + champion.h}`;
+
+  const ty = G.padTop - 40;
+  const labels = [
+    { x: xL32, y: ty, w: t32.w, tier: 'R32', phase: 'Round of 32' },
+    { x: xL16, y: ty, w: t16.w, tier: 'R16', phase: 'Round of 16' },
+    { x: xLQF, y: ty, w: tQF.w, tier: 'QF', phase: 'Quarterfinals' },
+    { x: xLSF, y: ty, w: tSF.w, tier: 'SF', phase: 'Semifinals' },
+    { x: xC, y: ty, w: tF.w, tier: 'FINAL', phase: 'Final' },
+    { x: xRSF, y: ty, w: tSF.w, tier: 'SF', phase: 'Semifinals' },
+    { x: xRQF, y: ty, w: tQF.w, tier: 'QF', phase: 'Quarterfinals' },
+    { x: xR16, y: ty, w: t16.w, tier: 'R16', phase: 'Round of 16' },
+    { x: xR32, y: ty, w: t32.w, tier: 'R32', phase: 'Round of 32' },
+  ];
+
+  const scenery = { type: 'pitch', cx: stemX, cy: final.y + tF.h / 2, r: Math.min(230, (h - G.padTop) / 2.6) };
+  return { id: 'wallchart', w, h, cards, links, stem, labels, scenery, champion, thirdTitle };
+}
+
+// --------------------------------------------- radial layout engine
+// Second chart view — the "orbit": circular flag tokens on concentric
+// rings converging on the trophy. Outermost ring = the 32 entrants; each
+// ring inward holds the winner slots of a round (a match's winner slot
+// doubles as its next match's participant). Elbow lines trace each team's
+// route; gold = real advancement, dashed blue = simulated pick. Clicking
+// any token opens its match (winner slots = the match they decide), so the
+// modal / sim-editor delegation is unchanged. Names and scores live in the
+// app tooltip (has-tip/data-tip) and the modal.
+
+const TGEO = {
+  pad: 40,
+  outerR: 388, // 32 entrant tokens
+  outerD: 44,
+  winners: { // ring where each round's winner slot sits (its diameter grows inward)
+    R32: { r: 322, d: 48 },
+    R16: { r: 252, d: 54 },
+    QF: { r: 178, d: 60 },
+    SF: { r: 96, d: 68 }, // = the two finalists flanking the trophy
+  },
+  championD: 84,
+  glowR: 190, // radius of the gold glow pool behind the trophy
+  thirdDy: 64, // third-place group below the circle
+  thirdGap: 72, // distance between the two third-place tokens
+  thirdD: 48,
+};
+
+function computeRadialLayout() {
+  const G = TGEO;
+  const R = G.outerR + G.outerD / 2 + 8; // circle's outer edge
+  const cx = G.pad + R;
+  const cy = G.pad + R;
+  const w = (G.pad + R) * 2;
+  const thirdY = cy + R + G.thirdDy;
+  const h = thirdY + G.thirdD / 2 + G.pad;
+  return { id: 'radial', w, h, cx, cy, thirdY };
+}
+
+// ------------------------------------------------------------- render
+
+// compact kickoff line ("Jul 4, 17:00") honoring the Local/Stadium toggle —
+// formatMatchTime()'s medium dateStyle (with year) is too wide for the cards
+function kickoffShort(match) {
+  const stadium = getData().stadiumByName.get(match.stadium);
+  const mode = storageGet('prefs', {}).timeMode ?? 'local';
+  const options = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+  if (mode === 'stadium' && stadium?.timezone) options.timeZone = stadium.timezone;
+  return new Intl.DateTimeFormat(getLocale(), options).format(matchDateUTC(match));
+}
+
+// ------------------------------------------------------ view switching
+// Three views: 'rounds' (swipeable pager, mobile default), 'wallchart'
+// (desktop default) and 'radial'. Explicit choice persists in
+// wc2026_prefs.bracketView; without one the default follows the breakpoint.
+
+const VIEW_IDS = ['rounds', 'wallchart', 'radial'];
+
+function activeView() {
+  const stored = storageGet('prefs', {}).bracketView;
+  if (VIEW_IDS.includes(stored)) return stored;
+  return window.matchMedia('(max-width: 767px)').matches ? 'rounds' : 'wallchart';
+}
+
+function setBracketView(id) {
+  const prefs = storageGet('prefs', {});
+  prefs.bracketView = id;
+  storageSet('prefs', prefs);
+}
+
+function viewSwitchHTML(active) {
+  const labels = {
+    rounds: t('bracket.viewRounds'),
+    wallchart: t('bracket.viewWallchart'),
+    radial: t('bracket.viewRadial'),
+  };
+  return `
+    <div class="bk-viewswitch" role="group" aria-label="${t('bracket.viewLabel')}">
+      ${VIEW_IDS.map((id) => `
+        <button class="view-btn ${id === active ? 'active' : ''}" data-view="${id}"
+                aria-pressed="${id === active}">${labels[id]}</button>`).join('')}
+    </div>`;
+}
+
 function render() {
   const tree = getBracketTree();
   const simulation = getSimulation();
   const challenge = calculateChallengeScore(simulation, getData().results, tree);
   const hasPicks = Object.keys(simulation).length > 0;
+  const viewId = activeView();
+  const chart = viewId !== 'rounds';
+  const L = chart ? (viewId === 'radial' ? computeRadialLayout() : computeWallchartLayout()) : null;
+
+  // the fit observer from the previous render watches removed DOM — reset
+  if (fitRO) { fitRO.disconnect(); fitRO = null; }
+
   document.getElementById('bracket-root').innerHTML = `
     ${challenge.total ? challengeCardHTML(challenge) : ''}
     <div class="bracket-toolbar">
       <div class="bracket-tools-left">
+        ${viewSwitchHTML(viewId)}
         <button class="zoom-btn sim-toggle ${simMode ? 'active' : ''}" id="sim-toggle"
                 aria-pressed="${simMode}">${t('sim.mode')}</button>
         <button class="zoom-btn" id="sim-reset">${t('sim.reset')}</button>
         <button class="zoom-btn" id="share-pred" ${hasPicks ? '' : 'disabled'}>${t('share.button')}</button>
       </div>
+      ${chart ? `
       <div class="bracket-tools-right">
         <button class="zoom-btn" id="zoom-out" aria-label="${t('bracket.zoomOut')}">−</button>
         <button class="zoom-btn zoom-reset" id="zoom-reset" aria-label="${t('bracket.zoomReset')}">100%</button>
         <button class="zoom-btn" id="zoom-in" aria-label="${t('bracket.zoomIn')}">+</button>
-      </div>
+      </div>` : ''}
     </div>
     ${simMode ? `<p class="sim-note">${t('sim.hint')}</p>` : ''}
-    <div class="bracket-wrap" id="bracket-wrap">
-      <div class="bracket-zoom" id="bracket-zoom">
-        <div class="bracket ${simMode ? 'sim-on' : ''}" id="bracket-canvas">
-          ${tree.rounds.filter((r) => r.id !== 'FINAL').map(roundColumnHTML).join('')}
-          ${finalColumnHTML(tree)}
-        </div>
-      </div>
-    </div>`;
+    ${chart ? chartHTML(tree, L, viewId) : pagerHTML(tree)}`;
+
+  for (const btn of document.querySelectorAll('#bracket-root .view-btn')) {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.view === viewId) return;
+      setBracketView(btn.dataset.view);
+      render();
+    });
+  }
   document.getElementById('sim-toggle').addEventListener('click', () => {
     simMode = !simMode;
     render();
@@ -360,51 +594,263 @@ function render() {
       window.prompt(t('share.button'), link); // clipboard unavailable — let the user copy manually
     }
   });
-  initInteractions();
+  if (chart) initInteractions(L);
+  else initPager(tree);
 }
 
-function roundColumnHTML(round) {
-  const pairs = [];
-  for (let i = 0; i < round.nodes.length; i += 2) {
-    pairs.push(`
-      <div class="bracket-pair">
-        <div class="bracket-slot">${matchNodeHTML(round.nodes[i])}</div>
-        <div class="bracket-slot">${matchNodeHTML(round.nodes[i + 1])}</div>
-      </div>`);
-  }
+function chartHTML(tree, L, viewId) {
+  const inner = viewId === 'radial' ? radialInnerHTML(tree, L) : wallchartInnerHTML(tree, L);
   return `
-    <div class="bracket-round" data-round="${round.id}">
-      <h3 class="bracket-round-title">${translatePhase(round.phase)}</h3>
-      <div class="bracket-matches">${pairs.join('')}</div>
-    </div>`;
-}
-
-function finalColumnHTML(tree) {
-  const finalNode = tree.rounds.find((r) => r.id === 'FINAL').nodes[0];
-  const champion = tree.champion ? slotDisplay({ teamId: tree.champion }) : null;
-  return `
-    <div class="bracket-round bracket-final-col" data-round="FINAL">
-      <h3 class="bracket-round-title">${translatePhase('Final')}</h3>
-      <div class="bracket-matches">
-        <div class="bracket-slot bracket-champion-slot">
-          <div class="champion-box ${champion ? 'has-champion' : ''}">
-            <span class="champion-trophy" aria-hidden="true">🏆</span>
-            <span class="champion-label">${t('bracket.champion')}</span>
-            <span class="champion-name">${champion ? champion.label : t('app.tbd')}</span>
-          </div>
-        </div>
-        <div class="bracket-slot">${matchNodeHTML(finalNode)}</div>
-        <div class="bracket-slot bracket-third-slot">
-          <div class="third-place-block">
-            <h4>${translatePhase('Third Place')}</h4>
-            ${matchNodeHTML(tree.third)}
-          </div>
+    <div class="bracket-wrap" id="bracket-wrap" style="aspect-ratio:${L.w}/${L.h}">
+      <div class="bracket-zoom" id="bracket-zoom">
+        <div class="bracket ${viewId} ${simMode ? 'sim-on' : ''}" id="bracket-canvas"
+             style="width:${L.w}px;height:${L.h}px">
+          ${inner}
         </div>
       </div>
     </div>`;
 }
 
-function matchNodeHTML(node) {
+function wallchartInnerHTML(tree, L) {
+  let cardsHTML = '';
+  for (const round of tree.rounds) {
+    for (const node of round.nodes) cardsHTML += matchNodeHTML(node, L.cards.get(node.ref));
+  }
+  cardsHTML += matchNodeHTML(tree.third, L.cards.get('THIRD-PLACE'));
+  return `
+    ${sceneryHTML(L)}
+    ${linksHTML(L)}
+    ${L.labels.map((lb) => `
+      <span class="bk-title bk-title-${lb.tier.toLowerCase()}"
+            style="left:${lb.x}px;top:${lb.y}px;width:${lb.w}px">
+        ${translatePhase(lb.phase)}</span>`).join('')}
+    ${cardsHTML}
+    ${centerHTML(tree, L)}`;
+}
+
+// -------------------------------------------------- radial (orbit) view
+
+// short tooltip line for a match: score when played, kickoff otherwise
+function matchTip(node) {
+  if (!node.match) return '';
+  const home = slotDisplay(node.home);
+  const away = slotDisplay(node.away);
+  const { result } = node;
+  if (result && result.status !== 'scheduled' && node.home.teamId && node.away.teamId) {
+    const pens = result.penalties ? ` (${result.penalties.home}-${result.penalties.away})` : '';
+    return `${home.label} ${result.homeScore}–${result.awayScore} ${away.label}${pens}`;
+  }
+  if (node.simulated && node.simScore) {
+    return `${home.label} ${node.simScore.home}–${node.simScore.away} ${away.label} · ${t('sim.chip')}`;
+  }
+  return `${home.label} ${t('hero.vs')} ${away.label} · ${kickoffShort(node.match)}`;
+}
+
+function radialTokenHTML(pos, d, display, node, opts = {}) {
+  const classes = [
+    'bk-token',
+    opts.ring ? `tk-${opts.ring}` : '',
+    display.team ? '' : 'tk-tbd',
+    opts.out ? 'tk-out' : '',
+    opts.winner ? (node.simulated ? 'tk-sim' : 'tk-winner') : '',
+    opts.live ? 'tk-live' : '',
+    opts.fav ? 'tk-fav' : '',
+    opts.slot && simMode && isSimulatable(node) ? 'simulatable' : '',
+  ].filter(Boolean).join(' ');
+  const tip = opts.slot ? matchTip(node) : display.label;
+  const interactive = node.match
+    ? `data-match-id="${node.match.id}" tabindex="0" role="button"
+       aria-label="${matchTip(node) || display.label} — ${translatePhase(node.phase)}"`
+    : '';
+  const flag = display.team
+    ? `<img src="${flagSrc(display.team)}" alt="" width="${d}" height="${d}" loading="lazy">`
+    : '';
+  return `
+    <article class="${classes} ${tip ? 'has-tip' : ''}" data-ref="${node.ref}" ${interactive}
+             ${tip ? `data-tip="${tip}"` : ''}
+             style="left:${pos.x - d / 2}px;top:${pos.y - d / 2}px;width:${d}px;height:${d}px">
+      ${flag}
+    </article>`;
+}
+
+function radialInnerHTML(tree, L) {
+  const G = TGEO;
+  const { cx, cy } = L;
+  const favorites = getFavorites();
+  const roundsById = new Map(tree.rounds.map((r) => [r.id, r]));
+  const polar = (slot, n, r) => {
+    const th = ((slot + 0.5) / n) * 2 * Math.PI;
+    return { x: cx + r * Math.sin(th), y: cy - r * Math.cos(th), th, r };
+  };
+
+  const tokens = [];
+  const lines = [];
+  const dots = [];
+  // elbow: out of the participant radially, then straight to the winner slot
+  const addLine = (from, to, node, sideTeamId, fromRef) => {
+    const rMid = to.r != null ? to.r + (from.r - (to.r ?? 0)) * 0.5 : from.r * 0.5;
+    const bend = { x: cx + rMid * Math.sin(from.th), y: cy - rMid * Math.cos(from.th) };
+    const adv = Boolean(node.winner && node.winner === sideTeamId);
+    const state = adv ? (node.simulated ? 'is-sim' : 'is-adv') : '';
+    lines.push(`
+      <path class="bk-le ${state}" pathLength="1" data-from="${fromRef}" data-to="${node.ref}"
+            d="M ${from.x} ${from.y} L ${bend.x} ${bend.y} L ${to.x} ${to.y}"/>`);
+    dots.push(`<circle class="bk-dot ${state}" cx="${bend.x}" cy="${bend.y}" r="2.2"/>`);
+  };
+
+  // entrants (outer ring) + one winner slot per match, ring by ring inward
+  const winnerPos = new Map();
+  roundsById.get('R32').nodes.forEach((node, m) => {
+    const wPos = polar(m, 16, G.winners.R32.r);
+    winnerPos.set(node.ref, wPos);
+    [['home', 2 * m], ['away', 2 * m + 1]].forEach(([side, slot]) => {
+      const pos = polar(slot, 32, G.outerR);
+      const teamId = node[side].teamId;
+      tokens.push(radialTokenHTML(pos, G.outerD, slotDisplay(node[side]), node, {
+        ring: 'ent',
+        out: Boolean(node.winner && teamId && node.winner !== teamId),
+        fav: favorites.includes(teamId),
+      }));
+      addLine(pos, wPos, node, teamId, node.ref);
+    });
+  });
+  const winnerSlot = (node, ring, pos) => {
+    const display = node.winner ? slotDisplay({ teamId: node.winner }) : { team: null, label: t('app.tbd') };
+    return radialTokenHTML(pos, G.winners[ring].d, display, node, {
+      ring: ring.toLowerCase(),
+      slot: true, // this token IS the match's winner slot — sim affordance lives here
+      winner: Boolean(node.winner),
+      live: node.result?.status === 'live',
+      fav: Boolean(node.winner) && favorites.includes(node.winner),
+    });
+  };
+  roundsById.get('R32').nodes.forEach((node) => tokens.push(winnerSlot(node, 'R32', winnerPos.get(node.ref))));
+  for (const [roundId, prevId, n, ring] of [['R16', 'R32', 8, 'R16'], ['QF', 'R16', 4, 'QF'], ['SF', 'QF', 2, 'SF']]) {
+    roundsById.get(roundId).nodes.forEach((node, i) => {
+      const wPos = polar(i, n, G.winners[ring].r);
+      winnerPos.set(node.ref, wPos);
+      for (const [side, childRef] of [['home', refName(prevId, i * 2)], ['away', refName(prevId, i * 2 + 1)]]) {
+        addLine(winnerPos.get(childRef), wPos, node, node[side].teamId, childRef);
+      }
+      tokens.push(winnerSlot(node, ring, wPos));
+    });
+  }
+
+  // trophy center = the FINAL's winner slot
+  const finalNode = tree.nodesByRef.get('FINAL');
+  const centerPos = { x: cx, y: cy, th: 0, r: 0 };
+  addLine(winnerPos.get('SF-1'), centerPos, finalNode, finalNode.home.teamId, 'SF-1');
+  addLine(winnerPos.get('SF-2'), centerPos, finalNode, finalNode.away.teamId, 'SF-2');
+  const champion = tree.champion ? slotDisplay({ teamId: tree.champion }) : null;
+  const simChampion = Boolean(tree.champion && finalNode.simulated);
+  const centerTip = matchTip(finalNode);
+  const centerHTMLStr = `
+    <article class="bk-center ${champion ? 'has-champion' : ''} ${simChampion ? 'is-sim' : ''}
+                    ${simMode && isSimulatable(finalNode) ? 'simulatable' : ''} ${centerTip ? 'has-tip' : ''}"
+             data-ref="FINAL" data-match-id="${finalNode.match.id}" tabindex="0" role="button"
+             aria-label="${centerTip} — ${translatePhase('Final')}" ${centerTip ? `data-tip="${centerTip}"` : ''}
+             style="left:${cx - G.championD / 2}px;top:${cy - G.championD / 2}px;width:${G.championD}px;height:${G.championD}px">
+      ${simChampion ? `<span class="sim-chip">${t('sim.chip')}</span>` : ''}
+      <span class="bk-center-trophy" aria-hidden="true">🏆</span>
+      ${champion?.team ? `<img src="${flagSrc(champion.team)}" alt="" width="${G.championD}" height="${G.championD}">` : ''}
+      ${champion ? `<span class="bk-center-name">${champion.label}</span>` : ''}
+    </article>`;
+
+  // third place: a small labeled pair below the circle (SF losers)
+  const third = tree.third;
+  const thirdTip = matchTip(third);
+  const thirdToken = (side) => {
+    const display = slotDisplay(third[side]);
+    const win = Boolean(third.winner && third[side].teamId === third.winner);
+    const flag = display.team
+      ? `<img src="${flagSrc(display.team)}" alt="" width="${G.thirdD}" height="${G.thirdD}" loading="lazy">`
+      : '';
+    return `
+      <span class="bk-token ${display.team ? '' : 'tk-tbd'} ${win ? (third.simulated ? 'tk-sim' : 'tk-winner') : ''}"
+            style="width:${G.thirdD}px;height:${G.thirdD}px">${flag}</span>`;
+  };
+  const thirdHTML = `
+    <div class="bk-third-group ${thirdTip ? 'has-tip' : ''}" data-ref="THIRD-PLACE"
+         ${third.match ? `data-match-id="${third.match.id}" tabindex="0" role="button"
+         aria-label="${thirdTip} — ${translatePhase(third.phase)}"` : ''}
+         ${thirdTip ? `data-tip="${thirdTip}"` : ''}
+         style="left:${cx - 110}px;top:${L.thirdY - G.thirdD / 2 - 26}px;width:220px">
+      <span class="bk-third-title">${translatePhase('Third Place')}</span>
+      <span class="bk-third-tokens">${thirdToken('home')}${thirdToken('away')}</span>
+    </div>`;
+
+  const orbits = [G.outerR, G.winners.R32.r, G.winners.R16.r, G.winners.QF.r]
+    .map((r) => `<circle class="bk-orbit" cx="${cx}" cy="${cy}" r="${r}"/>`).join('');
+  return `
+    <svg class="bk-links" width="${L.w}" height="${L.h}" viewBox="0 0 ${L.w} ${L.h}" aria-hidden="true">
+      <defs>
+        <radialGradient id="bk-glow-grad">
+          <stop offset="0%" stop-color="rgba(212, 175, 55, 0.30)"/>
+          <stop offset="55%" stop-color="rgba(212, 175, 55, 0.10)"/>
+          <stop offset="100%" stop-color="rgba(212, 175, 55, 0)"/>
+        </radialGradient>
+      </defs>
+      <circle cx="${cx}" cy="${cy}" r="${G.glowR}" fill="url(#bk-glow-grad)"/>
+      ${orbits}
+      <circle class="bk-orbit-accent" cx="${cx}" cy="${cy}" r="${G.winners.SF.r + 42}"/>
+      ${lines.join('')}
+      ${dots.join('')}
+    </svg>
+    ${tokens.join('')}
+    ${centerHTMLStr}
+    ${thirdHTML}`;
+}
+
+// faint pitch geometry echoing the wallchart layout: halfway line through
+// the center column, center circle around the Final — the stadium floor.
+// (The radial view draws its own orbit scenery inside radialInnerHTML.)
+function sceneryHTML(L) {
+  const { cx, cy, r } = L.scenery;
+  return `
+    <svg class="bk-scenery" width="${L.w}" height="${L.h}" viewBox="0 0 ${L.w} ${L.h}" aria-hidden="true">
+      <line x1="${cx}" y1="0" x2="${cx}" y2="${L.h}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}"/>
+      <circle class="bk-scenery-dot" cx="${cx}" cy="${cy}" r="3.5"/>
+    </svg>`;
+}
+
+function linksHTML(L) {
+  const paths = L.links.map((link) => `
+    <path class="bk-l-${link.tier.toLowerCase()}" d="${link.d}" pathLength="1"
+          data-from="${link.from}" data-to="${link.to}"/>`).join('');
+  return `
+    <svg class="bk-links" width="${L.w}" height="${L.h}" viewBox="0 0 ${L.w} ${L.h}" aria-hidden="true">
+      ${paths}
+      <path class="bk-stem" d="${L.stem}" pathLength="1" data-from="FINAL" data-to="FINAL"/>
+    </svg>`;
+}
+
+// champion centerpiece + third-place block (center column).
+// A simulated champion renders in the sim-blue treatment with a SIM chip —
+// a user's picks must never be mistakable for a real result (same rule the
+// stats verdict follows).
+function centerHTML(tree, L) {
+  const finalNode = tree.nodesByRef.get('FINAL');
+  const champion = tree.champion ? slotDisplay({ teamId: tree.champion }) : null;
+  const simChampion = Boolean(tree.champion && finalNode?.simulated);
+  const flag = champion?.team
+    ? `<img class="flag" src="${flagSrc(champion.team)}" alt="" width="26" height="18">`
+    : '';
+  const c = L.champion;
+  const tt = L.thirdTitle;
+  return `
+    <div class="bk-champion ${champion ? 'has-champion' : ''} ${simChampion ? 'is-sim' : ''}"
+         style="left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px">
+      ${simChampion ? `<span class="sim-chip">${t('sim.chip')}</span>` : ''}
+      <span class="champion-trophy" aria-hidden="true">🏆</span>
+      <span class="champion-label">${t('bracket.champion')}</span>
+      <span class="champion-name">${champion ? `${flag}<span>${champion.label}</span>` : t('app.tbd')}</span>
+    </div>
+    <span class="bk-third-title" style="left:${tt.x}px;top:${tt.y}px;width:${tt.w}px">
+      ${translatePhase('Third Place')}</span>`;
+}
+
+function matchNodeHTML(node, pos) {
   const home = slotDisplay(node.home);
   const away = slotDisplay(node.away);
   const live = node.result?.status === 'live';
@@ -412,6 +858,7 @@ function matchNodeHTML(node) {
   const hasFav = favorites.includes(node.home.teamId) || favorites.includes(node.away.teamId);
   const classes = [
     'bracket-match',
+    `bk-${pos.tier.toLowerCase()}`,
     live ? 'is-live' : '',
     node.simulated ? 'is-sim' : '',
     hasFav ? 'has-fav' : '',
@@ -422,11 +869,145 @@ function matchNodeHTML(node) {
        aria-label="${home.label} ${t('hero.vs')} ${away.label} — ${translatePhase(node.phase)}"`
     : '';
   return `
+    <article class="${classes}" data-ref="${node.ref}" ${interactive}
+             style="left:${pos.x}px;top:${pos.y}px;width:${pos.w}px;height:${pos.h}px">
+      ${node.simulated ? `<span class="sim-chip">${t('sim.chip')}</span>` : ''}
+      <div class="bk-teams">
+        ${teamRowHTML(home, node, 'home')}
+        ${teamRowHTML(away, node, 'away')}
+      </div>
+      ${metaHTML(node)}
+    </article>`;
+}
+
+// status fragment shared by chart microlines and pager cards
+function statusLine(node) {
+  const status = node.result?.status;
+  if (status === 'live') return `<span class="bk-meta-live">${t('hero.live')}</span>`;
+  if (status === 'finished') return `<span class="bk-meta-ft">${t('bracket.ft')}</span>`;
+  return node.match ? `<span>${kickoffShort(node.match)}</span>` : '';
+}
+
+// microline at the foot of a card: kickoff (upcoming) / LIVE pulse / FT.
+// The Final's hero card also carries its venue.
+function metaHTML(node) {
+  if (!node.match) return '';
+  const venue = node.ref === 'FINAL'
+    ? `<span class="bk-venue">${node.match.stadium} · ${node.match.city}</span>`
+    : '';
+  return `<div class="bk-meta">${venue}${statusLine(node)}</div>`;
+}
+
+// ------------------------------------------------------- rounds pager
+// Round-by-round view: chip buttons switch the visible page (R32 → R16 →
+// QF → SF → Finals) — button navigation only, no horizontal scrolling.
+// Cards are the fuller variant (venue + city). Same data-ref/data-match-id
+// contract, so the root delegation (modal + sim editor) works unchanged.
+
+let pagerIndex = null; // survives re-renders (langchange etc.), not reloads
+
+const PAGER_PAGES = [
+  { id: 'R32', phase: 'Round of 32' },
+  { id: 'R16', phase: 'Round of 16' },
+  { id: 'QF', phase: 'Quarterfinals' },
+  { id: 'SF', phase: 'Semifinals' },
+  { id: 'FINALS', phase: 'Final' },
+];
+
+// first round that still has an unfinished match — the page worth opening on
+function firstOpenPage(tree) {
+  for (let i = 0; i < 4; i += 1) {
+    const round = tree.rounds.find((r) => r.id === PAGER_PAGES[i].id);
+    if (round.nodes.some((n) => n.result?.status !== 'finished')) return i;
+  }
+  return 4;
+}
+
+function pcardHTML(node, hero = false) {
+  const home = slotDisplay(node.home);
+  const away = slotDisplay(node.away);
+  const live = node.result?.status === 'live';
+  const favorites = getFavorites();
+  const hasFav = favorites.includes(node.home.teamId) || favorites.includes(node.away.teamId);
+  const classes = [
+    'bk-pcard',
+    hero ? 'bk-pcard-hero' : '',
+    live ? 'is-live' : '',
+    node.simulated ? 'is-sim' : '',
+    hasFav ? 'has-fav' : '',
+    simMode && isSimulatable(node) ? 'simulatable' : '',
+  ].filter(Boolean).join(' ');
+  const interactive = node.match
+    ? `data-match-id="${node.match.id}" tabindex="0" role="button"
+       aria-label="${home.label} ${t('hero.vs')} ${away.label} — ${translatePhase(node.phase)}"`
+    : '';
+  const top = node.match
+    ? `<div class="bk-pcard-top">
+         <span class="bk-pcard-venue">${node.match.stadium} · ${node.match.city}</span>
+         ${statusLine(node)}
+       </div>`
+    : '';
+  return `
     <article class="${classes}" data-ref="${node.ref}" ${interactive}>
       ${node.simulated ? `<span class="sim-chip">${t('sim.chip')}</span>` : ''}
+      ${top}
       ${teamRowHTML(home, node, 'home')}
       ${teamRowHTML(away, node, 'away')}
     </article>`;
+}
+
+function pagerFinalsHTML(tree) {
+  const finalNode = tree.nodesByRef.get('FINAL');
+  const champion = tree.champion ? slotDisplay({ teamId: tree.champion }) : null;
+  const simChampion = Boolean(tree.champion && finalNode?.simulated);
+  const flag = champion?.team
+    ? `<img class="flag" src="${flagSrc(champion.team)}" alt="" width="26" height="18">`
+    : '';
+  return `
+    <div class="bk-champion bk-flow ${champion ? 'has-champion' : ''} ${simChampion ? 'is-sim' : ''}">
+      ${simChampion ? `<span class="sim-chip">${t('sim.chip')}</span>` : ''}
+      <span class="champion-trophy" aria-hidden="true">🏆</span>
+      <span class="champion-label">${t('bracket.champion')}</span>
+      <span class="champion-name">${champion ? `${flag}<span>${champion.label}</span>` : t('app.tbd')}</span>
+    </div>
+    ${pcardHTML(finalNode, true)}
+    <h4 class="bk-page-sub">${translatePhase('Third Place')}</h4>
+    ${pcardHTML(tree.third)}`;
+}
+
+function pagerHTML(tree) {
+  const roundsById = new Map(tree.rounds.map((r) => [r.id, r]));
+  const chips = PAGER_PAGES.map((page, i) => `
+    <button class="bk-page-btn" data-page="${i}" aria-pressed="false">
+      ${translatePhase(page.phase)}</button>`).join('');
+  const pages = PAGER_PAGES.map((page) => {
+    const body = page.id === 'FINALS'
+      ? `<div class="bk-page-list bk-page-finals">${pagerFinalsHTML(tree)}</div>`
+      : `<div class="bk-page-list">${roundsById.get(page.id).nodes.map((n) => pcardHTML(n)).join('')}</div>`;
+    return `<section class="bk-page" aria-label="${translatePhase(page.phase)}">${body}</section>`;
+  }).join('');
+  return `
+    <div class="bk-pager ${simMode ? 'sim-on' : ''}">
+      <nav class="bk-pager-nav" id="bk-pager-nav" aria-label="${t('bracket.viewRounds')}">${chips}</nav>
+      <div class="bk-pages" id="bk-pages">${pages}</div>
+    </div>`;
+}
+
+function initPager(tree) {
+  const pages = [...document.querySelectorAll('#bk-pages .bk-page')];
+  const chips = [...document.querySelectorAll('#bk-pager-nav .bk-page-btn')];
+  if (pagerIndex === null) pagerIndex = firstOpenPage(tree);
+
+  const show = (i) => {
+    pagerIndex = Math.max(0, Math.min(PAGER_PAGES.length - 1, i));
+    pages.forEach((page, k) => { page.hidden = k !== pagerIndex; });
+    chips.forEach((chip, k) => {
+      chip.classList.toggle('active', k === pagerIndex);
+      chip.setAttribute('aria-pressed', String(k === pagerIndex));
+    });
+  };
+  chips.forEach((chip, i) => chip.addEventListener('click', () => show(i)));
+  show(pagerIndex);
 }
 
 // ----------------------------------------------------- simulation (step 9)
@@ -550,35 +1131,53 @@ function openSimEditor(ref) {
 // ------------------------------------------------- interactions (step 8)
 
 const ROUND_ORDER = ['R32', 'R16', 'QF', 'SF', 'FINAL'];
-// zoom level survives re-renders (language switch) but not reloads
-const view = { scale: 1, natW: 0, natH: 0 };
-const MIN_SCALE = 0.4;
+// Zoom state survives re-renders (language switch) but not reloads.
+// The fit scale (whole chart visible) is the resting point and the zoom
+// label's "100%"; it's recomputed by a ResizeObserver because the panel is
+// usually hidden when render() first runs (clientWidth 0 — gotcha class).
+const view = { scale: 1, fit: 0, natW: 0, natH: 0, userZoomed: false };
 const MAX_SCALE = 2;
+let fitRO = null;
 
-function initInteractions() {
+function initInteractions(layout) {
   const wrap = document.getElementById('bracket-wrap');
   const zoomBox = document.getElementById('bracket-zoom');
   const canvas = document.getElementById('bracket-canvas');
-  view.natW = 0; // re-measure lazily — panel may be hidden right now (offsetWidth 0)
-  if (view.scale !== 1) applyScale(wrap, zoomBox, canvas);
+  if (view.layoutId !== layout.id) { // wallchart ↔ radial: fresh fit, not inherited zoom
+    view.layoutId = layout.id;
+    view.userZoomed = false;
+    view.fit = 0;
+  }
+  view.natW = layout.w; // geometry is computed, not measured — always known
+  view.natH = layout.h;
+  if (view.fit) {
+    if (!view.userZoomed) view.scale = view.fit;
+    applyScale(wrap, zoomBox, canvas);
+  }
   updateZoomLabel();
 
-  const ensureMeasured = () => {
-    if (view.natW) return true;
-    if (!canvas.offsetWidth) return false;
-    view.natW = canvas.offsetWidth;
-    view.natH = canvas.offsetHeight;
-    return true;
-  };
+  if (fitRO) fitRO.disconnect();
+  fitRO = new ResizeObserver(() => {
+    const cw = wrap.clientWidth;
+    const ch = wrap.clientHeight;
+    if (cw <= 0 || ch <= 0) return; // panel hidden — wait for the tab to open
+    view.fit = Math.min(cw / view.natW, ch / view.natH, 1);
+    if (!view.userZoomed || view.scale < view.fit) view.scale = Math.max(view.fit, view.userZoomed ? view.scale : 0);
+    if (!view.userZoomed) view.scale = view.fit;
+    applyScale(wrap, zoomBox, canvas);
+    updateZoomLabel();
+  });
+  fitRO.observe(wrap);
 
   const setScale = (next, cx, cy) => {
-    if (!ensureMeasured()) return;
-    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, next));
+    if (!view.fit) return;
+    const scale = Math.min(MAX_SCALE, Math.max(view.fit, next));
     if (scale === view.scale) return;
     const rect = wrap.getBoundingClientRect();
     const px = (cx - rect.left + wrap.scrollLeft) / view.scale;
     const py = (cy - rect.top + wrap.scrollTop) / view.scale;
     view.scale = scale;
+    view.userZoomed = true;
     applyScale(wrap, zoomBox, canvas);
     wrap.scrollLeft = px * scale - (cx - rect.left);
     wrap.scrollTop = py * scale - (cy - rect.top);
@@ -593,8 +1192,9 @@ function initInteractions() {
   document.getElementById('zoom-in').addEventListener('click', () => zoomAtCenter(1.25));
   document.getElementById('zoom-out').addEventListener('click', () => zoomAtCenter(1 / 1.25));
   document.getElementById('zoom-reset').addEventListener('click', () => {
-    if (!ensureMeasured()) return;
-    view.scale = 1;
+    if (!view.fit) return;
+    view.scale = view.fit;
+    view.userZoomed = false;
     applyScale(wrap, zoomBox, canvas);
     updateZoomLabel();
   });
@@ -672,34 +1272,29 @@ function initInteractions() {
     }
   }, true);
 
-  // hover/focus path highlight
+  // hover/focus path highlight — any ref-carrying element (card or token)
   canvas.addEventListener('mouseover', (event) => {
-    const node = event.target.closest('.bracket-match');
+    const node = event.target.closest('[data-ref]');
     if (node) showPath(node.dataset.ref);
   });
   canvas.addEventListener('mouseout', () => clearPath());
   canvas.addEventListener('focusin', (event) => {
-    const node = event.target.closest('.bracket-match');
+    const node = event.target.closest('[data-ref]');
     if (node) showPath(node.dataset.ref);
   });
   canvas.addEventListener('focusout', () => clearPath());
 }
 
 function applyScale(wrap, zoomBox, canvas) {
-  if (view.natW) {
-    zoomBox.style.width = `${view.natW * view.scale}px`;
-    zoomBox.style.height = `${view.natH * view.scale}px`;
-  }
-  canvas.style.transform = view.scale === 1 ? '' : `scale(${view.scale})`;
-  if (view.scale === 1) {
-    zoomBox.style.width = '';
-    zoomBox.style.height = '';
-  }
+  zoomBox.style.width = `${view.natW * view.scale}px`;
+  zoomBox.style.height = `${view.natH * view.scale}px`;
+  canvas.style.transform = `scale(${view.scale})`;
 }
 
+// 100% = the whole-chart fit, not natural card size
 function updateZoomLabel() {
   const label = document.getElementById('zoom-reset');
-  if (label) label.textContent = `${Math.round(view.scale * 100)}%`;
+  if (label) label.textContent = `${Math.round((view.scale / (view.fit || 1)) * 100)}%`;
 }
 
 // ----------------------------------------------------- path highlight
@@ -743,12 +1338,15 @@ function showPath(ref) {
   const canvas = document.getElementById('bracket-canvas');
   clearPath();
   canvas.classList.add('has-path');
-  for (const r of pathRefs(ref)) {
-    const el = canvas.querySelector(`[data-ref="${r}"]`);
-    if (!el) continue;
-    el.classList.add('path-on');
-    el.closest('.bracket-slot')?.classList.add('path-on');
-    el.closest('.bracket-pair')?.classList.add('path-on');
+  const refs = pathRefs(ref);
+  for (const r of refs) {
+    // cards (wallchart), tokens/center/third group (radial) — anything owning the ref
+    for (const el of canvas.querySelectorAll(`[data-ref="${r}"]`)) el.classList.add('path-on');
+  }
+  // a connector lights up when both of its endpoints are on the path
+  // (the champion stem carries FINAL→FINAL, so it follows the final)
+  for (const path of canvas.querySelectorAll('.bk-links path')) {
+    if (refs.has(path.dataset.from) && refs.has(path.dataset.to)) path.classList.add('path-on');
   }
 }
 

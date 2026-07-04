@@ -1,8 +1,11 @@
-/* bracket.css — knockout bracket: horizontal round columns, CSS connectors,
-   match nodes, champion box. Geometry note: every column has the same height
-   and slots are flex:1, so a pair's children sit at 25% / 75% of the pair and
-   the next round's node at its 50% — connector lines meet exactly.
-   Interactions (hover path, zoom, drag) land in step 8. */
+/* bracket.css — knockout wallchart: center-out mirrored layout, absolute-
+   positioned cards + generated SVG connectors (geometry lives in bracket.js
+   computeWallchartLayout(); cards and lines share the same numbers).
+   Art direction: "stadium at night" — spotlight gradients on the wrap, faint
+   pitch geometry behind the chart, rounds heating up toward the Final.
+   All motion is gated behind prefers-reduced-motion. */
+
+/* ------------------------------------------------------------ toolbar */
 
 .bracket-toolbar {
   display: flex;
@@ -15,6 +18,7 @@
 .bracket-tools-left,
 .bracket-tools-right {
   display: flex;
+  flex-wrap: wrap; /* six controls on the left — must wrap on narrow screens */
   gap: 0.4rem;
 }
 
@@ -62,12 +66,58 @@
   color: var(--text-secondary);
 }
 
+/* view switch — Rounds | Wallchart | Radial segmented control */
+.bk-viewswitch {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 20, 33, 0.6);
+}
+
+.view-btn {
+  height: 34px;
+  padding-inline: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--glass-border);
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.view-btn:last-child {
+  border-right: 0;
+}
+
+.view-btn:hover {
+  color: var(--text-primary);
+}
+
+.view-btn.active {
+  background: rgba(212, 175, 55, 0.14);
+  color: var(--accent-gold);
+}
+
+/* ------------------------------------------------- stage (wrap + zoom) */
+
+/* height follows the chart's aspect ratio (inline style from the layout
+   engine) so the fit view is never letterboxed; viewport-capped for safety */
 .bracket-wrap {
+  display: flex;
+  width: 100%; /* definite width — keeps min-height from transferring through the aspect-ratio into overflow */
+  min-height: 300px;
+  max-height: min(80vh, 840px);
   overflow: auto;
-  max-height: min(78vh, 900px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: rgba(8, 20, 33, 0.45);
+  /* stadium night: two spotlight pools from the top corners over a deep
+     navy floor — backgrounds don't scroll with overflow content, so the
+     light stays put while the chart pans underneath */
+  background:
+    radial-gradient(55% 60% at 16% -8%, rgba(30, 136, 229, 0.13), transparent 65%),
+    radial-gradient(55% 60% at 84% -8%, rgba(212, 175, 55, 0.10), transparent 65%),
+    radial-gradient(90% 60% at 50% 115%, rgba(30, 136, 229, 0.06), transparent 70%),
+    rgba(5, 13, 23, 0.82);
   -webkit-overflow-scrolling: touch;
   cursor: grab;
   touch-action: none; /* we implement pan + pinch ourselves via pointer events */
@@ -78,113 +128,105 @@
   user-select: none;
 }
 
+/* margins collapse to 0 when the scaled chart overflows, center it when not */
 .bracket-zoom {
   position: relative;
-  width: max-content;
+  flex: none;
+  margin: auto;
 }
 
 .bracket {
+  position: relative;
   transform-origin: 0 0;
+  /* soft gold halo pooled around the centerpiece (percent-based → scales) */
+  background: radial-gradient(34% 42% at 50% 48%, rgba(212, 175, 55, 0.06), transparent 70%);
 }
 
-.bracket {
-  --node-w: 200px;
-  --line: rgba(255, 255, 255, 0.18);
-  display: flex;
-  gap: 44px;
-  width: max-content;
-  min-height: 1150px;
-  padding: 1.25rem 1.5rem 1.5rem;
+/* every laid-out element inside a chart canvas is absolutely positioned by
+   the engine (scoped: the pager reuses these components in normal flow) */
+.bracket .bracket-match,
+.bracket .bk-champion,
+.bracket .bk-title,
+.bracket .bk-third-title,
+.bracket .bk-token,
+.bracket .bk-center,
+.bracket .bk-third-group {
+  position: absolute;
 }
 
-.bracket-round {
-  display: flex;
-  flex-direction: column;
-  width: var(--node-w);
+/* --------------------------------------------------- scenery + links */
+
+.bk-scenery,
+.bk-links {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.bracket-round-title {
-  margin: 0 0 0.75rem;
+.bk-scenery line,
+.bk-scenery circle,
+.bk-scenery ellipse {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1.5;
+}
+
+.bk-scenery .bk-scenery-dot {
+  fill: rgba(255, 255, 255, 0.07);
+  stroke: none;
+}
+
+.bk-links path {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: opacity 0.25s ease, stroke 0.25s ease;
+}
+
+/* connectors heat up round by round toward the center */
+.bk-links .bk-l-r16 { stroke: rgba(255, 255, 255, 0.15); }
+.bk-links .bk-l-qf { stroke: rgba(255, 255, 255, 0.20); }
+.bk-links .bk-l-sf { stroke: rgba(212, 175, 55, 0.28); }
+.bk-links .bk-l-final { stroke: rgba(212, 175, 55, 0.45); }
+
+.bk-links .bk-stem {
+  stroke: rgba(212, 175, 55, 0.55);
+  stroke-width: 2.5;
+}
+
+/* ------------------------------------------------------- round titles */
+
+.bk-title {
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
+  color: var(--text-secondary);
+}
+
+.bk-title-qf { color: rgba(240, 207, 106, 0.75); }
+.bk-title-sf { color: var(--accent-gold-soft); }
+
+.bk-title-final {
   color: var(--accent-gold);
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 14px rgba(212, 175, 55, 0.45);
 }
 
-.bracket-matches {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.bracket-pair {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.bracket-slot {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-/* ----------------------------------------------------------- connectors */
-
-/* out of a node toward the next column (half the 44px gap) */
-.bracket-round:not(.bracket-final-col) .bracket-slot::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -22px;
-  width: 22px;
-  height: 2px;
-  background: var(--line);
-}
-
-/* vertical join between a pair's two out-stubs */
-.bracket-pair::after {
-  content: "";
-  position: absolute;
-  top: 25%;
-  right: -22px;
-  width: 2px;
-  height: 50%;
-  background: var(--line);
-}
-
-/* into a node from the previous column */
-.bracket-round:not(:first-child) .bracket-slot::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: -22px;
-  width: 22px;
-  height: 2px;
-  background: var(--line);
-}
-
-.bracket-champion-slot::before,
-.bracket-third-slot::before {
-  display: none;
-}
-
-/* --------------------------------------------------------- match nodes */
+/* --------------------------------------------------------- match cards */
 
 .bracket-match {
-  position: relative;
   z-index: 1;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  background: rgba(16, 36, 59, 0.85);
-  border: 1px solid var(--glass-border);
+  background: rgba(13, 29, 48, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.25s ease;
 }
 
 .bracket-match:hover {
@@ -196,16 +238,57 @@
   border-color: rgba(255, 77, 90, 0.6);
 }
 
+/* heat: cards get warmer as the rounds close in on the Final */
+.bracket-match.bk-r16 { border-color: rgba(255, 255, 255, 0.14); }
+.bracket-match.bk-qf { border-color: rgba(212, 175, 55, 0.18); }
+
+.bracket-match.bk-sf,
+.bracket-match.bk-third {
+  border-color: rgba(212, 175, 55, 0.30);
+  background: rgba(18, 34, 52, 0.9);
+}
+
+.bracket-match.bk-final {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: linear-gradient(170deg, rgba(30, 48, 70, 0.95), rgba(16, 32, 50, 0.95) 55%, rgba(38, 32, 16, 0.9));
+  box-shadow: 0 0 26px rgba(212, 175, 55, 0.16);
+}
+
+.bk-teams {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .bracket-team {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.42rem 0.6rem;
-  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.74rem;
 }
 
 .bracket-team + .bracket-team {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.bk-qf .bracket-team,
+.bk-sf .bracket-team,
+.bk-third .bracket-team {
+  font-size: 0.78rem;
+}
+
+.bk-final .bracket-team {
+  font-size: 0.92rem;
+  gap: 0.55rem;
+  padding-inline: 0.9rem;
+}
+
+.bk-final .bracket-team .flag {
+  width: 27px;
+  height: 18px;
 }
 
 .bracket-team .flag {
@@ -218,6 +301,11 @@
   height: 14px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.08);
+}
+
+.bk-final .bt-flag-ph {
+  width: 27px;
+  height: 18px;
 }
 
 .bt-name {
@@ -253,81 +341,119 @@
   color: var(--text-secondary);
 }
 
-/* --------------------------------------------------- final column extras */
+/* microline: kickoff / LIVE / FT (+ venue on the Final hero card) */
+.bk-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: none;
+  padding: 0.18rem 0.5rem 0.26rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
 
-.champion-box {
+.bk-final .bk-meta {
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-block: 0.3rem 0.4rem;
+  font-size: 0.66rem;
+}
+
+.bk-venue {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  color: rgba(240, 207, 106, 0.8);
+}
+
+.bk-meta-ft {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.bk-meta-live {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--live);
+}
+
+.bk-meta-live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--live);
+}
+
+/* --------------------------------------------------- champion + third */
+
+.bk-champion {
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  width: 100%;
-  padding: 0.9rem 0.6rem;
+  justify-content: center;
+  gap: 0.2rem;
+  overflow: hidden;
+  padding: 0.5rem;
   text-align: center;
+  background: rgba(13, 29, 48, 0.75);
   border: 1px dashed rgba(212, 175, 55, 0.5);
   border-radius: var(--radius-sm);
 }
 
-.champion-box.has-champion {
+.bk-champion.has-champion {
   border-style: solid;
-  box-shadow: 0 0 18px rgba(212, 175, 55, 0.25);
+  background: linear-gradient(180deg, rgba(60, 48, 18, 0.55), rgba(13, 29, 48, 0.9));
+  box-shadow: 0 0 26px rgba(212, 175, 55, 0.3);
+}
+
+/* a simulated champion is a dream, not a result — sim-blue, never gold glow */
+.bk-champion.is-sim {
+  border-color: rgba(30, 136, 229, 0.65);
+  background: linear-gradient(180deg, rgba(15, 45, 78, 0.6), rgba(13, 29, 48, 0.9));
+  box-shadow: 0 0 20px rgba(30, 136, 229, 0.25);
+}
+
+.bk-champion.is-sim .champion-name {
+  color: var(--accent-blue);
 }
 
 .champion-trophy {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 
 .champion-label {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--text-secondary);
 }
 
 .champion-name {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--accent-gold);
 }
 
-.third-place-block {
-  width: 100%;
-}
-
-.third-place-block h4 {
-  margin: 0 0 0.4rem;
+.bk-third-title {
   text-align: center;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
-}
-
-/* mobile: narrower nodes and gap — connector stubs must stay at gap/2 */
-@media (max-width: 767px) {
-  .bracket {
-    --node-w: 168px;
-    gap: 36px;
-    min-height: 1000px;
-    padding: 1rem 1rem 1.25rem;
-  }
-
-  .bracket-round:not(.bracket-final-col) .bracket-slot::after {
-    right: -18px;
-    width: 18px;
-  }
-
-  .bracket-pair::after {
-    right: -18px;
-  }
-
-  .bracket-round:not(:first-child) .bracket-slot::before {
-    left: -18px;
-    width: 18px;
-  }
-
-  .bracket-wrap {
-    max-height: 72vh;
-  }
 }
 
 /* ----------------------------------------------------- challenge card */
@@ -457,18 +583,369 @@
   gap: 0.75rem;
 }
 
-/* -------------------------------------------------- path highlight */
+/* ------------------------------------------------------ rounds pager */
 
-.bracket-match,
-.bracket-slot::before,
-.bracket-slot::after,
-.bracket-pair::after {
-  transition: opacity 0.25s ease, background-color 0.25s ease,
-    border-color 0.25s ease, box-shadow 0.25s ease;
+.bk-pager-nav {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.5rem;
 }
 
-.bracket.has-path .bracket-match:not(.path-on) {
+.bk-page-btn {
+  flex: none;
+  padding: 0.32rem 0.85rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(8, 20, 33, 0.6);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.bk-page-btn:hover {
+  color: var(--text-primary);
+}
+
+.bk-page-btn.active {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--accent-gold);
+}
+
+/* pages switch via the chips only — one visible at a time, no side scroll */
+.bk-page {
+  padding: 0.2rem 0.15rem;
+}
+
+.bk-page-list {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr;
+}
+
+/* two wide columns max — cards stay comfortably readable on desktop */
+@media (min-width: 700px) {
+  .bk-page-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Finals page: champion banner + final + third, a single centered column */
+.bk-page-finals {
+  grid-template-columns: 1fr;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.bk-page .bk-champion.bk-flow {
+  padding: 1.1rem;
+}
+
+.bk-page-sub {
+  margin: 0.4rem 0 0;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+/* pager card — the fuller variant (venue + city), touch-friendly */
+.bk-pcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(13, 29, 48, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bk-pcard:hover {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.18);
+}
+
+.bk-pcard.is-live {
+  border-color: rgba(255, 77, 90, 0.6);
+}
+
+.bk-pcard.has-fav {
+  border-left: 3px solid var(--accent-gold);
+}
+
+.sim-on .bk-pcard.simulatable {
+  border-style: dashed;
+  border-color: rgba(30, 136, 229, 0.65);
+}
+
+.sim-on .bk-pcard.simulatable:hover {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 14px rgba(30, 136, 229, 0.3);
+}
+
+.bk-pcard .bracket-team {
+  flex: none;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.86rem;
+}
+
+.bk-pcard-hero {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: linear-gradient(170deg, rgba(30, 48, 70, 0.95), rgba(16, 32, 50, 0.95) 55%, rgba(38, 32, 16, 0.9));
+  box-shadow: 0 0 26px rgba(212, 175, 55, 0.16);
+}
+
+.bk-pcard-hero .bracket-team {
+  font-size: 0.95rem;
+}
+
+.bk-pcard-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.bk-pcard-venue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------ radial (orbit) view */
+
+.bk-token {
+  z-index: 1;
+  border-radius: 50%;
+  background: rgba(19, 36, 56, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.25s ease;
+}
+
+.bk-token img,
+.bk-center img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.bk-token:hover {
+  z-index: 3;
+  border-color: var(--accent-gold);
+  transform: scale(1.14);
+}
+
+/* TBD slot — striped disc, like an unlit stadium seat block */
+.bk-token.tk-tbd {
+  background: repeating-linear-gradient(45deg,
+    rgba(255, 255, 255, 0.10) 0 4px, rgba(255, 255, 255, 0.03) 4px 9px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* eliminated entrant — greyed out, still consultable */
+.bk-token.tk-out {
+  opacity: 0.45;
+}
+
+.bk-token.tk-out img {
+  filter: grayscale(1);
+}
+
+/* filled winner slot: gold = real result, dashed blue = simulated pick */
+.bk-token.tk-winner {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+}
+
+.bk-token.tk-sim {
+  border-style: dashed;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 12px rgba(30, 136, 229, 0.3);
+}
+
+.bk-token.tk-live {
+  border-color: var(--live);
+  box-shadow: 0 0 10px rgba(255, 77, 90, 0.4);
+}
+
+/* favorite team — small gold dot pinned to the token's rim */
+.bk-token.tk-fav::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  border: 2px solid var(--bg-primary);
+}
+
+.sim-on .bk-token.simulatable,
+.sim-on .bk-center.simulatable {
+  border-style: dashed;
+  border-color: rgba(30, 136, 229, 0.8);
+}
+
+/* trophy centerpiece — also the Final's winner slot */
+.bk-center {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(19, 36, 56, 0.9);
+  border: 2px dashed rgba(212, 175, 55, 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.25s ease;
+}
+
+.bk-center .bk-center-trophy {
+  font-size: 2.3rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.65));
+}
+
+.bk-center:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.35);
+}
+
+.bk-center.has-champion {
+  border-style: solid;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 26px rgba(212, 175, 55, 0.45);
+}
+
+/* champion known: flag fills the circle, trophy floats above, name below */
+.bk-center.has-champion .bk-center-trophy {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+}
+
+.bk-center-name {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent-gold);
+}
+
+.bk-center.is-sim {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 20px rgba(30, 136, 229, 0.35);
+}
+
+.bk-center.is-sim .bk-center-name {
+  color: var(--accent-blue);
+}
+
+/* third place — small labeled pair below the circle */
+.bk-third-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: opacity 0.25s ease;
+}
+
+.bk-third-group .bk-token,
+.bracket .bk-third-group .bk-third-title {
+  position: static;
+  display: inline-block;
+}
+
+.bk-third-tokens {
+  display: flex;
+  gap: 1.1rem;
+}
+
+/* orbit scenery + route lines */
+.bk-orbit {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.045);
+  stroke-width: 1.5;
+}
+
+.bk-orbit-accent {
+  fill: none;
+  stroke: rgba(212, 175, 55, 0.20);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 8;
+}
+
+.bk-links .bk-le {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.13);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bk-links .bk-le.is-adv {
+  stroke: rgba(212, 175, 55, 0.65);
+  stroke-width: 1.8;
+}
+
+.bk-links .bk-le.is-sim {
+  stroke: rgba(30, 136, 229, 0.75);
+  stroke-width: 1.8;
+  stroke-dasharray: 4 4;
+}
+
+.bk-dot {
+  fill: rgba(255, 255, 255, 0.25);
+}
+
+.bk-dot.is-adv {
+  fill: rgba(212, 175, 55, 0.85);
+}
+
+.bk-dot.is-sim {
+  fill: rgba(30, 136, 229, 0.85);
+}
+
+/* -------------------------------------------------- path highlight */
+
+.bracket.has-path .bracket-match:not(.path-on),
+.bracket.has-path .bk-champion:not(.path-on),
+.bracket.has-path .bk-token:not(.path-on),
+.bracket.has-path .bk-center:not(.path-on),
+.bracket.has-path .bk-third-group:not(.path-on) {
   opacity: 0.3;
+}
+
+.bk-token.path-on,
+.bk-center.path-on {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.4);
+}
+
+.bracket.has-path .bk-links path:not(.path-on) {
+  opacity: 0.2;
 }
 
 .bracket-match.path-on {
@@ -476,8 +953,110 @@
   box-shadow: 0 0 16px rgba(212, 175, 55, 0.28);
 }
 
-.bracket-slot.path-on::before,
-.bracket-slot.path-on::after,
-.bracket-pair.path-on::after {
-  background: var(--accent-gold);
+.bk-links path.path-on {
+  stroke: var(--accent-gold);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.8));
+}
+
+/* ---------------------------------------------------------- motion */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* cards rise in, connectors draw themselves — staggered by round so the
+     chart assembles outside-in each time the tab is opened */
+  .bracket-match,
+  .bk-champion {
+    animation: bk-card-in 0.45s ease-out backwards;
+  }
+
+  .bracket-match.bk-r32 { animation-delay: 0.05s; }
+  .bracket-match.bk-r16 { animation-delay: 0.25s; }
+  .bracket-match.bk-qf { animation-delay: 0.45s; }
+  .bracket-match.bk-sf { animation-delay: 0.65s; }
+
+  .bracket-match.bk-final,
+  .bracket-match.bk-third,
+  .bk-champion {
+    animation-delay: 0.85s;
+  }
+
+  .wallchart .bk-links path {
+    stroke-dasharray: 1; /* paths carry pathLength="1" */
+    animation: bk-draw 0.5s ease-out backwards;
+  }
+
+  .bk-links .bk-l-r16 { animation-delay: 0.3s; }
+  .bk-links .bk-l-qf { animation-delay: 0.5s; }
+  .bk-links .bk-l-sf { animation-delay: 0.7s; }
+  .bk-links .bk-l-final { animation-delay: 0.9s; }
+  .bk-links .bk-stem { animation-delay: 1.05s; }
+
+  .bk-meta-live::before {
+    animation: bk-live-pulse 1.4s ease-in-out infinite;
+  }
+
+  .bk-pcard {
+    animation: bk-card-in 0.35s ease-out backwards;
+  }
+
+  /* orbit view: tokens pop in ring by ring, route lines draw themselves
+     (sim lines keep their dash pattern, so they skip the draw effect) */
+  .bk-token,
+  .bk-center {
+    animation: bk-card-in 0.4s ease-out backwards;
+  }
+
+  .bk-token.tk-ent { animation-delay: 0.05s; }
+  .bk-token.tk-r32 { animation-delay: 0.3s; }
+  .bk-token.tk-r16 { animation-delay: 0.5s; }
+  .bk-token.tk-qf { animation-delay: 0.65s; }
+  .bk-token.tk-sf { animation-delay: 0.8s; }
+  .bk-center { animation-delay: 0.9s; }
+
+  .bk-links .bk-le:not(.is-sim) {
+    stroke-dasharray: 1;
+    animation: bk-draw 0.6s ease-out 0.25s backwards;
+  }
+
+  .bk-token.tk-live {
+    animation: bk-live-ring 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes bk-live-ring {
+  50% {
+    box-shadow: 0 0 14px rgba(255, 77, 90, 0.55);
+  }
+}
+
+@keyframes bk-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes bk-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes bk-live-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ------------------------------------------------------------ mobile */
+
+@media (max-width: 767px) {
+  /* interim until the mobile round pager lands — pinch-zoom canvas */
+  .bracket-wrap {
+    min-height: 220px;
+    max-height: 70vh;
+  }
 }
