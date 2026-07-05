@@ -383,10 +383,13 @@ SSHes into the VPS on push to `master` and `curl -X POST`s Dokploy's **deploy we
 `http://localhost:3000`, keeping the `/api/deploy/…` token path). Recommend a **dedicated SSH deploy
 key** (optionally a forced-command `authorized_keys` entry that only runs the curl). Test the webhook
 by SSHing in and running the curl by hand **before** trusting CI. Runs parallel with the FTP job.
-**Gotcha (2026-07-05):** the deploy webhook **validates the branch from the request body** — a bare
-`POST` returns `{"message":"Branch Not Match"}` (HTTP 200, so `curl -f` won't catch it). Send a minimal
-GitHub-style push body `-H "Content-Type: application/json" -d '{"ref":"refs/heads/master"}'` so Dokploy
-matches `master` and deploys.
+**Gotcha (2026-07-05):** the deploy webhook only parses the request as a push (and reads the branch
+from `ref`) when it gets the **`X-GitHub-Event: push` header** — this was the real blocker. Without it,
+**every** branch returns `{"message":"Branch Not Match"}` (it never even extracts the branch). The full
+working call is `-H "Content-Type: application/json" -H "X-GitHub-Event: push" -d '{"ref":"refs/heads/master"}'`
+→ `{"message":"Application deployed successfully"}` (confirmed the app's branch is `master`). Dokploy
+answers **HTTP 200 even on failure**, so `curl -f` stays green on a mismatch — the workflow greps the
+body for `deployed successfully` to fail the job properly.
 - **Migration phases (Hostinger → Dokploy):** (1) **now** — parallel auto-deploy on both (this
   workflow + FTP). (2) **soak** — run a real daily refresh, confirm on `app.lucaskalil.com/worldcup2026`
   that the new score shows, the 90s live-refresh poll works, manifest/PWA + assets are 200 (no 404).
