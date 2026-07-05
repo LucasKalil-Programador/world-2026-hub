@@ -30,10 +30,15 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
           envs: DEPLOY_WEBHOOK
-          # Dokploy's deploy webhook validates the branch from the request body,
-          # so a bare POST returns {"message":"Branch Not Match"}. Send a minimal
-          # GitHub-style push payload with the ref so it matches `master`.
+          # Dokploy's deploy webhook only parses the request as a push (and reads
+          # the branch from `ref`) when it sees the `X-GitHub-Event: push` header.
+          # Without it, ANY branch returns {"message":"Branch Not Match"}. The
+          # configured branch is `master`. Dokploy answers HTTP 200 even on
+          # failure, so we grep the body to make the job actually red on error.
           script: |
-            curl -fsS -X POST "$DEPLOY_WEBHOOK" \
+            resp=$(curl -fsS -X POST "$DEPLOY_WEBHOOK" \
               -H "Content-Type: application/json" \
-              -d '{"ref":"refs/heads/master"}'
+              -H "X-GitHub-Event: push" \
+              -d '{"ref":"refs/heads/master"}')
+            echo "Dokploy response: $resp"
+            echo "$resp" | grep -q "deployed successfully"
