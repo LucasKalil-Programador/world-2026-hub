@@ -383,6 +383,10 @@ SSHes into the VPS on push to `master` and `curl -X POST`s Dokploy's **deploy we
 `http://localhost:3000`, keeping the `/api/deploy/…` token path). Recommend a **dedicated SSH deploy
 key** (optionally a forced-command `authorized_keys` entry that only runs the curl). Test the webhook
 by SSHing in and running the curl by hand **before** trusting CI. Runs parallel with the FTP job.
+**Gotcha (2026-07-05):** the deploy webhook **validates the branch from the request body** — a bare
+`POST` returns `{"message":"Branch Not Match"}` (HTTP 200, so `curl -f` won't catch it). Send a minimal
+GitHub-style push body `-H "Content-Type: application/json" -d '{"ref":"refs/heads/master"}'` so Dokploy
+matches `master` and deploys.
 - **Migration phases (Hostinger → Dokploy):** (1) **now** — parallel auto-deploy on both (this
   workflow + FTP). (2) **soak** — run a real daily refresh, confirm on `app.lucaskalil.com/worldcup2026`
   that the new score shows, the 90s live-refresh poll works, manifest/PWA + assets are 200 (no 404).

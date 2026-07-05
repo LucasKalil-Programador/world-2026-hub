@@ -30,6 +30,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
           envs: DEPLOY_WEBHOOK
-          # -f: fail the job on any HTTP error from the webhook.
+          # Dokploy's deploy webhook validates the branch from the request body,
+          # so a bare POST returns {"message":"Branch Not Match"}. Send a minimal
+          # GitHub-style push payload with the ref so it matches `master`.
           script: |
-            curl -fsS -X POST "$DEPLOY_WEBHOOK"
+            curl -fsS -X POST "$DEPLOY_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d '{"ref":"refs/heads/master"}'
