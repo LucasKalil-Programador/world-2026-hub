@@ -349,6 +349,30 @@ a separate commit keeps the data commit's diff clean.
   `manifest.json` / `assets/icons/` files **are** deployed. Incremental sync state
   (`.ftp-deploy-sync-state.json`) lives only on the server — don't commit it.
 
+### Deploy — Dokploy via Docker/nginx (2026-07-05, in parallel with Hostinger)
+Migrating the live host to **Dokploy** (self-hosted PaaS on a VPS: Docker + Traefik). Hostinger/FTP
+is **kept in parallel** until Dokploy is 100% confirmed — the FTP workflow is untouched (only its
+`exclude` grew to drop the new infra files). Target URL: **`app.lucaskalil.com/worldcup2026`** — a
+**subpath** (the user's plan: every mini-app at `app.lucaskalil.com/<appname>`).
+- **3 new root files (no app-code change — paths were already relative, gotcha #2):**
+  `Dockerfile` (nginx:1.27-alpine, no build step, single-stage `COPY`), `nginx.conf`
+  (server config), `.dockerignore` (mirrors the FTP exclude; keeps `.git`/docs out of the context).
+- **Subpath is served INSIDE the container** — files copied to
+  `/usr/share/nginx/html/worldcup2026/` and nginx serves them there, so container path == public path
+  1:1 (same mental model as Hostinger's `public_html/worldcup2026/`). **Dokploy domain must set Strip
+  Path = OFF** (Host `app.lucaskalil.com`, Path `/worldcup2026`, Container Port `80`). If strip were
+  ON, Traefik would forward `/` and nginx would 404 — this is the one setting that breaks it. This
+  "serve under /appname, no strip" is the **reusable template** for the other mini-apps.
+- **nginx cache policy is deliberate** (no build step ⇒ unversioned JS/CSS ⇒ gotcha #5): `index.html`
+  + JS + CSS = `Cache-Control: no-cache` (revalidate); `data/*.json` = `no-store` (the 90s live poll
+  owns freshness); media (svg/png/ico/…) = `max-age=604800`; `manifest.json` gets
+  `application/manifest+json` MIME. `absolute_redirect off` so the behind-Traefik trailing-slash
+  redirect stays relative. `/healthz` (200) for the Docker `HEALTHCHECK`; `/` 302→ the app.
+- **New deploy flow:** push to `master` → Dokploy rebuilds the image + redeploys (in addition to the
+  FTP job). Heavier than FTP's incremental sync, but trivial for a tiny static image. **Status:
+  files added, first Dokploy build NOT yet verified** (Docker isn't installed on the dev box, so no
+  local `docker build` was possible — validate in Dokploy).
+
 ### Real-data migration (DONE 2026-06-12)
 All 6 `data/*.json` hold real WC2026 data (sources: Wikipedia per-group + knockout articles,
 cross-checked vs ESPN/FOX/olympics.com). **Stadiums trimmed 30 → 16**; cities use FIFA host-city

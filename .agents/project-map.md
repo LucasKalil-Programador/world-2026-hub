@@ -23,8 +23,18 @@ worldcup2026/
 │
 ├── .github/workflows/
 │   └── deploy.yml                        CI: FTP deploy to Hostinger on push to master
-│                                           (needs FTP_SERVER/USERNAME/PASSWORD secrets)
+│                                           (needs FTP_SERVER/USERNAME/PASSWORD secrets;
+│                                           exclude also drops Dockerfile/nginx.conf/.dockerignore)
 │ .gitignore                              OS/editor junk
+│
+│ Dockerfile                              Dokploy image: nginx:1.27-alpine, no build step; COPYs the
+│                                           app under /usr/share/nginx/html/worldcup2026/ (subpath ==
+│                                           public path). HEALTHCHECK hits /healthz
+│ nginx.conf                              nginx server config for Dokploy: serves the app at the
+│                                           /worldcup2026 subpath, cache policy (no-cache HTML/JS/CSS,
+│                                           no-store data/*.json, long-cache media), manifest MIME,
+│                                           /healthz. Dokploy domain: Strip Path = OFF
+│ .dockerignore                           Keeps .git/docs/.agents/specs out of the build context
 │
 ├── index.html                            ★ SPA shell — header, nav tabs (Home, Matches,
 │                                           Groups, Knockout, Stadiums, Stats), hero, dashboard,
@@ -204,6 +214,7 @@ matches.json time (UTC) ── formatMatchTime(match, stadium, mode)
 | Where do I change the app name / install icon / theme color? | `manifest.json` (name/short_name/theme) + `assets/icons/` (regenerate PNGs from `icon.svg`) + PWA `<meta>` in `index.html` `<head>` |
 | How do I replace mock data with real WC2026 data? | `how-update.md` (root) — done 2026-06-12; kept as schema reference |
 | How do I update scores during the tournament? | `how-refresh-data.md` (root) — daily results.json routine + thirdPlaceAssignment how-to |
+| Where do I configure the Dokploy deploy? | `Dockerfile` + `nginx.conf` (root); Dokploy domain Path `/worldcup2026`, **Strip Path OFF**, Port 80 |
 
 ---
 
