@@ -690,8 +690,9 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   containerized (`Dockerfile`/`nginx.conf`) and **live at `app.lucaskalil.com/worldcup2026`** (subpath,
   Strip OFF). The SSH-bridge workflow (`dokploy-deploy.yml`) triggers a Dokploy deploy on push —
   **requires the `X-GitHub-Event: push` header** (see the runbook gotcha). A manual webhook call already
-  deployed the current `master` to Dokploy, so the site is up there now. **2 local commits not yet
-  pushed:** `b218963` (header fix) + `23baff1` (gotcha doc) — push happens with the Fase-2 test.
+  deployed the current `master` to Dokploy, so the site is up there now. The header fix (`b218963`)
+  + gotcha doc (`23baff1`) are already on `origin/master` — so confirm that push's *Trigger Dokploy
+  deploy* Action was green (if so, auto-deploy is validated on a real push, not just the manual webhook).
   **➡ NEXT — Fase 2 soak test (do it after the NEXT match):** run `/update-worldcup` for real, then
   confirm on `app.lucaskalil.com/worldcup2026` that the new score shows, the 90s live-refresh poll
   works, and assets/manifest return 200 (no 404) — and that the push turned the *Trigger Dokploy deploy*
