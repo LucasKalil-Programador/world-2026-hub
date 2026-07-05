@@ -373,6 +373,24 @@ is **kept in parallel** until Dokploy is 100% confirmed — the FTP workflow is 
   files added, first Dokploy build NOT yet verified** (Docker isn't installed on the dev box, so no
   local `docker build` was possible — validate in Dokploy).
 
+### Auto-deploy behind an SSH tunnel + migration plan (2026-07-05)
+The **Dokploy dashboard is not publicly exposed** (accessed via an SSH tunnel), so the GitHub App /
+webhook (inbound) can't reach it — **only outbound clone works** (which is why manual/CI-triggered
+deploys build fine). Auto-deploy is done **in reverse**: `.github/workflows/dokploy-deploy.yml`
+SSHes into the VPS on push to `master` and `curl -X POST`s Dokploy's **deploy webhook on localhost**
+(uses `appleboy/ssh-action`). **Secrets required:** `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`,
+`VPS_SSH_PORT`, `DOKPLOY_DEPLOY_WEBHOOK` (the app's Dokploy webhook URL with the host swapped to
+`http://localhost:3000`, keeping the `/api/deploy/…` token path). Recommend a **dedicated SSH deploy
+key** (optionally a forced-command `authorized_keys` entry that only runs the curl). Test the webhook
+by SSHing in and running the curl by hand **before** trusting CI. Runs parallel with the FTP job.
+- **Migration phases (Hostinger → Dokploy):** (1) **now** — parallel auto-deploy on both (this
+  workflow + FTP). (2) **soak** — run a real daily refresh, confirm on `app.lucaskalil.com/worldcup2026`
+  that the new score shows, the 90s live-refresh poll works, manifest/PWA + assets are 200 (no 404).
+  (3) **cutover** — make `app.lucaskalil.com/worldcup2026` the canonical URL: update README badge/live-
+  demo link + this memory (today it's still **`lucaskalil.com/worldcup2026`** on Hostinger), optional
+  Hostinger redirect old→new so existing links survive. (4) **retire FTP** — delete `deploy.yml`,
+  remove the FTP secrets, clean `public_html/worldcup2026/` (or leave only the redirect).
+
 ### Real-data migration (DONE 2026-06-12)
 All 6 `data/*.json` hold real WC2026 data (sources: Wikipedia per-group + knockout articles,
 cross-checked vs ESPN/FOX/olympics.com). **Stadiums trimmed 30 → 16**; cities use FIFA host-city

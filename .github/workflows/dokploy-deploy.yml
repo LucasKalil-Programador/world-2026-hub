@@ -1,0 +1,35 @@
+name: Trigger Dokploy deploy
+
+# The Dokploy dashboard is NOT publicly reachable (accessed via an SSH tunnel),
+# so the usual GitHub -> Dokploy webhook (inbound) can't be delivered. We reverse
+# it: on a push to master this job SSHes into the VPS and calls Dokploy's deploy
+# webhook on localhost. Cloning is outbound, so Dokploy still pulls the new commit.
+#
+# Runs IN PARALLEL with the Hostinger FTP workflow during the migration. When the
+# cutover to Dokploy is done, delete deploy.yml (FTP) and keep this one.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: dokploy-deploy
+  cancel-in-progress: true
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Dokploy deploy webhook over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          envs: DEPLOY_WEBHOOK
+          # -f: fail the job on any HTTP error from the webhook.
+          script: |
+            curl -fsS -X POST "$DEPLOY_WEBHOOK"

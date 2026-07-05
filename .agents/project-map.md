@@ -22,9 +22,12 @@ worldcup2026/
 │   └── TODO.md                           12-step build checklist + stats stages
 │
 ├── .github/workflows/
-│   └── deploy.yml                        CI: FTP deploy to Hostinger on push to master
-│                                           (needs FTP_SERVER/USERNAME/PASSWORD secrets;
-│                                           exclude also drops Dockerfile/nginx.conf/.dockerignore)
+│   ├── deploy.yml                        CI: FTP deploy to Hostinger on push to master
+│   │                                       (needs FTP_SERVER/USERNAME/PASSWORD secrets;
+│   │                                       exclude also drops Dockerfile/nginx.conf/.dockerignore)
+│   └── dokploy-deploy.yml                CI: SSH into the VPS on push to master + POST Dokploy's
+│                                           deploy webhook on localhost (dashboard is tunnel-private,
+│                                           so no inbound GitHub webhook). Runs parallel with FTP
 │ .gitignore                              OS/editor junk
 │
 │ Dockerfile                              Dokploy image: nginx:1.27-alpine, no build step; COPYs the
