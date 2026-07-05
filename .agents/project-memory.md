@@ -686,6 +686,18 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   (verified in bracket). Next R32: ids 80–88.
 
 ### Pending / next
+- **Dokploy migration — Fase 1 DONE (auto-deploy working, 2026-07-05).** The static site is
+  containerized (`Dockerfile`/`nginx.conf`) and **live at `app.lucaskalil.com/worldcup2026`** (subpath,
+  Strip OFF). The SSH-bridge workflow (`dokploy-deploy.yml`) triggers a Dokploy deploy on push —
+  **requires the `X-GitHub-Event: push` header** (see the runbook gotcha). A manual webhook call already
+  deployed the current `master` to Dokploy, so the site is up there now. **2 local commits not yet
+  pushed:** `b218963` (header fix) + `23baff1` (gotcha doc) — push happens with the Fase-2 test.
+  **➡ NEXT — Fase 2 soak test (do it after the NEXT match):** run `/update-worldcup` for real, then
+  confirm on `app.lucaskalil.com/worldcup2026` that the new score shows, the 90s live-refresh poll
+  works, and assets/manifest return 200 (no 404) — and that the push turned the *Trigger Dokploy deploy*
+  Action green. **Once proven → Fase 3 Hostinger cutover** (make app.lucaskalil.com the canonical URL:
+  update README badge/live-demo + this memory, optional old→new redirect) **→ Fase 4 retire FTP** (delete
+  `deploy.yml`, remove FTP secrets, clean `public_html`). Hostinger stays parallel until Fase 3.
 - **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
   75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 77 (FRA 3–0 SWE), 78 (CIV 1–2 NOR), 79 (MEX 2–0 ECU),
   80 (ENG 2–1 COD), 81 (USA 2–0 BIH), 82 (BEL 3–2 SEN AET). Next: ids 83–88. `penalties` apply on ids
