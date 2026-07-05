@@ -1,0 +1,12 @@
+# Keep the Docker build context small — only the app itself is COPYed into the
+# image (index.html, manifest.json, favicon.ico, assets/, data/). Everything
+# below is docs/dev/CI and never ships to the live site (mirrors the FTP
+# `exclude` list in .github/workflows/deploy.yml).
+.git
+.gitignore
+.github
+.agents
+docs
+*.md
+*-en.md
+.ftp-deploy-sync-state.json

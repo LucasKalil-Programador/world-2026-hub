@@ -48,3 +48,6 @@ jobs:
             how-refresh-data.md
             world-cup-2026-hub-spec-en.md
             complement-spec-worldcup2026-en.md
+            Dockerfile
+            nginx.conf
+            .dockerignore
