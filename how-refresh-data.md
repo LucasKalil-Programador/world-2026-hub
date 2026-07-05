@@ -68,7 +68,7 @@ Rules:
 ### 4. Cache-busting (no longer a manual step)
 
 There is **no `DATA_VERSION` to bump**. `loadData()` appends `?t=${Date.now()}`
-to every `data/*.json` fetch, so each page load gets a fresh URL and Hostinger
+to every `data/*.json` fetch, so each page load gets a fresh URL and the host
 can never serve a stale `results.json`. Just edit the data and ship — nothing
 to bump.
 
@@ -170,8 +170,8 @@ Rules:
 docs: log daily refresh DD/MM/YYYY
 ```
 
-`.agents/` is excluded from the FTP deploy, so keeping it a separate commit keeps
-the data commit (the one that actually changes the live site) a clean diff.
+`.agents/` is excluded from the deploy build (see `.dockerignore`), so keeping it a
+separate commit keeps the data commit (the one that actually changes the live site) a clean diff.
 
 > The previous habit of letting `/git-semantic-commit` invent a fresh subject
 > each run (`data: update match 13 result and stats`, `data: update match 12 …`)

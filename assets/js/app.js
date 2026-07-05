@@ -103,7 +103,7 @@ async function pollResults() {
   if (tournamentOver()) { stopResultsPolling(); return; }
   let results;
   try {
-    // ?t + no-store bypasses Hostinger's missing cache headers (same scheme loadData uses)
+    // ?t + no-store guarantees a fresh results.json regardless of host caching (same scheme loadData uses)
     const res = await fetch(`data/results.json?t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return;
     results = await res.json();

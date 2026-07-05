@@ -333,7 +333,9 @@ Rules: `DD/MM/YYYY` + `HH:MM` are the match's **UTC** kickoff (as in `matches.js
 uppercase letters; separator lowercase `x`. `.agents/` is excluded from the FTP deploy → keeping it
 a separate commit keeps the data commit's diff clean.
 
-### Deploy — Hostinger via FTP (GitHub Actions, 2026-06-14)
+### Deploy — Hostinger via FTP (GitHub Actions, 2026-06-14) — RETIRED 2026-07-05
+> **RETIRED 2026-07-05** — `deploy.yml` was deleted at the Dokploy cutover; the repo no longer deploys
+> to Hostinger (see "Dokploy cutover — FTP retired" below). Kept as historical reference.
 - `.github/workflows/deploy.yml`: every `push` to `master` (or `workflow_dispatch`) deploys via
   `SamKirkland/FTP-Deploy-Action@v4.3.5` (`protocol: ftps`, `port: 21`, `local-dir: ./`,
   `server-dir: worldcup2026/`).
@@ -394,9 +396,20 @@ body for `deployed successfully` to fail the job properly.
   workflow + FTP). (2) **soak** — run a real daily refresh, confirm on `app.lucaskalil.com/worldcup2026`
   that the new score shows, the 90s live-refresh poll works, manifest/PWA + assets are 200 (no 404).
   (3) **cutover** — make `app.lucaskalil.com/worldcup2026` the canonical URL: update README badge/live-
-  demo link + this memory (today it's still **`lucaskalil.com/worldcup2026`** on Hostinger), optional
-  Hostinger redirect old→new so existing links survive. (4) **retire FTP** — delete `deploy.yml`,
-  remove the FTP secrets, clean `public_html/worldcup2026/` (or leave only the redirect).
+  demo link + this memory (**DONE 2026-07-05, repo side** — see the "Dokploy cutover" entry below),
+  optional Hostinger redirect old→new so existing links survive. (4) **retire FTP** — delete
+  `deploy.yml`, remove the FTP secrets, clean `public_html/worldcup2026/` (or leave only the redirect).
+
+### Dokploy cutover — FTP retired, repo side (2026-07-05)
+**Fase 3 (canonical URL) + Fase 4 (retire FTP) done _in the repo_.** Removed the FTP workflow
+(`deploy.yml` deleted) so **push → Dokploy is the only deploy** (`dokploy-deploy.yml`). Swapped the
+public URL **`lucaskalil.com/worldcup2026` → `app.lucaskalil.com/worldcup2026`** everywhere it appeared
+(README badge + "try it now", `DEVELOPMENT.md` deploy section, `project-map.md`). Reworded the stale
+Hostinger/FTP references in `DEVELOPMENT.md` (deploy section → Dokploy), `how-refresh-data.md`,
+`.dockerignore`, `nginx.conf`, and the `app.js` cache comment. **Still pending (out of repo — GitHub/
+Hostinger side):** delete the `FTP_SERVER`/`FTP_USERNAME`/`FTP_PASSWORD` GitHub secrets and clean or
+redirect Hostinger's `public_html/worldcup2026/`. **Caveat:** the Fase 2 soak test (confirm a real
+daily refresh lands on `app.lucaskalil.com/worldcup2026`) was NOT explicitly re-run before this cutoff.
 
 ### Real-data migration (DONE 2026-06-12)
 All 6 `data/*.json` hold real WC2026 data (sources: Wikipedia per-group + knockout articles,
@@ -602,7 +615,8 @@ supersedes the old "768–1439 single-row header" note.
 ### Docs — README showcase + DEVELOPMENT.md split (2026-07-04)
 The root README was reframed (via /grill-me) from a dev/maintenance guide into a **non-technical
 showcase** (English): tagline, shields.io badges, prominent live-demo link
-(**https://lucaskalil.com/worldcup2026** — the public URL; not previously recorded anywhere),
+(**https://app.lucaskalil.com/worldcup2026** — the public URL since the 2026-07-05 cutover; was
+`lucaskalil.com/worldcup2026` on Hostinger, not previously recorded anywhere),
 per-page **screenshot gallery** (Home/Matches/Groups/Knockout/Stadiums/Stats), and a plain-language
 "Under the hood" section. All the old technical content (run locally, project structure, JSON
 maintenance, local storage, deploy, acceptance criteria, roadmap) moved to a new **`DEVELOPMENT.md`**;
@@ -696,9 +710,10 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   **➡ NEXT — Fase 2 soak test (do it after the NEXT match):** run `/update-worldcup` for real, then
   confirm on `app.lucaskalil.com/worldcup2026` that the new score shows, the 90s live-refresh poll
   works, and assets/manifest return 200 (no 404) — and that the push turned the *Trigger Dokploy deploy*
-  Action green. **Once proven → Fase 3 Hostinger cutover** (make app.lucaskalil.com the canonical URL:
-  update README badge/live-demo + this memory, optional old→new redirect) **→ Fase 4 retire FTP** (delete
-  `deploy.yml`, remove FTP secrets, clean `public_html`). Hostinger stays parallel until Fase 3.
+  Action green. **Fase 3 (canonical URL) + Fase 4 repo-side DONE 2026-07-05** — `deploy.yml` deleted,
+  every URL swapped to `app.lucaskalil.com` (see "Dokploy cutover — FTP retired" above). **Remaining
+  out-of-repo:** delete the `FTP_*` GitHub secrets and clean/redirect Hostinger `public_html/worldcup2026/`.
+  The Fase 2 soak test was not explicitly re-run before the cutoff — validate on the next real refresh.
 - **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
   75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 77 (FRA 3–0 SWE), 78 (CIV 1–2 NOR), 79 (MEX 2–0 ECU),
   80 (ENG 2–1 COD), 81 (USA 2–0 BIH), 82 (BEL 3–2 SEN AET). Next: ids 83–88. `penalties` apply on ids

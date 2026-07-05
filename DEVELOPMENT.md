@@ -118,14 +118,18 @@ Clearing site data resets picks, favourites and preferences.
 
 ## Deployment
 
-The live site is deployed automatically to **Hostinger over FTP** by GitHub Actions
-([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) on every push to `master`, and is
-served at **[lucaskalil.com/worldcup2026](https://lucaskalil.com/worldcup2026)**.
+The live site is deployed automatically to **Dokploy** (self-hosted Docker + Traefik on a VPS) by
+GitHub Actions ([`.github/workflows/dokploy-deploy.yml`](.github/workflows/dokploy-deploy.yml)) on
+every push to `master`, and is served at
+**[app.lucaskalil.com/worldcup2026](https://app.lucaskalil.com/worldcup2026)**.
 
-- The workflow needs three repository secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
-- Development/documentation files (`README.md`, `DEVELOPMENT.md`, `docs/`, `.agents/`, the specs and
-  `how-*.md`) are **excluded** from the upload — only `index.html`, `assets/` and `data/` reach the
-  site.
+- The image is built from the root [`Dockerfile`](Dockerfile) (nginx, no build step) with
+  [`nginx.conf`](nginx.conf); [`.dockerignore`](.dockerignore) keeps docs/dev/CI out of the build
+  context, so only `index.html`, `assets/` and `data/` end up in the image. In Dokploy the app serves
+  under the `/worldcup2026` subpath with **Strip Path = OFF**.
+- The Dokploy dashboard isn't publicly reachable, so the workflow SSHes into the VPS and calls
+  Dokploy's deploy webhook on localhost. It needs the repository secrets `VPS_HOST`, `VPS_USER`,
+  `VPS_SSH_KEY`, `VPS_SSH_PORT` and `DOKPLOY_DEPLOY_WEBHOOK`.
 
 Because every asset and data path in the code is **relative** (never starting with `/`), the same
 folder also works unchanged on **GitHub Pages** or any other static host — just publish the directory.

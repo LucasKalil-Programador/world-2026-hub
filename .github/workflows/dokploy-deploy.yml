@@ -5,8 +5,8 @@ name: Trigger Dokploy deploy
 # it: on a push to master this job SSHes into the VPS and calls Dokploy's deploy
 # webhook on localhost. Cloning is outbound, so Dokploy still pulls the new commit.
 #
-# Runs IN PARALLEL with the Hostinger FTP workflow during the migration. When the
-# cutover to Dokploy is done, delete deploy.yml (FTP) and keep this one.
+# This is the sole deploy workflow. The old Hostinger FTP deploy (deploy.yml) was
+# retired at the Dokploy cutover (2026-07-05).
 on:
   push:
     branches: [master]

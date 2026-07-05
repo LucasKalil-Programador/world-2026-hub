@@ -4,7 +4,7 @@
 
 ### Follow the entire FIFA World Cup 2026 in one beautiful place — the schedule, live group standings, an interactive knockout bracket you can predict, the stadiums, and full tournament stats.
 
-[![Live demo](https://img.shields.io/badge/Live_demo-lucaskalil.com%2Fworldcup2026-e6b800?style=for-the-badge)](https://lucaskalil.com/worldcup2026)
+[![Live demo](https://img.shields.io/badge/Live_demo-app.lucaskalil.com%2Fworldcup2026-e6b800?style=for-the-badge)](https://app.lucaskalil.com/worldcup2026)
 
 ![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-no_frameworks-f7df1e?style=flat-square)
 ![Zero dependencies](https://img.shields.io/badge/Dependencies-zero-2ea44f?style=flat-square)
@@ -31,7 +31,7 @@ bracket. Results roll in as the tournament goes, and you can flip the entire int
 Nothing to install (although you can — see [Under the hood](#-under-the-hood-for-the-curious)), no
 sign-up, no ads. Just open it.
 
-> 🔗 **Try it now → [lucaskalil.com/worldcup2026](https://lucaskalil.com/worldcup2026)**
+> 🔗 **Try it now → [app.lucaskalil.com/worldcup2026](https://app.lucaskalil.com/worldcup2026)**
 
 ---
 

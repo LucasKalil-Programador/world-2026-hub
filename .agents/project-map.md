@@ -22,12 +22,10 @@ worldcup2026/
 │   └── TODO.md                           12-step build checklist + stats stages
 │
 ├── .github/workflows/
-│   ├── deploy.yml                        CI: FTP deploy to Hostinger on push to master
-│   │                                       (needs FTP_SERVER/USERNAME/PASSWORD secrets;
-│   │                                       exclude also drops Dockerfile/nginx.conf/.dockerignore)
-│   └── dokploy-deploy.yml                CI: SSH into the VPS on push to master + POST Dokploy's
-│                                           deploy webhook on localhost (dashboard is tunnel-private,
-│                                           so no inbound GitHub webhook). Runs parallel with FTP
+│   └── dokploy-deploy.yml                CI (sole deploy): SSH into the VPS on push to master + POST
+│                                           Dokploy's deploy webhook on localhost (dashboard is
+│                                           tunnel-private, so no inbound GitHub webhook). The old
+│                                           Hostinger FTP workflow (deploy.yml) was retired 2026-07-05
 │ .gitignore                              OS/editor junk
 │
 │ Dockerfile                              Dokploy image: nginx:1.27-alpine, no build step; COPYs the
@@ -130,7 +128,7 @@ worldcup2026/
 │                                           all-time-baselines.json — absent = silent empty default
 │
 ├── README.md                             ★ Non-technical SHOWCASE (2026-07-04): tagline, badges,
-│                                           live-demo link (lucaskalil.com/worldcup2026), per-page
+│                                           live-demo link (app.lucaskalil.com/worldcup2026), per-page
 │                                           screenshot gallery, plain-language "Under the hood".
 │                                           Dev content lives in DEVELOPMENT.md now.
 ├── DEVELOPMENT.md                        Developer guide (2026-07-04): run locally, project
