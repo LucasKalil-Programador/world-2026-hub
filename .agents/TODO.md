@@ -62,7 +62,7 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 ### 🟡 IMPORTANT
 - [x] ~~Replace mock `data/*.json` with real World Cup 2026 data~~ (2026-06-12 — full migration + smoke test; see project-memory)
 - [x] ~~Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage ends~~ (2026-06-28 — all 8 slots filled from FIFA's official combination table for thirds B,D,E,F,I,J,K,L → `{1:D,2:F,3:B,4:I,5:E,6:K,7:J,8:L}`; R32 verified vs official bracket)
-- [ ] Update `results.json` as the tournament progresses (R32 in progress — results through match id 82 on 2026-07-02: R32 ids 73–82 finished [74 GER 1–1 PAR pen 3–4, 75 NED 1–1 MAR pen 2–3, 77 FRA 3–0 SWE, 78 CIV 1–2 NOR, 79 MEX 2–0 ECU, 80 ENG 2–1 COD, 81 USA 2–0 BIH, 82 BEL 3–2 SEN AET]; ids 83–88 next)
+- [ ] Update `results.json` as the tournament progresses (Quarterfinals underway — results through match id 97 on 2026-07-09: group stage + R32 + R16 all finished, QF-1 done [97 FRA 2–0 MAR]; next QF-2 ESP×BEL id 98 on 2026-07-10)
 - [x] ~~Real stadium photos + team flag SVGs in `assets/images/`~~ (flag SVGs added 2026-06-18; stadium photos optional)
 - [ ] **Pós-Copa: estado final da home.** Quando a Final encerrar, o hero fica vazio (por design atual). Criar um estado pós-torneio (campeão/epílogo) na home — ver entrada "Hero cronômetro inteligente (2026-06-15)" em project-memory; provavelmente converge com a aba Stats (`stats-screen-plan.md`).
 

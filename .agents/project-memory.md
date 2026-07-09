@@ -638,16 +638,14 @@ excluded from deploy).
 
 ## Current State
 
-**Updated 2026-07-03.** **Bracket redesign Steps 1–3 shipped on master (not yet pushed):** the
-Knockout tab has 3 switchable views — center-out wallchart (desktop default), radial "orbit" (flag
-tokens per the user's reference image), rounds pager (mobile default, button-only navigation, ≤2
-columns). See Architecture → "Bracket redesign" (both entries). Pending: Step 4 champion
-celebration + polish pass + version bump to v1.1.0.
-Data: **R32 underway** — group stage COMPLETE (1–72) + R32 matches **73
-(RSA 0–1 CAN)**, **74 (GER 1–1 PAR, PAR 4–3 pens)**, **75 (NED 1–1 MAR, MAR 3–2 pens)**, **76
-(BRA 2–1 JPN)**, **77 (FRA 3–0 SWE)**, **78 (CIV 1–2 NOR)**, **79 (MEX 2–0 ECU)**, **80
-(ENG 2–1 COD)**, **81 (USA 2–0 BIH)** and **82 (BEL 3–2 SEN, AET)** finished (82/104 total);
-remaining R32 ids 83–88 are next.
+**Updated 2026-07-09.** **Bracket redesign Steps 1–3 live on `master`** (pushed — branch is up to
+date with `origin/master`): the Knockout tab has 3 switchable views — center-out wallchart (desktop
+default), radial "orbit" (flag tokens per the user's reference image), rounds pager (mobile default,
+button-only navigation, ≤2 columns). See Architecture → "Bracket redesign" (both entries). Pending:
+Step 4 champion celebration + polish pass + version bump to v1.1.0.
+Data: **Round of 16 complete, Quarterfinals underway** — group stage (1–72), R32 (73–88) and R16
+(89–96) all finished; QF-1 (97, FRA 2–0 MAR) finished 2026-07-09; QF-2 ESP×BEL (98, 2026-07-10),
+QF-3 NOR×ENG (99, 2026-07-11), QF-4 ARG×SUI (100, 2026-07-12) still ahead (97/104 total finished).
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
 (bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
@@ -656,71 +654,42 @@ leader cards now rotate through tied teams + 3 new metric cards (Most wins / Mos
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
-- **2026-07-02** — **R32 ids 81 & 82.** Match 81 (R32-7, USA D1 × BIH 3rd-B): **USA 2–0 BIH** —
-  Balogun 45' (his 3rd of the tournament) then sent off 64' for a reckless tackle on Muharemović,
-  Tillman sealed it with an 82' direct free-kick; USA's first WC knockout win since 2002, playing the
-  final ~30min with 10 men — 2-source+ confirmed ESPN(gid 760494)/CBS/NBC Bay Area/NPR/CNN/FOX/US
-  Soccer/Opta Analyst. Stats: poss 48/52 (ESPN match box), shots 8/10 (Opta Analyst total-shots —
-  cross-checked against ESPN's own SOG-conversion %: 2/8=25% and 3/10=30%, both match exactly). Cards
-  1/1 (Balogun red 64' only; BIH's Radeljić yellow 80' — excluded a 2nd BIH yellow shown to head coach
-  Barbarez, a bench/technical-area card, not a player card). Regulation, no penalties. Winner
-  propagated: USA → R16-4 vs BEL (verified in bracket, matches real-world reporting). Match 82
-  (R32-8, BEL G1 × SEN 3rd-I): **BEL 3–2 SEN (AET)** — Diarra 25', Sarr 51' put Senegal 2-0 up; sub
-  Lukaku 86' and Tielemans 89' forced extra time, Tielemans converted a 125' penalty (VAR) for the
-  latest goal in WC history — 2-source+ confirmed ESPN(gid 760493)/Outlook India/Opta Analyst/CBS/
-  FOX/Sofascore. Stats: poss 52/48 (FotMob — ESPN's page didn't expose a possession stat, same gap as
-  the 77 FRA-SWE refresh), shots 18/5 (ESPN match box — initial reads were inconsistent/swapped, took
-  2 more fetches with explicit home/away attribution to settle; FotMob's conflicting 19/19 discarded
-  as the outlier). Cards 1/1 (Mechele BEL yellow 64', Camara SEN yellow 67'; excluded Belgium coach
-  Rudi Garcia's dissent yellow and an uncorroborated FotMob claim of a 2nd Camara yellow at 73' — no
-  source reports Senegal playing a man down). Decided in extra time by a live-play goal, not a
-  shootout — no `penalties` field. Winner propagated: BEL → R16-4 vs USA (verified in bracket). Next
-  R32: ids 83–88.
-- **2026-07-01 (b)** — **R32 id 80 (R32-12, ENG L1 × COD 3rd-K): ENG 2–1 COD.** Cipenga 7' gave
-  Congo an early lead (their first-ever WC knockout appearance); Kane leveled 75' (header) and won
-  it 86' (strike), both assists from Gordon — 2-source+ confirmed ESPN(gid 760495)/Olympics.com/
-  Fox Sports/englandfootball.com/CBS/NBC/Yahoo. Stats: poss 60/40, shots 9/5 (ESPN match box — a
-  Sofascore-derived search snippet suggested 16/7 but that looked like a different attempt-counting
-  method, so ESPN's box was used per the authoritative-source rule), cards 1/1 (Bellingham 19' ENG,
-  Sadiki ~27' COD, both yellow, no reds — confirmed via Sofascore's card list). Regulation, no
-  penalties. Winner propagated: ENG → R16-2 vs MEX (verified in bracket). Next R32: ids 81–88.
-- **2026-07-01** — **R32 ids 77 & 79.** Match 77 (R32-2, FRA I1 × SWE F3): **FRA 3–0 SWE** —
-  Mbappé 45', 74' (his 6th of the tournament, level with Messi's career WC tally), Barcola 53' — 2-source
-  confirmed ESPN(gid 760492)/FIFA match centre/Al Jazeera/FOX/RTE. Stats: poss 61/39 (FotMob; ESPN's
-  page didn't expose a possession stat), shots 11/6 (ESPN match box — used over FotMob's much higher
-  25/8 figure, which looked like a different attempt-counting method), cards **0/0** — checked ESPN
-  boxscore + playbyplay, FOX, Al Jazeera live blog, RTE, Yahoo recap; none reported any booking, so
-  treated as a clean game rather than an unconfirmed gap. Regulation, no penalties. Winner propagated:
-  FRA → R16-1 vs PAR (verified in bracket). Match 79 (R32-11, MEX A1 × ECU E3): **MEX 2–0 ECU** —
-  Quiñones 22', Jiménez 31'; Ecuador's Hincapié sent off 90+5' (covering his mouth during a dispute
-  with Giménez, a new directive this tournament) — 2-source confirmed ESPN(gid 760491)/FIFA match
-  centre/Al Jazeera/Yahoo/CBS. Stats: poss 43/57, shots 9/7, cards 0/3 (2 yellow + Hincapié's red) —
-  all from the ESPN match box, red card cross-confirmed by the Yahoo live blog. Regulation, no
-  penalties. Mexico (co-host) reached R16 for the first time in the format; winner propagated to R16-2
-  (verified in bracket). Next R32: ids 80–88.
+- **2026-07-09** — **QF-1 (match 97): FRA 2–0 MAR** (Gillette Stadium, Boston) — Mbappé 60' (his 8th
+  of the tournament) and Dembélé 66' sent France to a 3rd straight semifinal; Bounou saved a Mbappé
+  penalty in the first half. France remain the only team to win all 6 games in regulation. 2-source+
+  confirmed FIFA match centre/CNN/NBC News/Fox Sports/Yahoo/Olympics.com/Boston.com/ESPN. Stats: poss
+  48/52, shots 24/4 (ESPN match box). Cards 0/1 (Diop MAR 63' only — no France booking reported across
+  Sofascore/ESPN live blog/Fox boxscore). Regulation, no penalties. Winner propagated: FRA → SF-1
+  (verified in bracket). Next: QF-2 ESP×BEL (98, 2026-07-10 19:00 UTC).
+- **2026-07-07** — **R16 ids 95–96** (committed same day, `2a626d5`/`4e4ad72` — this run is a memory
+  catch-up, per-goal detail wasn't logged at the time): Match 95 (R16-7): **ARG 3–2 EGY**. Match 96
+  (R16-8): **SUI 0–0 COL, SUI 4–3 pens**.
+- **2026-07-06** — **R16 ids 92–94** (committed same day, `f65cd62`/`9df4a5e`/`a234ae0` — memory
+  catch-up, same gap as above): Match 92 (R16-6): **MEX 2–3 ENG**. Match 93 (R16-3): **POR 0–1 ESP**.
+  Match 94 (R16-4): **USA 1–4 BEL**.
+
+> **Note (2026-07-09):** memory went unmaintained 07-03→07-07 while daily data commits + pushes
+> continued normally (R32 ids 83–88 and R16 ids 89–94 finished + committed with the standard subject
+> format, just without a following `docs:` commit or Current State update). No data was lost — git is
+> authoritative — but the detailed per-match narrative for that window (scorers, source list) was never
+> captured and isn't recoverable beyond the scores. If this recurs, catch up memory the same day rather
+> than letting it compound.
 
 ### Pending / next
-- **Dokploy migration — Fase 1 DONE (auto-deploy working, 2026-07-05).** The static site is
-  containerized (`Dockerfile`/`nginx.conf`) and **live at `app.lucaskalil.com/worldcup2026`** (subpath,
-  Strip OFF). The SSH-bridge workflow (`dokploy-deploy.yml`) triggers a Dokploy deploy on push —
-  **requires the `X-GitHub-Event: push` header** (see the runbook gotcha). A manual webhook call already
-  deployed the current `master` to Dokploy, so the site is up there now. The header fix (`b218963`)
-  + gotcha doc (`23baff1`) are already on `origin/master` — so confirm that push's *Trigger Dokploy
-  deploy* Action was green (if so, auto-deploy is validated on a real push, not just the manual webhook).
-  **➡ NEXT — Fase 2 soak test (do it after the NEXT match):** run `/update-worldcup` for real, then
-  confirm on `app.lucaskalil.com/worldcup2026` that the new score shows, the 90s live-refresh poll
-  works, and assets/manifest return 200 (no 404) — and that the push turned the *Trigger Dokploy deploy*
-  Action green. **Fase 3 (canonical URL) + Fase 4 repo-side DONE 2026-07-05** — `deploy.yml` deleted,
-  every URL swapped to `app.lucaskalil.com` (see "Dokploy cutover — FTP retired" above). **Remaining
-  out-of-repo:** delete the `FTP_*` GitHub secrets and clean/redirect Hostinger `public_html/worldcup2026/`.
-  The Fase 2 soak test was not explicitly re-run before the cutoff — validate on the next real refresh.
-- **Knockout R32 (ids 73–88) — in progress.** Done: 73 (RSA 0–1 CAN), 74 (GER 1–1 PAR, PAR 4–3 pens),
-  75 (NED 1–1 MAR, MAR 3–2 pens), 76 (BRA 2–1 JPN), 77 (FRA 3–0 SWE), 78 (CIV 1–2 NOR), 79 (MEX 2–0 ECU),
-  80 (ENG 2–1 COD), 81 (USA 2–0 BIH), 82 (BEL 3–2 SEN AET). Next: ids 83–88. `penalties` apply on ids
-  73–104 (KO only — append `"penalties": {home,away}` and keep `homeScore/awayScore` as the 90+30
-  score; id 82 was decided in extra time by a live goal, not a shootout, so it carries no `penalties`
-  field despite going past 90+30). R16 ids 89–96 from 2026-07-04.
-  **Note:** the 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — re-confirm if a clean box surfaces.
+- **Dokploy migration — Fase 1+2 DONE.** Fase 2 soak test confirmed 2026-07-09: fetched
+  `app.lucaskalil.com/worldcup2026/data/results.json` live and it matched local state through match 96
+  exactly (stats included) — auto-deploy has been working transparently across all the 07-03→07-07
+  pushes. **Fase 3 (canonical URL) + Fase 4 repo-side DONE 2026-07-05** — `deploy.yml` deleted, every
+  URL swapped to `app.lucaskalil.com` (see "Dokploy cutover — FTP retired" above). **Remaining
+  out-of-repo (low priority):** delete the `FTP_*` GitHub secrets and clean/redirect Hostinger
+  `public_html/worldcup2026/`.
+- **Knockout — R32 + R16 complete, QF underway.** R32 (73–88) and R16 (89–96) all finished (full
+  per-match detail in git — see the note above about the 07-03→07-07 memory gap). QF-1 (97, FRA 2–0
+  MAR) done 2026-07-09. **Next: QF-2 ESP×BEL (98, 2026-07-10 19:00 UTC)**, then QF-3 NOR×ENG (99,
+  07-11 21:00 UTC) and QF-4 ARG×SUI (100, 07-12 01:00 UTC). `penalties` apply on ids 73–104 (KO only).
+  SF (101 07-14, 102 07-15), Third Place (103, 07-18), Final (104, 07-19) still ahead.
+  **Note:** R32 id 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — never
+  re-confirmed; low-stakes, leaving as-is.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
   table; bracket verified. No longer pending.
 - **Lighthouse > 90** run (needs a deployed URL).
