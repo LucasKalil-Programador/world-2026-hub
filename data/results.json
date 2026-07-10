@@ -4,9 +4,23 @@
   {"matchId":97,"homeScore":2,"awayScore":0,"status":"finished","stats":{"possession":{"home":48,"away":52},"shots":{"home":24,"away":4},"cards":{"home":0,"away":1}}},
   {
     "matchId": 98,
-    "homeScore": null,
-    "awayScore": null,
-    "status": "scheduled"
+    "homeScore": 2,
+    "awayScore": 1,
+    "status": "finished",
+    "stats":{
+      "possession":{
+        "home":68,
+        "away":32
+      },
+      "shots":{
+        "home":17,
+        "away":5
+      },
+      "cards": {
+        "home":2,
+        "away":2
+      }
+    }
   },
   {
     "matchId": 99,
