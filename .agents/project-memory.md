@@ -62,6 +62,20 @@ automated tests / linter (explicit spec constraint).
 - **Custom events on `document`** drive re-renders — each view owns its own: `langchange`,
   `simchange`, `favchange`, `timemodechange`, `datachange` (live refresh). No shared render loop.
 
+### Error & loading copy cleanup (2026-07-10)
+`app.comingSoon` ("This section arrives in a later build step.") was a leftover from the
+step-by-step build — the 5 non-home panels (`index.html`) showed it as a static placeholder until
+each view's `init*()` replaced it. Since all 12 build steps have long shipped, the text read as
+"unbuilt" on the live site even though it only ever showed for the instant `loadData()` was in
+flight. **Key removed; the 5 panels now reuse `app.loading`** ("Loading data…"/"Carregando
+dados…") — same semantics as the Home hero's loading state, one fewer i18n key to maintain.
+Separately, `showError()`'s (`app.js`) fatal-load fallback had a dev-only hint ("serve via `python
+-m http.server`") and rendered the raw `error.message` in the UI — both wrong for a production
+visitor. **`app.errorHint` now reads "Please check your connection and try reloading the page." /
+"Verifique sua conexão e tente recarregar a página."**, and the raw error goes to `console.error`
+instead (still inspectable via DevTools, just not shown to visitors). Verified both paths in
+preview (normal load + a forced `results.json` 404 via temporary rename).
+
 ### Data model
 - **All match times are UTC** in `matches.json`; converted at render by `formatMatchTime(match,
   stadium, mode)` via `Intl.DateTimeFormat` (`mode` = `"local"` browser tz, or `"stadium"`

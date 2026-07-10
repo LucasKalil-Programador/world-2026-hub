@@ -12,6 +12,10 @@ Navigation map of the codebase. Use this to find which file owns a concern befor
 
 ```
 worldcup2026/
+├── .claude/
+│   └── launch.json                       Claude Code preview server config: `python -m http.server
+│                                           8126` (project name "worldcup2026") — gotcha #1
+│
 ├── .agents/                              ← Internal documentation for AI agents
 │   ├── project-map.md                    This file
 │   ├── project-memory.md                 Context, decisions, gotchas
