@@ -575,10 +575,10 @@ function renderHome() {
 }
 
 function showError(error) {
+  console.error(error);
   document.getElementById('hero-content').innerHTML = `
     <p class="hero-label">${t('app.error')}</p>
-    <p class="hero-meta">${t('app.errorHint')}</p>
-    <p class="hero-meta"><code>${error.message}</code></p>`;
+    <p class="hero-meta">${t('app.errorHint')}</p>`;
 }
 
 async function init() {
