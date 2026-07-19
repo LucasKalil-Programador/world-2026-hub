@@ -62,7 +62,7 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 ### 🟡 IMPORTANT
 - [x] ~~Replace mock `data/*.json` with real World Cup 2026 data~~ (2026-06-12 — full migration + smoke test; see project-memory)
 - [x] ~~Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage ends~~ (2026-06-28 — all 8 slots filled from FIFA's official combination table for thirds B,D,E,F,I,J,K,L → `{1:D,2:F,3:B,4:I,5:E,6:K,7:J,8:L}`; R32 verified vs official bracket)
-- [ ] Update `results.json` as the tournament progresses (Quarterfinals underway — results through match id 97 on 2026-07-09: group stage + R32 + R16 all finished, QF-1 done [97 FRA 2–0 MAR]; next QF-2 ESP×BEL id 98 on 2026-07-10)
+- [x] ~~Update `results.json` as the tournament progresses~~ (COMPLETE — results updated through match id 104 on 2026-07-19: all 104 matches finished; the Final ended ESP 1–0 ARG a.e.t., Spain champions. No further daily refreshes are due.)
 - [x] ~~Real stadium photos + team flag SVGs in `assets/images/`~~ (flag SVGs added 2026-06-18; stadium photos optional)
 - [x] ~~**Pós-Copa: estado final da home.**~~ (2026-07-19 — champion epilogue + awaiting-result state
   no hero, verdict-gated no FINAL real; ver "Post-Cup home hero + Bracket Step 4 celebration" em

@@ -716,14 +716,24 @@ Bracket Step 4 celebration".
 Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.1.0`
 (bumped 2026-07-19; v1.0.4 same day was the stats knockout-resolution fix + non-fatal view init —
 see those entries).
-**Data as of 2026-07-19:** 103/104 finished (QF, SF and the third-place match are all in); only the
-**Final (104, ESP × ARG, 19:00 UTC today)** remains — the home hero is counting down to it.
+**Data as of 2026-07-19 (tournament COMPLETE):** **104/104 finished.** The Final (104) ended
+**ESP 1–0 ARG after extra time** — **Spain are World Champions**; the post-Cup hero epilogue and the
+gold champion celebration are live (verified, non-simulated). No further daily refreshes are due.
 Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
 leader cards now rotate through tied teams + 3 new metric cards (Most wins / Most goals conceded /
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".
 
 ### Recent refreshes (rolling — keep the last 3, prune older; full detail in git)
+- **2026-07-19** — **FINAL (match 104): ESP 1–0 ARG (a.e.t.)** at MetLife Stadium, New York/New
+  Jersey. Ferran Torres 106' (assist Nico Williams, seconds into the second period of extra time);
+  0–0 after 90. Enzo Fernández (ARG) sent off 90+3' for a second yellow, so Argentina played extra
+  time with 10. **Spain's 2nd World Cup** (first since 2010); reported as Messi's last World Cup
+  match. Confirmed FIFA match centre + ESPN (+ Yahoo/Fox live coverage). Stats: poss 65/35, shots
+  20/2 (ESPN, xG 1.94 × 0.17), cards 0/5 (ARG: L. Martínez, Paredes, Enzo ×2 → red; Spain unbooked).
+  No `penalties` field — decided in extra time. Verified in preview: FINAL home=ESP away=ARG,
+  champion ESP `simulated:false`, hero epilogue + stats verdict + gold celebration all lit,
+  console clean.
 - **2026-07-09** — **QF-1 (match 97): FRA 2–0 MAR** (Gillette Stadium, Boston) — Mbappé 60' (his 8th
   of the tournament) and Dembélé 66' sent France to a 3rd straight semifinal; Bounou saved a Mbappé
   penalty in the first half. France remain the only team to win all 6 games in regulation. 2-source+
@@ -734,9 +744,11 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
 - **2026-07-07** — **R16 ids 95–96** (committed same day, `2a626d5`/`4e4ad72` — this run is a memory
   catch-up, per-goal detail wasn't logged at the time): Match 95 (R16-7): **ARG 3–2 EGY**. Match 96
   (R16-8): **SUI 0–0 COL, SUI 4–3 pens**.
-- **2026-07-06** — **R16 ids 92–94** (committed same day, `f65cd62`/`9df4a5e`/`a234ae0` — memory
-  catch-up, same gap as above): Match 92 (R16-6): **MEX 2–3 ENG**. Match 93 (R16-3): **POR 0–1 ESP**.
-  Match 94 (R16-4): **USA 1–4 BEL**.
+
+> **Gap note (2026-07-19):** refreshes for **QF-2/3/4 (98–100), both SFs (101–102) and the
+> third-place match (103)** were committed + pushed normally between 07-10 and 07-18 but never got a
+> Current State entry — same pattern as the 07-03→07-07 gap below. Scores and stats are in
+> `results.json` and git; the per-match narrative for that window wasn't captured.
 
 > **Note (2026-07-09):** memory went unmaintained 07-03→07-07 while daily data commits + pushes
 > continued normally (R32 ids 83–88 and R16 ids 89–94 finished + committed with the standard subject
@@ -753,18 +765,15 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
   URL swapped to `app.lucaskalil.com` (see "Dokploy cutover — FTP retired" above). **Remaining
   out-of-repo (low priority):** delete the `FTP_*` GitHub secrets and clean/redirect Hostinger
   `public_html/worldcup2026/`.
-- **Knockout — R32 + R16 complete, QF underway.** R32 (73–88) and R16 (89–96) all finished (full
-  per-match detail in git — see the note above about the 07-03→07-07 memory gap). QF-1 (97, FRA 2–0
-  MAR) done 2026-07-09. **Next: QF-2 ESP×BEL (98, 2026-07-10 19:00 UTC)**, then QF-3 NOR×ENG (99,
-  07-11 21:00 UTC) and QF-4 ARG×SUI (100, 07-12 01:00 UTC). `penalties` apply on ids 73–104 (KO only).
-  SF (101 07-14, 102 07-15), Third Place (103, 07-18), Final (104, 07-19) still ahead.
+- **Tournament OVER — no more data refreshes.** All 104 matches are `finished`; `/update-worldcup`
+  has nothing left to update (running it should be a no-op). Anything further is app work, not data.
   **Note:** R32 id 75 (NED×MAR) card count is single-source (Sofascore, only Diop 47') — never
   re-confirmed; low-stakes, leaving as-is.
 - **`thirdPlaceAssignment` — DONE (2026-06-28).** All 8 slots filled from FIFA's official combination
   table; bracket verified. No longer pending.
 - **Lighthouse > 90** run (needs a deployed URL).
-- **Post-Cup home state** — when the Final goes `over` the hero is empty; build a champion/epilogue
-  state (likely converges with the Stats screen).
+- ~~**Post-Cup home state**~~ — **DONE 2026-07-19** (shipped in v1.1.0 and now live with the real
+  champion; see "Post-Cup home hero + Bracket Step 4 celebration").
 - **Stats Stage G** (Layer-2 cheap data — `cards`→{y,r} migration is breaking for `modal.js` +
   `stats.js`; **schedule LATE**, conflicts with daily `results.json` edits), **Stage H** (players +
   the deferred comparator Teams/Players toggle), **Stage I** (editorial), **Stage J round 2** polish.
