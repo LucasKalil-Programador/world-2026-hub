@@ -76,6 +76,26 @@ visitor. **`app.errorHint` now reads "Please check your connection and try reloa
 instead (still inspectable via DevTools, just not shown to visitors). Verified both paths in
 preview (normal load + a forced `results.json` 404 via temporary rename).
 
+### Stats knockout-resolution fix + non-fatal view init (2026-07-19)
+The whole app died behind the "check your connection" error screen (home hero blank, Stats tab empty)
+from **one** `TypeError` in `stats.js` → `highScoreCardHTML`. Two independent defects:
+1. **`stats.js` read `m.homeTeam`/`m.awayTeam` raw** — the exact class of bug called out in the hero
+   entry (2026-06-28). Knockout matches (ids 73–104) carry only `bracketRef`, so once a knockout game
+   became the highest-scoring match (id 103, FRA 4–6 ENG, 10 goals) the card crashed on
+   `teamById.get(undefined).name`. Silently wrong before it crashed: **`aggregateTeams()` was bucketing
+   every knockout result into a single `undefined` row**, so the 48-team table, leader cards, comparator
+   and win-streak record only ever counted the group stage (England showed 3 played, now 8). Fix: new
+   **`teamIdsOf(match)`** helper in `stats.js` — `m.homeTeam` when present, else
+   `resolveBracketTeams(match)` → ids (null when unresolved, caller `continue`s). Now the single
+   participant-id source for `aggregateTeams` + all three `computeRecords` passes (biggest win, win
+   streak, highest-scoring). **Never read `match.homeTeam` raw outside group-only code.**
+2. **`init()` (`app.js`) wrapped `loadData()` AND all 7 view inits in one `try`** — any view crash
+   aborted the rest and rendered the fatal connection error, which is about *data loading*, not code.
+   Split: `loadData()` failure alone is fatal (`showError` + `return`); the views now run in a loop,
+   each in its own `try`, logging `[wc2026] "<name>" failed to initialise:` and continuing. A broken
+   view can no longer blank the home page.
+`APP_VERSION` → **v1.0.4**.
+
 ### Data model
 - **All match times are UTC** in `matches.json`; converted at render by `formatMatchTime(match,
   stadium, mode)` via `Intl.DateTimeFormat` (`mode` = `"local"` browser tz, or `"stadium"`
@@ -287,7 +307,12 @@ Step 1 (shipped): wallchart replaces the old left-to-right columns.
    viewport emulation desyncs the capture surface. At emulated widths > native, navigate via
    `preview_eval` + `navigateTo()` and verify geometry via eval/inspect; trust screenshots only at
    widths ≤ native. `preview_resize preset: desktop` resets it.
-9. **`aspect-ratio` + `min-height` can transfer size INTO width** (bracket wallchart, 2026-07-03) —
+9. **Never read `match.homeTeam` / `match.awayTeam` raw** — only group matches (ids 1–72) have them;
+   knockout matches carry `bracketRef` only. Always go through `resolveBracketTeams()` (or
+   `stats.js`'s `teamIdsOf()`). Symptom: "A definir vs A definir", `undefined` rows, or a
+   `Cannot read properties of undefined (reading 'name')` crash — bit the hero (2026-06-28) and
+   `stats.js` (2026-07-19).
+10. **`aspect-ratio` + `min-height` can transfer size INTO width** (bracket wallchart, 2026-07-03) —
    on a box with `width: auto`, a violated `min-height` transfers back through the ratio and widens
    the element past its container (on mobile the 220px min became 585px of page overflow). Fix: give
    the box a definite width (`width: 100%`); then the ratio only drives height and min/max-height
@@ -661,8 +686,11 @@ Data: **Round of 16 complete, Quarterfinals underway** — group stage (1–72),
 (89–96) all finished; QF-1 (97, FRA 2–0 MAR) finished 2026-07-09; QF-2 ESP×BEL (98, 2026-07-10),
 QF-3 NOR×ENG (99, 2026-07-11), QF-4 ARG×SUI (100, 2026-07-12) still ahead (97/104 total finished).
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
-Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.3`
-(bumped 2026-06-28: hero knockout-resolution fix + best-third ranking table in the Grupos tab). Build: all 12 steps + real-data migration
+Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.4`
+(bumped 2026-07-19: stats knockout-resolution fix + non-fatal view init — see that entry).
+**Data as of 2026-07-19:** 103/104 finished (QF, SF and the third-place match are all in); only the
+**Final (104, ESP × ARG, 19:00 UTC today)** remains — the home hero is counting down to it.
+Build: all 12 steps + real-data migration
 done; Stats stages A–D + F + J(r1) merged to `master` and live (E skipped). Stats Team-statistics
 leader cards now rotate through tied teams + 3 new metric cards (Most wins / Most goals conceded /
 Best goal difference) — see Stats Screen → "Leader cards — tied-team carousel".

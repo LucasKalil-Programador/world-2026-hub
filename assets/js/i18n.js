@@ -6,7 +6,7 @@
 import { getPrefs, setPref } from './storage.js';
 
 // App version for footer display — bump this after any notable changes
-const APP_VERSION = 'v1.0.3';
+const APP_VERSION = 'v1.0.4';
 
 const dicts = {
   en: {

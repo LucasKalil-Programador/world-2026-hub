@@ -6,7 +6,7 @@
 // sections gate on data so player/award/editorial blocks slot in later.
 
 import { getData, flagSrc, navigateTo } from './app.js';
-import { getBracketTree } from './bracket.js';
+import { getBracketTree, resolveBracketTeams } from './bracket.js';
 import { getFavorites } from './storage.js';
 import { openMatchModal } from './modal.js';
 import { t, translatePhase } from './i18n.js';
@@ -79,6 +79,17 @@ function stageOf(phase) {
   return phase.startsWith('Group ') ? 'Group' : phase;
 }
 
+// Participant ids of any match. Group matches carry `homeTeam`/`awayTeam`;
+// knockout matches (ids 73–104) carry only `bracketRef` and must be resolved
+// through the bracket — reading `m.homeTeam` raw there yields undefined (same
+// class of bug as the 2026-06-28 hero fix). Either id is null when the slot
+// isn't resolved yet; callers skip those matches.
+function teamIdsOf(match) {
+  if (match.homeTeam) return { homeId: match.homeTeam, awayId: match.awayTeam };
+  const slots = resolveBracketTeams(match);
+  return { homeId: slots.home.team?.id ?? null, awayId: slots.away.team?.id ?? null };
+}
+
 // Tournament-wide team aggregation over finished matches (group + knockout).
 // computeStandings() only covers group matches, so this is its own pass.
 // possession/shots/cards are gated per-match: a finished match without the
@@ -96,8 +107,10 @@ function aggregateTeams(finished, resultByMatchId) {
   };
   for (const m of finished) {
     const r = resultByMatchId.get(m.id);
-    const home = row(m.homeTeam);
-    const away = row(m.awayTeam);
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) continue;
+    const home = row(homeId);
+    const away = row(awayId);
     applySide(home, r.homeScore, r.awayScore);
     applySide(away, r.awayScore, r.homeScore);
     if (r.stats) {
@@ -291,13 +304,15 @@ function computeRecords(finished, resultByMatchId, verdict) {
     const r = resultByMatchId.get(m.id);
     const margin = Math.abs(r.homeScore - r.awayScore);
     if (margin === 0) continue;
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) continue;
     const total = r.homeScore + r.awayScore;
     if (!biggestWin || margin > biggestWin.margin || (margin === biggestWin.margin && total > biggestWin.total)) {
       const homeWon = r.homeScore > r.awayScore;
       biggestWin = {
         matchId: m.id, margin, total,
-        winnerId: homeWon ? m.homeTeam : m.awayTeam,
-        loserId: homeWon ? m.awayTeam : m.homeTeam,
+        winnerId: homeWon ? homeId : awayId,
+        loserId: homeWon ? awayId : homeId,
         score: homeWon ? `${r.homeScore}-${r.awayScore}` : `${r.awayScore}-${r.homeScore}`,
       };
     }
@@ -311,7 +326,9 @@ function computeRecords(finished, resultByMatchId, verdict) {
     const r = resultByMatchId.get(m.id);
     const homeWin = r.homeScore > r.awayScore || (r.homeScore === r.awayScore && r.penalties && r.penalties.home > r.penalties.away);
     const awayWin = r.awayScore > r.homeScore || (r.homeScore === r.awayScore && r.penalties && r.penalties.away > r.penalties.home);
-    for (const [teamId, won] of [[m.homeTeam, homeWin], [m.awayTeam, awayWin]]) {
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) continue;
+    for (const [teamId, won] of [[homeId, homeWin], [awayId, awayWin]]) {
       const run = won ? (current.get(teamId) ?? 0) + 1 : 0;
       current.set(teamId, run);
       if (won && (!longestWinStreak || run > longestWinStreak.count)) longestWinStreak = { teamId, count: run };
@@ -324,9 +341,11 @@ function computeRecords(finished, resultByMatchId, verdict) {
     const r = resultByMatchId.get(m.id);
     const total = r.homeScore + r.awayScore;
     const margin = Math.abs(r.homeScore - r.awayScore);
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) continue;
     if (!highestScoringMatch || total > highestScoringMatch.total
         || (total === highestScoringMatch.total && margin > highestScoringMatch.margin)) {
-      highestScoringMatch = { matchId: m.id, total, margin, homeTeam: m.homeTeam, awayTeam: m.awayTeam, score: `${r.homeScore}-${r.awayScore}` };
+      highestScoringMatch = { matchId: m.id, total, margin, homeTeam: homeId, awayTeam: awayId, score: `${r.homeScore}-${r.awayScore}` };
     }
   }
 

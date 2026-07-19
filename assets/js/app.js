@@ -594,17 +594,26 @@ async function init() {
   document.addEventListener('datachange', renderHome); // poll picked up new results → refresh hero + dashboard counts
   try {
     await loadData();
-    renderHome();
-    initModal();
-    initSchedule();
-    initGroups();
-    initBracket();
-    initStadiums();
-    initStats();
-    startResultsPolling(); // after the views register their datachange listeners
   } catch (error) {
-    showError(error);
+    showError(error); // only a failed data load is fatal — that's what the hint is about
+    return;
   }
+  // A crash inside ONE view must not take the whole app down, nor masquerade as
+  // the "check your connection" state: log it and keep the other views alive.
+  // (2026-07-19: a stats.js crash blanked the home hero behind a bogus error.)
+  const views = [
+    ['home', renderHome], ['modal', initModal], ['schedule', initSchedule],
+    ['groups', initGroups], ['bracket', initBracket], ['stadiums', initStadiums],
+    ['stats', initStats],
+  ];
+  for (const [name, initView] of views) {
+    try {
+      initView();
+    } catch (error) {
+      console.error(`[wc2026] "${name}" failed to initialise:`, error);
+    }
+  }
+  startResultsPolling(); // after the views register their datachange listeners
 }
 
 init();
