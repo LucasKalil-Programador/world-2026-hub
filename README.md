@@ -53,7 +53,7 @@ sign-up, no ads. Just open it.
 <img src="docs/screenshots/groups.png" alt="Groups — standings tables for all twelve groups A–L with qualification highlights" width="100%">
 
 ### 🏆 Knockout bracket
-*The centrepiece. A gorgeous interactive bracket that fills itself in as teams advance. Hover a team to trace its whole path to the final, zoom and pan around, switch between three layouts — **and predict it yourself**: pick winners, watch the rounds re-draw, then see how your picks score against the real results. You can even share your bracket as a link.*
+*The centrepiece. A gorgeous interactive bracket that fills itself in as teams advance. Hover a team to trace its whole path to the final, zoom and pan around, switch between three layouts — **and predict it yourself**: pick winners, watch the rounds re-draw, then see how your picks score against the real results. You can even share your bracket as a link. And when the champion is crowned, the bracket celebrates it — in gold for the real winner, in blue for your predicted one.*
 
 <img src="docs/screenshots/bracket.png" alt="Knockout — the center-out wallchart bracket with prediction and challenge features" width="100%">
 

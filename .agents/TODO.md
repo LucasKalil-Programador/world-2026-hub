@@ -64,7 +64,9 @@ Use checkboxes to track progress. Items marked **🔴 BLOCKER** prevent release;
 - [x] ~~Fill `thirdPlaceAssignment` in `bracket-config.json` after group stage ends~~ (2026-06-28 — all 8 slots filled from FIFA's official combination table for thirds B,D,E,F,I,J,K,L → `{1:D,2:F,3:B,4:I,5:E,6:K,7:J,8:L}`; R32 verified vs official bracket)
 - [ ] Update `results.json` as the tournament progresses (Quarterfinals underway — results through match id 97 on 2026-07-09: group stage + R32 + R16 all finished, QF-1 done [97 FRA 2–0 MAR]; next QF-2 ESP×BEL id 98 on 2026-07-10)
 - [x] ~~Real stadium photos + team flag SVGs in `assets/images/`~~ (flag SVGs added 2026-06-18; stadium photos optional)
-- [ ] **Pós-Copa: estado final da home.** Quando a Final encerrar, o hero fica vazio (por design atual). Criar um estado pós-torneio (campeão/epílogo) na home — ver entrada "Hero cronômetro inteligente (2026-06-15)" em project-memory; provavelmente converge com a aba Stats (`stats-screen-plan.md`).
+- [x] ~~**Pós-Copa: estado final da home.**~~ (2026-07-19 — champion epilogue + awaiting-result state
+  no hero, verdict-gated no FINAL real; ver "Post-Cup home hero + Bracket Step 4 celebration" em
+  project-memory. Acende sozinho hoje à noite quando o resultado da Final for publicado.)
 
 ### 🟢 OPTIONAL
 - [x] ~~PWA Tier 1 — instalável (manifest + ícones + meta tags; 2026-06-16). Atende todos os critérios de aceitação da issue.~~
@@ -112,8 +114,9 @@ direction; built directly on master, one approval gate per step.
 - [x] ~~Step 3 — Radial layout (second chart view on the toggle)~~ (2026-07-03; redesigned to the
   user's reference image: circular flag tokens on rings + trophy center = "orbit" view, gold real /
   dashed-blue sim route lines, tooltips for names/scores)
-- [ ] Step 4 — Champion celebration (gold real / blue sim), polish pass (a11y/i18n/reduced-motion),
-  `APP_VERSION` → v1.1.0, README note
+- [x] ~~Step 4 — Champion celebration (gold real / blue sim), polish pass (a11y/i18n/reduced-motion),
+  `APP_VERSION` → v1.1.0, README note~~ (2026-07-19 — CSS-only celebration nas 3 views via
+  `--celebrate` var, tudo atrás de prefers-reduced-motion; verificado por simulação da Final)
 
 ---
 

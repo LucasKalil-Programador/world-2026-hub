@@ -96,6 +96,34 @@ from **one** `TypeError` in `stats.js` → `highScoreCardHTML`. Two independent 
    view can no longer blank the home page.
 `APP_VERSION` → **v1.0.4**.
 
+### Post-Cup home hero + Bracket Step 4 celebration (2026-07-19, shipped hours before the Final)
+Two features closing known gaps, both gated on the REAL Final (same verdict rule as stats):
+1. **Post-Cup hero (`app.js`)** — `renderHero`'s empty-featured branch no longer blanks the home.
+   `heroVerdict()` (local copy of the stats gate: FINAL `finished && !simulated && winner`) picks
+   between **`heroEpilogueHTML()`** (trophy + champion flag/name/crown, Final score line with
+   `status.pending`/pens, runner-up + third podium, CTA button → `navigateTo('stats')`) and
+   **`heroAwaitingHTML()`** (Final matchup + `status.pending`) for the window between clock-over and
+   the results push. The flip is automatic: heroTick flips upcoming→awaiting at kickoff+3h with no
+   JSON edit; the 90s poll's `datachange` → `renderHome` flips awaiting→epilogue. CTA is delegated on
+   `#hero-content` (survives re-renders). New i18n keys `hero.tournamentOver` / `hero.viewStats`;
+   CSS `.hero-champ*`/`.hero-podium*`/`.hero-cta` in `style.css` (motion reduced-motion-gated).
+2. **Champion celebration (`bracket.css` only)** — fires on `has-champion` in all 3 views:
+   wallchart/pager `.bk-champion` gets breathing `champ-glow` + `champ-sheen` sweep + `champ-pop`
+   trophy; radial `.bk-center` gets `champ-glow` + expanding `champ-ring` ripple. Color runs through
+   **`--celebrate`** (gold `212,175,55`; `.is-sim` overrides to blue `30,136,229` — a simulated
+   champion celebrates in blue, never gold). All animation inside
+   `@media (prefers-reduced-motion: no-preference)`; the pre-existing static glows are the
+   reduced-motion presentation. `.bk-champion.bk-flow` gained `position: relative` (sheen pseudo
+   needs a positioning context; chart canvases are already absolute).
+Verified by simulation (results.json temporarily marked 104 finished 2–2 pens 3–4, then
+`git restore`d; awaiting state via a `Date.now` override — heroTick flipped it alone): epilogue,
+podium, CTA, stats verdict, debut-champion fact, gold celebration ×3 views, sim-blue ×2, sim never
+leaking into the home epilogue, console clean. `APP_VERSION` → **v1.1.0** (closes the bracket
+redesign Steps 1–4). **Preview gotcha discovered:** when the Browser pane is hidden,
+`document.visibilityState === 'hidden'` → Chromium freezes rAF/IntersectionObserver/paint, so
+count-up tiles sit at "0" and screenshots hang — verify via `data-countup` attrs / computed styles,
+not pixels (extends gotcha #7).
+
 ### Data model
 - **All match times are UTC** in `matches.json`; converted at render by `formatMatchTime(match,
   stadium, mode)` via `Intl.DateTimeFormat` (`mode` = `"local"` browser tz, or `"stadium"`
@@ -677,17 +705,17 @@ excluded from deploy).
 
 ## Current State
 
-**Updated 2026-07-09.** **Bracket redesign Steps 1–3 live on `master`** (pushed — branch is up to
-date with `origin/master`): the Knockout tab has 3 switchable views — center-out wallchart (desktop
-default), radial "orbit" (flag tokens per the user's reference image), rounds pager (mobile default,
-button-only navigation, ≤2 columns). See Architecture → "Bracket redesign" (both entries). Pending:
-Step 4 champion celebration + polish pass + version bump to v1.1.0.
-Data: **Round of 16 complete, Quarterfinals underway** — group stage (1–72), R32 (73–88) and R16
-(89–96) all finished; QF-1 (97, FRA 2–0 MAR) finished 2026-07-09; QF-2 ESP×BEL (98, 2026-07-10),
-QF-3 NOR×ENG (99, 2026-07-11), QF-4 ARG×SUI (100, 2026-07-12) still ahead (97/104 total finished).
+**Updated 2026-07-19 (Final day).** **Bracket redesign Steps 1–4 COMPLETE on `master`**: the
+Knockout tab has 3 switchable views — center-out wallchart (desktop default), radial "orbit" (flag
+tokens per the user's reference image), rounds pager (mobile default, button-only navigation, ≤2
+columns) — plus the Step 4 champion celebration (gold real / blue sim). The home has a post-Cup
+state (champion epilogue + awaiting-result fallback) that lights up by itself when tonight's Final
+result is published. See Architecture → "Bracket redesign" (both entries) and "Post-Cup home hero +
+Bracket Step 4 celebration".
 `thirdPlaceAssignment` **FILLED** (8 best thirds → R32 — see the rolling refresh list below).
-Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.0.4`
-(bumped 2026-07-19: stats knockout-resolution fix + non-fatal view init — see that entry).
+Cache-busting is now automatic (`?t=Date.now()`; `DATA_VERSION` removed 2026-06-18). `APP_VERSION = v1.1.0`
+(bumped 2026-07-19; v1.0.4 same day was the stats knockout-resolution fix + non-fatal view init —
+see those entries).
 **Data as of 2026-07-19:** 103/104 finished (QF, SF and the third-place match are all in); only the
 **Final (104, ESP × ARG, 19:00 UTC today)** remains — the home hero is counting down to it.
 Build: all 12 steps + real-data migration
