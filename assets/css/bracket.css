@@ -447,6 +447,89 @@
   color: var(--accent-gold);
 }
 
+/* ---------------------------------- Step 4: champion celebration ----- */
+/* Fires the moment a champion lands in the box, in every view (wallchart
+   .bk-champion, pager .bk-flow, radial .bk-center). Color is parameterized:
+   gold for the real world champion, sim-blue for a simulated pick — a dream
+   must never celebrate in gold (same rule as the stats verdict). All motion
+   behind prefers-reduced-motion; the static gold/blue glow rules above remain
+   the reduced-motion presentation. */
+
+.bk-champion.has-champion,
+.bk-center.has-champion {
+  --celebrate: 212, 175, 55; /* gold (real) */
+}
+
+.bk-champion.has-champion.is-sim,
+.bk-center.has-champion.is-sim {
+  --celebrate: 30, 136, 229; /* sim blue */
+}
+
+/* the sheen pseudo needs a positioning context in the pager variant
+   (chart-canvas champions are already position:absolute via .bracket) */
+.bk-champion.bk-flow {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* breathing halo on the champion box (wallchart + pager) */
+  .bk-champion.has-champion {
+    animation: champ-glow 2.8s ease-in-out infinite;
+  }
+
+  /* trophy pops in; replays on each tab open, like the chart assembly */
+  .bk-champion.has-champion .champion-trophy {
+    display: inline-block;
+    animation: champ-pop 0.8s cubic-bezier(0.2, 1.6, 0.4, 1) 0.2s both;
+  }
+
+  /* sheen sweeping across the box (clipped by its overflow:hidden) */
+  .bk-champion.has-champion::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.13) 50%, transparent 62%);
+    background-size: 250% 100%;
+    animation: champ-sheen 3.4s ease-in-out 0.6s infinite;
+  }
+
+  /* radial orbit: ring ripples expanding off the trophy circle */
+  .bk-center.has-champion::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(var(--celebrate), 0.6);
+    pointer-events: none;
+    animation: champ-ring 2.4s ease-out infinite;
+  }
+
+  .bk-center.has-champion {
+    animation: champ-glow 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes champ-glow {
+  0%, 100% { box-shadow: 0 0 26px rgba(var(--celebrate), 0.3); }
+  50% { box-shadow: 0 0 46px rgba(var(--celebrate), 0.6); }
+}
+
+@keyframes champ-pop {
+  from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes champ-sheen {
+  from { background-position: 120% 0; }
+  to { background-position: -60% 0; }
+}
+
+@keyframes champ-ring {
+  from { transform: scale(0.92); opacity: 0.85; }
+  to { transform: scale(1.55); opacity: 0; }
+}
+
 .bk-third-title {
   text-align: center;
   font-size: 0.66rem;
