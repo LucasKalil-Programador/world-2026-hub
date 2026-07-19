@@ -6,7 +6,7 @@
 import { getPrefs, setPref } from './storage.js';
 
 // App version for footer display — bump this after any notable changes
-const APP_VERSION = 'v1.0.4';
+const APP_VERSION = 'v1.0.3';
 
 const dicts = {
   en: {
@@ -25,6 +25,8 @@ const dicts = {
     'hero.inProgress': 'In progress',
     'hero.countdownLabel': 'Time until kickoff',
     'hero.vs': 'vs',
+    'hero.tournamentOver': 'Tournament complete',
+    'hero.viewStats': 'See the full tournament stats',
     'countdown.days': 'days',
     'countdown.hours': 'hours',
     'countdown.minutes': 'min',
@@ -209,6 +211,8 @@ const dicts = {
     'hero.inProgress': 'Bola rolando!',
     'hero.countdownLabel': 'Tempo até o início da partida',
     'hero.vs': 'vs',
+    'hero.tournamentOver': 'Copa encerrada',
+    'hero.viewStats': 'Veja as estatísticas completas da Copa',
     'countdown.days': 'dias',
     'countdown.hours': 'horas',
     'countdown.minutes': 'min',

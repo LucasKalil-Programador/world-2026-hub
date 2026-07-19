@@ -8,7 +8,7 @@ import { initSchedule } from './schedule.js';
 import { initGroups } from './groups.js';
 import { initStadiums } from './stadiums.js';
 import { initModal } from './modal.js';
-import { initBracket, invalidateBracket, resolveBracketTeams } from './bracket.js';
+import { initBracket, invalidateBracket, resolveBracketTeams, getBracketTree } from './bracket.js';
 import { initStats } from './stats.js';
 
 // ---------------------------------------------------------------- data
@@ -315,6 +315,80 @@ let heroSig = null;
 let countdownTarget = null;
 let countdownEls = null;
 
+// ------------------------------------------------- post-Cup hero states
+
+// Real-final gate, same rule as stats.js computeVerdict(): the epilogue only
+// ever shows a champion the JSON confirms as finished — a user's simulated
+// pick must never read as the real world champion on the home page.
+function heroVerdict() {
+  const tree = getBracketTree();
+  const finalNode = tree.nodesByRef.get('FINAL');
+  if (!finalNode || finalNode.simulated || finalNode.result?.status !== 'finished' || !finalNode.winner) {
+    return null;
+  }
+  const verdict = { champion: finalNode.winner, runnerUp: finalNode.loser };
+  const third = tree.third;
+  if (third && !third.simulated && third.result?.status === 'finished' && third.winner) {
+    verdict.third = third.winner;
+  }
+  return verdict;
+}
+
+function heroPodiumItemHTML(label, team) {
+  return `
+    <div class="hero-podium-item">
+      <img class="flag" src="${flagSrc(team)}" alt="" width="34" height="23">
+      <span class="hero-podium-team">${team.name}</span>
+      <span class="hero-podium-label">${label}</span>
+    </div>`;
+}
+
+// Champion epilogue — replaces the (previously empty) post-Cup hero once the
+// Final's real result is in: trophy + champion, the Final's score line as meta,
+// runner-up/third podium, and a CTA into the Stats tab (the Cup's epilogue).
+function heroEpilogueHTML(verdict) {
+  const { teamById, resultByMatchId } = data;
+  const match = data.matches.find((m) => m.bracketRef === 'FINAL');
+  const r = resultByMatchId.get(match.id);
+  const slots = resolveBracketTeams(match);
+  const champion = teamById.get(verdict.champion);
+  const pens = r.penalties ? ` (${t('status.pens')} ${r.penalties.home}–${r.penalties.away})` : '';
+  const scoreLine = `${slots.home.label} ${r.homeScore}–${r.awayScore} ${slots.away.label}${pens}`;
+  const podium = [
+    heroPodiumItemHTML(t('stats.runnerUp'), teamById.get(verdict.runnerUp)),
+    verdict.third ? heroPodiumItemHTML(t('stats.thirdPlace'), teamById.get(verdict.third)) : '',
+  ].join('');
+  return `
+    <p class="hero-label">${t('hero.tournamentOver')}<span class="hero-phase">${translatePhase('Final')}</span></p>
+    <div class="hero-champion">
+      <span class="hero-champ-trophy" aria-hidden="true">🏆</span>
+      <img class="flag hero-champ-flag" src="${flagSrc(champion)}" alt="" width="96" height="64">
+      <span class="hero-champ-name">${champion.name}</span>
+      <span class="hero-champ-crown">${t('bracket.champion')}</span>
+    </div>
+    <p class="hero-meta">${translatePhase('Final')}: ${scoreLine} · ${match.stadium}, ${match.city}</p>
+    <div class="hero-podium">${podium}</div>
+    <button type="button" class="hero-cta" data-hero-cta>${t('hero.viewStats')}</button>`;
+}
+
+// Between the final whistle (clock window elapsed → featured is empty) and the
+// results.json push, show the Final as "awaiting result" instead of a blank
+// hero; the 90s poll flips this to the epilogue by itself (datachange →
+// renderHome). JSON always wins, so this state can never mask a real result.
+function heroAwaitingHTML() {
+  const match = data.matches.find((m) => m.bracketRef === 'FINAL');
+  if (!match) return '';
+  const slots = resolveBracketTeams(match);
+  return `
+    <p class="hero-label">${t('hero.tournamentOver')}<span class="hero-phase">${translatePhase('Final')}</span></p>
+    <div class="hero-matchup">
+      ${heroTeamHTML(slots.home)}
+      <div class="hero-vs">${t('hero.vs')}</div>
+      ${heroTeamHTML(slots.away)}
+    </div>
+    <p class="hero-meta">${t('status.pending')}</p>`;
+}
+
 // One matchup row (teams + center) plus its meta line. `multi` drops the time
 // from the meta (shown once, shared) and keeps only the stadium; a single match
 // keeps the original "time · stadium, city" so the lone-match hero is unchanged.
@@ -351,8 +425,11 @@ function renderHero() {
   countdownTarget = null;
   countdownEls = null;
 
+  // Tournament over: champion epilogue (real Final only) or, while the JSON
+  // hasn't landed yet, the awaiting-result state. Never an empty hero.
   if (!featured.length) {
-    root.innerHTML = '';
+    const verdict = heroVerdict();
+    root.innerHTML = verdict ? heroEpilogueHTML(verdict) : heroAwaitingHTML();
     startHeroClock();
     return;
   }
@@ -592,6 +669,10 @@ async function init() {
   document.addEventListener('langchange', renderHome);
   document.addEventListener('timemodechange', renderHero);
   document.addEventListener('datachange', renderHome); // poll picked up new results → refresh hero + dashboard counts
+  // epilogue CTA → Stats tab; delegated so it survives hero re-renders
+  document.getElementById('hero-content').addEventListener('click', (e) => {
+    if (e.target.closest('[data-hero-cta]')) navigateTo('stats');
+  });
   try {
     await loadData();
   } catch (error) {

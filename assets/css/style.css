@@ -383,6 +383,99 @@ button {
   font-weight: 600;
 }
 
+/* ------------------- post-Cup hero: champion epilogue + awaiting state */
+
+.hero-champion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.hero-champ-trophy {
+  font-size: clamp(2.2rem, 6vw, 3rem);
+  line-height: 1;
+  filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.55));
+}
+
+.hero-champ-flag {
+  width: clamp(72px, 12vw, 108px);
+  height: auto;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.25);
+}
+
+.hero-champ-name {
+  font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+  font-weight: 700;
+}
+
+.hero-champ-crown {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent-gold);
+}
+
+.hero-podium {
+  display: flex;
+  justify-content: center;
+  gap: clamp(1.5rem, 5vw, 3rem);
+  margin-top: 1.25rem;
+}
+
+.hero-podium-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hero-podium-team {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.hero-podium-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.hero-cta {
+  margin-top: 1.5rem;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  border-radius: 999px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.hero-cta:hover,
+.hero-cta:focus-visible {
+  color: var(--bg-primary);
+  background: var(--accent-gold);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-champion { animation: hero-champ-rise 0.7s ease-out both; }
+  .hero-champ-trophy { animation: hero-trophy-pop 0.8s cubic-bezier(0.2, 1.6, 0.4, 1) 0.15s both; }
+}
+
+@keyframes hero-champ-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-trophy-pop {
+  from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
 /* --------------------------------------------------------- countdown */
 
 .countdown {
