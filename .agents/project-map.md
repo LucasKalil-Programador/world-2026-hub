@@ -117,19 +117,29 @@ worldcup2026/
 │
 ├── data/                                 All content — REAL WC2026 data since 2026-06-12
 │   ├── teams.json                        48 real qualifiers: { id, name, flag } (FIFA codes)
+│   │                                       + Stage G: confederation, ranking (MOCK), wcDebut
 │   ├── groups.json                       Official draw { "A": [4 team ids], ... } × 12 (A–L)
 │   ├── matches.json                      104 real fixtures; UTC times; ids 1–72 chronological
 │   │                                       group games, 73–104 = FIFA match numbers (bracketRef)
-│   ├── results.json                      { matchId, homeScore, awayScore, penalties?, status } —
-│   │                                       update as the tournament progresses
-│   ├── stadiums.json                     16 real venues: { id, name, city, capacity, image, timezone }
+│   ├── results.json                      { matchId, homeScore, awayScore, penalties?, status,
+│   │                                       stats? } + Stage G: attendance (MOCK), decidedIn
+│   │                                       (knockout), cards now {home:{y,r},away:{y,r}} (reds MOCK)
+│   ├── stadiums.json                     16 real venues: { id, name, city, capacity, image,
+│   │                                       timezone } + Stage G: lat/lng
 │   ├── bracket-config.json               ★ official R32 structure + thirdPlaceAssignment (all null) —
 │   │                                       the ONLY file to edit once real 3rd places are known
 │   │                                       (slot → allowed-groups table in project-memory.md)
-│   └── (optional, NOT yet created)        stats-screen data layers loaded fault-tolerantly by
-│                                           loadOptional(): players.json, player-events.json,
-│                                           awards.json, keeper-stats.json, curiosities.json,
-│                                           all-time-baselines.json — absent = silent empty default
+│   ├── players.json                      Stage H (MOCK names): 349 involved players
+│   │                                       { id "TEAM-shirt", name, team, position, shirt, birthDate }
+│   ├── player-events.json                Stage H (MOCK): 603 events, exact vs real scores/card splits
+│   │                                       { type goal|card, player, team, matchId, minute, ... }
+│   ├── awards.json                       Stage H (MOCK): goldenBall/Boot/Glove, bestYoung,
+│   │                                       goalOfTournament, squadOfTournament[11]
+│   ├── keeper-stats.json                 Stage H (MOCK): per-team GK { player, team, saves, cleanSheets }
+│   ├── curiosities.json                  Stage I (MOCK copy): 6 bilingual editorial cards
+│   │                                       { id, type, priority, titleEN/PT, bodyEN/PT, matchId?, teamId? }
+│   └── all-time-baselines.json           Stage I (REAL history): 8 all-time records { value, holder }
+│                                           for the "Esta Copa vs história" panel
 │
 ├── README.md                             ★ Non-technical SHOWCASE (2026-07-04): tagline, badges,
 │                                           live-demo link (app.lucaskalil.com/worldcup2026), per-page
@@ -141,6 +151,11 @@ worldcup2026/
 ├── docs/screenshots/                     6 PNGs (home/matches/groups/bracket/stadiums/stats) for the
 │                                           README gallery — captured via headless Edge, EN UI, 1366px.
 │                                           Excluded from the FTP deploy (docs-only)
+├── how-fill-postcup-data.md              ★ Runbook for replacing the post-Cup MOCK data layers with
+│                                           real values (attendance, card splits, ranking, players/
+│                                           events/awards/keeper stats, curiosity copy): per-file
+│                                           schemas, the coverage-or-nothing rule, the two event-log
+│                                           reconciliation rules, verification steps
 ├── how-update.md                         Real-data migration runbook (mock → real — DONE 2026-06-12)
 ├── how-refresh-data.md                   ★ Daily refresh runbook during the tournament:
 │                                           results.json scores/status + one-time
@@ -232,6 +247,7 @@ matches.json time (UTC) ── formatMatchTime(match, stadium, mode)
 | `loadData` | `assets/js/app.js` | `()` | `Promise<AppData>` | Fetches all `data/*.json` in parallel, caches in memory |
 | `formatMatchTime` | `assets/js/app.js` | `(match, stadium, mode)` | `string` | UTC → display time; `mode` is `"local"` or `"stadium"` |
 | `matchState` | `assets/js/app.js` | `(match, result, now)` | `'over' \| 'live' \| 'upcoming'` | Hybrid JSON+clock state (finished/live win; else clock advances at kickoff/kickoff+window). Used by the hero **and** the schedule occurrence filter / "Awaiting result" chip |
+| `cardCounts` | `assets/js/app.js` | `(side)` | `{ y, r, total, split }` | Backward-compatible reader for `stats.cards` sides (legacy number = yellows-only, `split:false`); used by modal + stats aggregation |
 | `get` / `set` | `assets/js/storage.js` | `(key, fallback)` / `(key, value)` | `any` / `void` | localStorage wrapper, auto JSON parse/stringify |
 | `t` | `assets/js/i18n.js` | `(key)` | `string` | Translated UI string for current lang |
 | `resolveBracketTeams` | `assets/js/bracket.js` | `(matchOrRef)` | `{ home, away }` of `{ team, label }` | Display slots for any match (group or knockout); reused by schedule/modal/filters |

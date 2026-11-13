@@ -3,7 +3,7 @@
 // stadium, city, capacity, result (+penalties) and a placeholder section for
 // future stats (possession, shots, cards). "Add to calendar" lands in step 12.
 
-import { getData, formatMatchTime, flagSrc } from './app.js';
+import { getData, formatMatchTime, flagSrc, cardCounts } from './app.js';
 import { t, getLocale, translatePhase } from './i18n.js';
 import { resolveBracketTeams } from './bracket.js';
 import { getFavorites } from './storage.js';
@@ -85,12 +85,15 @@ function renderContent(matchId) {
         <div><dt>${t('modal.stadium')}</dt><dd>${match.stadium}</dd></div>
         <div><dt>${t('modal.city')}</dt><dd>${match.city}</dd></div>
         <div><dt>${t('stadiums.capacity')}</dt><dd>${stadium ? numberFmt.format(stadium.capacity) : '—'}</dd></div>
+        ${result?.attendance ? `<div><dt>${t('modal.attendance')}</dt><dd>${numberFmt.format(result.attendance)}</dd></div>` : ''}
+        ${result?.decidedIn && result.decidedIn !== 'regulation'
+          ? `<div><dt>${t('modal.decidedIn')}</dt><dd>${t(result.decidedIn === 'ET' ? 'modal.decidedET' : 'modal.decidedPens')}</dd></div>` : ''}
       </dl>
       <section class="modal-stats" aria-label="${t('modal.stats')}">
         <h3>${t('modal.stats')}</h3>
         ${statRow(s ? `${s.possession.home}%` : '—', t('modal.possession'), s ? `${s.possession.away}%` : '—')}
         ${statRow(s ? s.shots.home : '—', t('modal.shots'), s ? s.shots.away : '—')}
-        ${statRow(s ? s.cards.home : '—', t('modal.cards'), s ? s.cards.away : '—')}
+        ${statRow(cardsCell(s?.cards?.home), t('modal.cards'), cardsCell(s?.cards?.away))}
         ${s ? '' : `<p class="modal-stats-note">${t('modal.statsSoon')}</p>`}
       </section>
       <div class="modal-actions">
@@ -114,6 +117,15 @@ function teamHTML(slot) {
                 aria-pressed="${fav}" aria-label="${t('fav.toggle')} ${slot.team.name}">${fav ? '★' : '☆'}</button>
       </span>
     </div>`;
+}
+
+// Cards cell — legacy numeric value renders as-is; the Stage-G {y,r} split shows
+// both counts (red only when present, most games have none).
+function cardsCell(side) {
+  const c = cardCounts(side);
+  if (!c) return '—';
+  if (!c.split) return String(c.total);
+  return `${c.y} 🟨${c.r ? ` ${c.r} 🟥` : ''}`;
 }
 
 // stat row — shows real home/away values, or "—" when no stats data exists

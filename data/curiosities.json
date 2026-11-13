@@ -1,0 +1,65 @@
+[
+  {
+    "id": "esp-first-48",
+    "type": "story",
+    "priority": 1,
+    "titleEN": "First champions of the 48-team era",
+    "titlePT": "Primeiros campeões da era dos 48",
+    "bodyEN": "Spain lifted the trophy in the first 104-match World Cup, beating Argentina 1–0 after extra time at MetLife Stadium — a second star, sixteen years after South Africa 2010.",
+    "bodyPT": "A Espanha ergueu a taça na primeira Copa de 104 jogos, batendo a Argentina por 1 a 0 na prorrogação no MetLife Stadium — a segunda estrela, dezesseis anos depois da África do Sul 2010.",
+    "matchId": 104,
+    "teamId": "ESP"
+  },
+  {
+    "id": "ten-goal-goodbye",
+    "type": "quirk",
+    "priority": 2,
+    "titleEN": "A ten-goal goodbye",
+    "titlePT": "Despedida com dez gols",
+    "bodyEN": "The third-place match produced ten goals — France 4, England 6 — the highest-scoring game of the tournament, played with nothing at stake and everything on show.",
+    "bodyPT": "A disputa de terceiro lugar teve dez gols — França 4, Inglaterra 6 — o jogo com mais gols da Copa, disputado sem nada em jogo e com tudo em cena.",
+    "matchId": 103
+  },
+  {
+    "id": "morocco-again",
+    "type": "story",
+    "priority": 3,
+    "titleEN": "Morocco, giant-killers again",
+    "titlePT": "Marrocos, matador de gigantes de novo",
+    "bodyEN": "Four years after their historic semifinal, Morocco swept Canada 3–0 in the round of 16 on Canadian soil, before falling to France in a rematch of the 2022 semifinal.",
+    "bodyPT": "Quatro anos depois da semifinal histórica, o Marrocos atropelou o Canadá por 3 a 0 nas oitavas, em solo canadense, antes de cair diante da França numa reedição da semi de 2022.",
+    "matchId": 90,
+    "teamId": "MAR"
+  },
+  {
+    "id": "paraguay-shock",
+    "type": "stat",
+    "priority": 4,
+    "titleEN": "The shootout that shook the bracket",
+    "titlePT": "Os pênaltis que sacudiram o chaveamento",
+    "bodyEN": "Paraguay held Germany to 1–1 and knocked out the four-time champions on penalties in the round of 32 — the biggest upset of the tournament by ranking gap.",
+    "bodyPT": "O Paraguai segurou o 1 a 1 com a Alemanha e eliminou os tetracampeões nos pênaltis nos 16 avos — a maior zebra da Copa pela diferença de ranking.",
+    "matchId": 74,
+    "teamId": "PAR"
+  },
+  {
+    "id": "triple-host",
+    "type": "quirk",
+    "priority": 5,
+    "titleEN": "Three hosts, one tournament",
+    "titlePT": "Três anfitriões, uma Copa",
+    "bodyEN": "For the first time ever, three nations co-hosted the World Cup: 16 stadiums across Mexico, the United States and Canada, spanning four time zones.",
+    "bodyPT": "Pela primeira vez, três países sediaram juntos a Copa do Mundo: 16 estádios entre México, Estados Unidos e Canadá, cruzando quatro fusos horários."
+  },
+  {
+    "id": "messi-farewell",
+    "type": "story",
+    "priority": 6,
+    "titleEN": "The last dance",
+    "titlePT": "A última dança",
+    "bodyEN": "The Final was reportedly Lionel Messi's last World Cup match. Argentina played the whole of extra time with ten men after a late second yellow, and the fairy-tale ending never came.",
+    "bodyPT": "A Final teria sido a última partida de Lionel Messi em Copas. A Argentina jogou toda a prorrogação com dez após um segundo amarelo nos acréscimos, e o final de conto de fadas não veio.",
+    "matchId": 104,
+    "teamId": "ARG"
+  }
+]

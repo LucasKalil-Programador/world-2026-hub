@@ -35,12 +35,19 @@ worldcup2026/
 │   ├── images/             flags/*.svg · stadiums/*.svg
 │   └── icons/              PWA app icons + favicons
 └── data/                   ← the only thing you edit to maintain the site
-    ├── teams.json          48 teams: { id, name, flag }
+    ├── teams.json          48 teams: { id, name, flag, confederation, ranking, wcDebut }
     ├── groups.json         { "A": [4 team ids], … } × 12
     ├── matches.json        104 matches (UTC times; knockout uses bracketRef)
-    ├── results.json        one entry per match: scores + status (+ penalties, + optional stats)
-    ├── stadiums.json       name, city, capacity, image, IANA timezone
-    └── bracket-config.json Round-of-32 slots + best-third assignment
+    ├── results.json        one entry per match: scores + status (+ penalties, attendance,
+    │                       decidedIn, optional stats with cards split {y,r})
+    ├── stadiums.json       name, city, capacity, image, IANA timezone, lat/lng
+    ├── bracket-config.json Round-of-32 slots + best-third assignment
+    ├── players.json        involved players: { id, name, team, position, shirt, birthDate }
+    ├── player-events.json  goal/card event log (drives every player chart)
+    ├── awards.json         FIFA awards + Squad of the Tournament
+    ├── keeper-stats.json   per-keeper saves + clean sheets
+    ├── curiosities.json    bilingual editorial cards (EN + PT)
+    └── all-time-baselines.json  all-time records for the “this Cup vs history” panel
 ```
 
 ---
@@ -48,7 +55,14 @@ worldcup2026/
 ## Maintaining the data
 
 > The data is **real World Cup 2026 data**, refreshed as the tournament progresses. Everything the
-> site shows is derived from the six `data/*.json` files — no code changes required.
+> site shows is derived from the `data/*.json` files — no code changes required.
+>
+> ⚠️ **Post-Cup data layers are currently MOCK** (2026-07-20): `attendance`, red-card splits and
+> `ranking` in the core files, plus everything in `players.json` / `player-events.json` /
+> `awards.json` / `keeper-stats.json` (all player names are synthetic) and the editorial copy in
+> `curiosities.json`. Replace with real values before deploying — the full checklist, schemas and
+> consistency rules are in [`how-fill-postcup-data.md`](how-fill-postcup-data.md). The six optional
+> stats files are loaded fault-tolerantly: delete any of them and its sections simply disappear.
 >
 > The day-to-day refresh routine is documented in
 > [`how-refresh-data.md`](how-refresh-data.md); the original mock → real migration is kept as a schema

@@ -63,7 +63,7 @@ sign-up, no ads. Just open it.
 <img src="docs/screenshots/stadiums.png" alt="Stadiums — cards for the sixteen host venues with capacity and match links" width="100%">
 
 ### 📈 Stats
-*A tournament stats screen: goals by stage and by round, records, a full 1–48 ranking and a head-to-head team comparator. Once the final is played, a champion “verdict” takes over the top of the page.*
+*The full post-tournament stats screen: goals by stage and by round, attendance and discipline totals, a full 1–48 ranking, confederation performance, a top-scorers podium with player charts and FIFA awards, tournament records — including a “this Cup vs history” panel — editorial stories, and a head-to-head comparator for both teams and players. With the final played, the champion “verdict” crowns the top of the page.*
 
 <img src="docs/screenshots/stats.png" alt="Stats — tournament-to-date totals, goals-by-stage and goals-by-round charts" width="100%">
 

@@ -350,6 +350,13 @@ Step 1 (shipped): wallchart replaces the old left-to-right columns.
 
 ## Operational Runbooks
 
+### Post-Cup data pass (mock → real)
+Follow **`how-fill-postcup-data.md`** (project root) when replacing any Stage G/H/I mock data. It
+carries the per-file schemas, the coverage-or-nothing contract, the two event-log reconciliation
+rules (goals must equal the scores; card events must equal the `{y,r}` sums), the Golden-Boot ↔
+podium consistency trap, and the verification checklist. Referenced from DEVELOPMENT.md's
+maintenance section.
+
 ### Daily data refresh
 Follow **`how-refresh-data.md`** (project root) before touching any `data/*.json`. In short: edit
 `data/results.json` (scores/status, two-source rule, `penalties` only on knockout ids 73–104) →
@@ -615,6 +622,111 @@ difference** (GD value shows a `+` sign when positive).
   `stats.leaderPrev`, `stats.leaderNext`. CSS: `.leader-stage/.leader-nav/.leader-dots/.leader-dot/
   .leader-counter` in `stats.css`.
 
+### Stage G — Layer-2 cheap data, shipped with MOCK data (2026-07-20)
+Post-Cup phase opened. All Stage-G code + schema extensions are live locally, but **several data
+fields are MOCK and must be replaced with real values before any deploy** (generator:
+`scratchpad stage_g_mock.py`, deterministic — see the list below).
+- **Schema extensions:** `results.json` per finished match: `attendance` (int), `cards` migrated
+  `{home:n,away:n}` → `{home:{y,r},away:{y,r}}`, `decidedIn` (`"regulation"|"ET"|"penalties"`,
+  knockout ids 73–104 only). `teams.json`: `confederation`, `ranking` (int 1–48), `wcDebut` (bool).
+  `stadiums.json`: `lat`/`lng`. The old `stats` backfill turned out already complete (all 104 games
+  had `stats` from the daily refreshes) — no work needed.
+- **MOCK vs real within the generated data:** MOCK = `attendance` (deterministic 86–100% of
+  capacity), red-card splits (sprinkle rule; the Final's ARG red is real), `ranking` (plausible
+  order). REAL = `confederation`, `wcDebut` (CUW/JOR/UZB/CPV), `decidedIn` (derived: penalties
+  field → penalties; match 104 → ET; else regulation), stadium coords (approx real).
+- **Backward-compatible cards reader: `cardCounts(side)` exported from `app.js`** — legacy number →
+  `{y:n, r:0, total:n, split:false}`; new shape → `{y, r, total, split:true}`. `modal.js` and
+  `stats.js` aggregation go through it; **never read `.y` raw** (legacy data throws). `split:false`
+  marks non-authoritative red data — `computeDiscipline` returns null unless EVERY finished match
+  has `split:true` on both sides (a mixed set can't attribute reds).
+- **New model blocks in `stats.js`, each null-gated on FULL coverage (§0.1):** `attendance`
+  (total/avg/biggest — null if any finished match lacks the field), `discipline` (y/r totals +
+  most-cards match), `confederations` (points-per-game table, needs `confederation` on all 48),
+  records `biggestUpset` (largest ranking gap win, pens winners count; needs `ranking` on all 48)
+  and `longestRoad` (haversine over chronological venues; needs coords on all 16 stadiums).
+- **UI:** Overview grid +4 tiles (público total/média, amarelos/vermelhos); Records +4 cards
+  (zebra, mais cartões, maior público, maior deslocamento); Teams + confederation ppg bar chart
+  (reuses `.stats-chart`) + new `fairPlay` leader card (`needsDiscipline: true` filter in
+  `computeLeaders(teamStats, disciplineOk)`). Modal: attendance + "Decidido em" rows in the dl,
+  cards row shows `y 🟨 r 🟥` when split. i18n: 15 new keys EN+PT (`stats.totalAttendance`…,
+  `modal.attendance`/`decidedIn`/`decidedET`/`decidedPens`). Zero new CSS (reused card/chart/tile
+  classes).
+- Verified in preview via evals (gotcha #7 — screenshot hung with the pane hidden, evals are the
+  proof path): all sections lit, console clean, modal Final shows público 79.856 + Prorrogação +
+  0🟨 × 4🟨 1🟥; degradation test (stripped 1 match's attendance + reverted its cards to legacy in
+  memory → datachange) correctly dropped attendance/discipline tiles, fair-play card and both
+  gated record cards while keeping upset/distance; restore re-lit everything. `APP_VERSION` →
+  **v1.2.0**.
+
+### Stage H — Layer-3 players, shipped with MOCK data (2026-07-20)
+Players layer live locally on top of Stage G. **ALL PLAYER NAMES ARE SYNTHETIC** (plausible
+per-country surnames, generator `stage_h_mock.py` in scratchpad, seeded RNG). Event **totals are
+exact against the real results** — per finished match, goal events reproduce the score per side and
+card events match the {y,r} splits — so the coverage gates pass; the Final's winning goal is
+structurally real (106' ET, 1 assist). Knockout participants were resolved by evaluating
+`resolveBracketTeams` in the app itself (browser eval), not re-deriving in Python.
+- **New data files (all optional, loadOptional):** `players.json` (349 involved players only:
+  `{id: "TEAM-shirt", name, team, position GK|DF|MF|FW, shirt, birthDate}`), `player-events.json`
+  (603 events `{type: goal|card, player, team, matchId, minute, goalType?/assist? | card:
+  yellow|red}`), `awards.json` (`goldenBall/Boot/Glove`, `bestYoung`, `goalOfTournament{player,
+  matchId, minute}`, `squadOfTournament[11]`), `keeper-stats.json` (per-team GK `{player, team,
+  saves, cleanSheets}`).
+- **`computePlayers()` in `stats.js` — authoritative-or-absent gate:** the section renders only when
+  the goal-event log reproduces EVERY finished match's score per side (uses `teamIdsOf`); any
+  unknown player id or event on a non-finished match also kills it. Sub-gates: cards chip needs
+  event card totals == `discipline.y/r`; saves chip needs keeper rows. Exposes
+  `scorers/assisters/carded/keepers`, `podium`, `awards`, `squad`, goal-time records, `byId`,
+  `aggById`.
+- **UI:** Players section = Golden-Boot podium (count-up, #1 elevated, stacked on mobile) + chip
+  toggle Artilheiros/Assistências/Cartões/Defesas (aria-pressed buttons swapping only the table,
+  top-10) + FIFA awards cards + Seleção da Copa (formation rows FW/MF/DF/GK). Records section +3
+  cards (fastest/latest goal, youngest scorer — clickable to the match). **Comparator gained the
+  deferred Stage-F Teams|Players toggle** (`cmpMode` module state; saves/CS rows appear only when a
+  selected player is a keeper; all wiring is delegation on the section so mode swaps survive).
+  **Golden Boot tiebreak must match the JS scorers sort** (goals ↓, assists ↓, name ↑) — the
+  generator replicates it, else the award card contradicts the podium (hit + fixed same day).
+- i18n: 29 new keys EN+PT (`stats.playersTitle`, chips, awards, goal-time, cmp modes). CSS: podium /
+  player-chips / squad-pitch blocks in `stats.css` (~120 lines, tokens only, mobile variant).
+- Verified via evals: nav shows Jogadores; podium/award coherence (H. Díaz ARG 8 gols = Chuteira de
+  Ouro); chips + players comparator work; console clean; degradation test (pop 1 goal event →
+  datachange) removed section + chip + cmp toggle + the 3 goal-time records, restore re-lit.
+  `APP_VERSION` → **v1.3.0**.
+
+### Stage I — Layer-4 editorial (2026-07-20, curiosities MOCK / baselines REAL)
+- **`data/curiosities.json`** — 6 bilingual editorial cards `{id, type story|stat|quirk, priority,
+  titleEN/PT, bodyEN/PT, matchId?, teamId?}` (hand-written this session; the narratives lean on
+  real facts from the refresh logs but are **MOCK copy, review before deploy**). Render:
+  "Histórias da Copa" grid in the Records section; `editorialText()` picks the current language and
+  **falls back to the other when a translation is missing** (never a blank card, plan §6.7); a card
+  needs title+body in ≥1 language or it's filtered out; `matchId` → "Ver jogo" button into the
+  modal; `teamId` → flag in the title.
+- **`data/all-time-baselines.json`** — 8 all-time records `{value, holder}` (**REAL historical
+  values**: Qatar 2022 172 goals, USA 94 attendance, Fontaine 13, Hungary 10–1, PORxNED 20 cards,
+  Germany 2006 28 reds…). `computeVsHistory()` builds "Esta Copa vs história" rows — each needs
+  BOTH the baseline entry AND this Cup's value from an available model block (rows whose source
+  degraded away are absent); all metrics read "higher beats the record"; `beaten` → gold + "Novo
+  recorde" badge. With mock data 3 records fall: total goals 310, total attendance, 21-card match.
+- Both blocks live in the Records section between the record cards and the debuts band; empty
+  `curiosities`/`allTimeBaselines` (the loadOptional defaults) degrade both away cleanly. CSS:
+  `.editorial-*` + `.history-*` in `stats.css`. i18n: 7 new keys EN+PT. `APP_VERSION` → **v1.4.0**.
+  Verified via evals: PT/EN fallback, modal link, degradation, console clean.
+
+### Stage J round 2 — polish audit over G/H/I (2026-07-20)
+Audit passed with ONE code fix: removed `aria-hidden` from the vs-history header row ("Esta Copa /
+Recorde histórico" is useful SR context, not decoration). Checks run: i18n (all new UI strings via
+`t()` EN+PT; hardcoded leftovers are data-like codes only — "km", 🟨/🟥, GK/DF/MF/FW, team ids);
+a11y (chips/links/record cards are real `<button>`s with aria-pressed/labels; tables carry
+caption + scoped headers); responsive 375px (page overflow 0 — wide tables/subnav scroll inside
+their own wraps; podium stacks column; history rows 2-col); perf (new repeated tiles — podium,
+squad — use flat fills; glass-blur cards stay at the small counts of the established record-card
+idiom); reduced-motion (only the already-gated count-up/bar animations are reused). EN/PT toggle
+verified across every new section. Docs refreshed: README Stats bullet now describes the full
+post-Cup screen; DEVELOPMENT.md file tree + maintenance section document the 6 new data files, the
+extended core schemas and a **⚠️ MOCK-data warning listing exactly what must be replaced before
+deploy**. `APP_VERSION` → **v1.4.1**. Lighthouse remains deferred to a deployed URL. **The entire
+stats-screen plan (A–J) is now CODE-COMPLETE; what remains is data passes, not features.**
+
 ### Partial stats tab built during the Cup (foundation, 2026-06-14)
 The 6th `stats` tab was first shipped incrementally as the evolving foundation of the post-Cup plan
 (same tab/module; post-Cup sections "light up" later). Files: `assets/js/stats.js` +
@@ -774,9 +886,11 @@ Best goal difference) — see Stats Screen → "Leader cards — tied-team carou
 - **Lighthouse > 90** run (needs a deployed URL).
 - ~~**Post-Cup home state**~~ — **DONE 2026-07-19** (shipped in v1.1.0 and now live with the real
   champion; see "Post-Cup home hero + Bracket Step 4 celebration").
-- **Stats Stage G** (Layer-2 cheap data — `cards`→{y,r} migration is breaking for `modal.js` +
-  `stats.js`; **schedule LATE**, conflicts with daily `results.json` edits), **Stage H** (players +
-  the deferred comparator Teams/Players toggle), **Stage I** (editorial), **Stage J round 2** polish.
+- ~~**Stats Stages G/H/I/J-r2**~~ — **ALL CODE-COMPLETE 2026-07-20** (v1.2.0→v1.4.1, built with mock
+  data in one session; see the four Stage entries above). **Remaining = real-data passes, 🔴 blocks
+  deploy:** (G) real attendance + red-card splits + FIFA ranking; (H) real rosters/event log/awards/
+  keeper stats — every player name is synthetic; (I) review the 6 curiosity texts. Then Lighthouse
+  on the deployed URL.
 - **PWA Tier 2** (service worker + offline) — deferred; must exclude `data/*.json` (see `issues.md`).
 
 ### Success metrics

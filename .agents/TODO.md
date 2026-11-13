@@ -93,10 +93,27 @@ champion path, debuts champion) once the final lands. The **data-layer stages (G
 - [x] ~~Stage J (round 1, release polish) — a11y/responsive/i18n/README audit on A–F~~ — passed clean (no code fixes). **Lighthouse still pending an actual deploy** (the once-planned final `DATA_VERSION` bump is moot — `DATA_VERSION` removed 2026-06-18).
 
 ### 🔭 Future (data layers + 2nd polish — near/after the Cup)
-- [ ] **Stage G — Layer 2 cheap data.** Extend `results.json` (attendance, **`cards`→{y,r} migration** — breaking for `modal.js` + `stats.js` `aggregateTeams`, add a backward-compatible reader; `decidedIn`; backfill `stats`), `teams.json` (`ranking`/`wcDebut`/`confederation`), `stadiums.json` (`lat`/`lng`). Light up records: attendance, discipline/fair-play, ranking upsets, confederation performance, distance. **SCHEDULE LATE — conflicts with master's daily `results.json` refreshes.**
-- [ ] **Stage H — Layer 3 players.** `players.json` + `player-events.json` + `awards.json` (+ optional `keeper-stats.json`). Top-scorers podium, assists/cards/saves chips, awards block, Squad of the Tournament, **Teams/Players toggle in the comparator** (the deferred half of Stage F), goal-time records. Relative photo paths (gotcha #7).
-- [ ] **Stage I — Layer 4 editorial.** `curiosities.json` (bilingual EN+PT) + `all-time-baselines.json`; editorial record-cards + "this Cup vs history" panel.
-- [ ] **Stage J (round 2) — polish over the NEW G/H/I features.** Repeat the audit on the added sections (a11y/responsive/perf, Lighthouse, EN/PT review) + README refresh.
+- [x] ~~**Stage G — Layer 2 cheap data** (code + schema)~~ (2026-07-20 — all features live with **MOCK
+  data**: attendance/red-splits/ranking are mocked, confederation/wcDebut/decidedIn/coords are real;
+  see project-memory "Stage G — Layer-2 cheap data". `stats` backfill was already complete from the
+  daily refreshes.)
+- [ ] **Stage G data pass — replace MOCK with real values before deploy:** real `attendance` per
+  match (FIFA), real red-card splits (`cards.{y,r}`), real FIFA `ranking` for the 48 teams. 🔴 blocks
+  push/deploy of the Stage-G work.
+- [x] ~~**Stage H — Layer 3 players** (code + schema)~~ (2026-07-20 — podium, chips, awards, Seleção
+  da Copa, Teams/Players comparator toggle, goal-time records, all live with **MOCK data**; see
+  project-memory "Stage H — Layer-3 players".)
+- [ ] **Stage H data pass — replace MOCK with real values before deploy:** real rosters/names (all
+  349 names are synthetic!), real goal/card event log (~600 entries, FIFA match centre), real awards
+  + Squad of the Tournament, real keeper stats. 🔴 blocks push/deploy of the Stage-H work.
+- [x] ~~**Stage I — Layer 4 editorial**~~ (2026-07-20 — "Histórias da Copa" cards + "Esta Copa vs
+  história" panel live; baselines are REAL historical values, curiosity copy is MOCK-ish (based on
+  real facts but unreviewed); see project-memory "Stage I — Layer-4 editorial".)
+- [ ] **Stage I data pass — review/rewrite the 6 curiosity cards** (accuracy + editorial quality,
+  EN and PT) before deploy. 🟡 lighter than G/H: baselines are already real.
+- [x] ~~**Stage J (round 2) — polish over the NEW G/H/I features**~~ (2026-07-20 — audit passed, 1
+  a11y fix, README/DEVELOPMENT.md refreshed with the new schemas + MOCK warning; see project-memory
+  "Stage J round 2". Lighthouse still deferred to a deployed URL.)
 
 ---
 

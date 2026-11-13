@@ -5,11 +5,11 @@
 // for the post-tournament stats screen (see .agents/stats-screen-plan.md):
 // sections gate on data so player/award/editorial blocks slot in later.
 
-import { getData, flagSrc, navigateTo } from './app.js';
+import { getData, flagSrc, navigateTo, cardCounts } from './app.js';
 import { getBracketTree, resolveBracketTeams } from './bracket.js';
 import { getFavorites } from './storage.js';
 import { openMatchModal } from './modal.js';
-import { t, translatePhase } from './i18n.js';
+import { t, getLang, getLocale, translatePhase } from './i18n.js';
 
 // "Goals by stage" collapses all 12 groups into one bucket; knockout phases
 // keep their own. Order used to render the chart left-to-right.
@@ -47,7 +47,7 @@ const COLUMNS = [
 const SECTIONS = [
   { id: 'overview', navKey: 'stats.navOverview', available: () => true, body: overviewHTML },
   { id: 'teams', navKey: 'stats.navTeams', available: () => true, body: teamsSectionHTML },
-  { id: 'players', navKey: 'stats.navPlayers', available: () => false, body: () => '' },
+  { id: 'players', navKey: 'stats.navPlayers', available: (m) => Boolean(m.players), body: playersSectionHTML },
   { id: 'records', navKey: 'stats.navRecords', available: () => true, body: recordsSectionHTML },
   { id: 'comparator', navKey: 'stats.navComparator', available: (m) => m.finishedCount > 0, body: comparatorSectionHTML },
   { id: 'archive', navKey: 'stats.navArchive', available: () => false, body: () => '' },
@@ -74,6 +74,11 @@ let teamPage = 0;
 // comparator selection (team ids) — survives langchange like the table state
 let cmpA = null;
 let cmpB = null;
+// comparator mode + player selections (Stage H); players chip choice too
+let cmpMode = 'teams';
+let cmpPA = null;
+let cmpPB = null;
+let playersChip = 'scorers';
 
 function stageOf(phase) {
   return phase.startsWith('Group ') ? 'Group' : phase;
@@ -100,7 +105,8 @@ function aggregateTeams(finished, resultByMatchId) {
     if (!rows.has(id)) {
       rows.set(id, {
         teamId: id, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0,
-        cleanSheets: 0, possSum: 0, possCount: 0, shots: 0, cards: 0,
+        cleanSheets: 0, possSum: 0, possCount: 0, shots: 0,
+        cardsY: 0, cardsR: 0, cardsTotal: 0,
       });
     }
     return rows.get(id);
@@ -120,7 +126,15 @@ function aggregateTeams(finished, resultByMatchId) {
         away.possSum += s.possession.away; away.possCount += 1;
       }
       if (s.shots) { home.shots += s.shots.home; away.shots += s.shots.away; }
-      if (s.cards) { home.cards += s.cards.home; away.cards += s.cards.away; }
+      if (s.cards) {
+        for (const [side, teamRow] of [['home', home], ['away', away]]) {
+          const c = cardCounts(s.cards[side]);
+          if (!c) continue;
+          teamRow.cardsY += c.y;
+          teamRow.cardsR += c.r;
+          teamRow.cardsTotal += c.total;
+        }
+      }
     }
   }
   return rows;
@@ -192,17 +206,24 @@ function buildStatsModel() {
       points: won * 3 + drawn,
       cleanSheets: a?.cleanSheets ?? 0,
       gpg: played ? gf / played : 0,
+      cardsY: a?.cardsY ?? 0,
+      cardsR: a?.cardsR ?? 0,
+      cardsTotal: a?.cardsTotal ?? 0,
     };
   });
 
   const verdict = computeVerdict();
   assignRanks(teamStats);
+  const attendance = computeAttendance(finished, resultByMatchId);
+  const discipline = computeDiscipline(finished, resultByMatchId);
+  const players = computePlayers(finished, resultByMatchId, discipline);
+  const avgGoals = finished.length ? totalGoals / finished.length : 0;
 
   return {
     totalMatches: matches.length,
     finishedCount: finished.length,
     totalGoals,
-    avgGoals: finished.length ? totalGoals / finished.length : 0,
+    avgGoals,
     draws,
     decisive,
     biggestMargin,
@@ -211,9 +232,229 @@ function buildStatsModel() {
     byRound,
     verdict,
     teamStats,
-    leaders: computeLeaders(teamStats),
+    attendance,
+    discipline,
+    players,
+    confederations: computeConfederations(teamStats),
+    leaders: computeLeaders(teamStats, Boolean(discipline)),
     records: computeRecords(finished, resultByMatchId, verdict),
+    curiosities: computeCuriosities(),
+    vsHistory: computeVsHistory({
+      finishedCount: finished.length, totalGoals, avgGoals, biggestMargin,
+      attendance, discipline, players,
+    }),
   };
+}
+
+// Editorial curiosity cards (Layer 4, Stage I). A card renders only when it has
+// a title AND a body in at least one language; the render side falls back to
+// the other language rather than showing a blank (plan §6.7). Sorted by the
+// hand-set priority.
+function computeCuriosities() {
+  const list = (getData().curiosities ?? [])
+    .filter((c) => (c.titleEN || c.titlePT) && (c.bodyEN || c.bodyPT));
+  return list.length ? [...list].sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99)) : null;
+}
+
+// "This Cup vs history" rows (Layer 4). Each row needs BOTH sides: a baseline
+// entry in all-time-baselines.json and this Cup's value from an available model
+// block — rows whose source degraded away (no attendance, no players…) are
+// simply absent. All metrics read "higher beats the record".
+function computeVsHistory({ finishedCount, totalGoals, avgGoals, biggestMargin, attendance, discipline, players }) {
+  const base = getData().allTimeBaselines;
+  if (!base || !Object.keys(base).length || !finishedCount) return null;
+  const rows = [];
+  const push = (key, labelKey, current, fmt = 'int') => {
+    const b = base[key];
+    if (!b || !Number.isFinite(b.value) || current == null) return;
+    rows.push({ labelKey, current, record: b.value, holder: b.holder ?? '', beaten: current > b.value, fmt });
+  };
+  push('totalGoals', 'stats.tileGoals', totalGoals);
+  push('avgGoals', 'stats.tileAvg', avgGoals, 'dec');
+  push('topScorerGoals', 'stats.topScorerRow', players?.podium[0]?.goals ?? null);
+  push('totalAttendance', 'stats.totalAttendance', attendance?.total ?? null, 'num');
+  push('avgAttendance', 'stats.avgAttendance', attendance ? Math.round(attendance.avg) : null, 'num');
+  push('biggestWinMargin', 'stats.tileBiggestMargin', biggestMargin || null);
+  push('mostCardsMatch', 'stats.mostCardsMatch', discipline?.mostCards?.total ?? null);
+  push('redCards', 'stats.cardsRed', discipline?.r ?? null);
+  return rows.length ? rows : null;
+}
+
+// Attendance aggregates (Layer 2). Authoritative only with FULL coverage —
+// every finished match carries `attendance` (§0.1: partial sums would silently
+// understate the totals). Null → the tiles and the crowd record degrade away.
+function computeAttendance(finished, resultByMatchId) {
+  if (!finished.length) return null;
+  let total = 0;
+  let biggest = null;
+  for (const m of finished) {
+    const r = resultByMatchId.get(m.id);
+    if (!Number.isFinite(r.attendance)) return null;
+    total += r.attendance;
+    if (!biggest || r.attendance > biggest.attendance) {
+      biggest = { matchId: m.id, attendance: r.attendance, stadium: m.stadium };
+    }
+  }
+  return { total, avg: total / finished.length, biggest };
+}
+
+// Discipline aggregates (Layer 2). Requires the {y,r} card split on EVERY
+// finished match — a legacy numeric value can't attribute reds, so a mixed data
+// set is not authoritative and the whole block degrades away.
+function computeDiscipline(finished, resultByMatchId) {
+  if (!finished.length) return null;
+  let y = 0;
+  let r = 0;
+  let mostCards = null;
+  for (const m of finished) {
+    const cards = resultByMatchId.get(m.id)?.stats?.cards;
+    const home = cardCounts(cards?.home);
+    const away = cardCounts(cards?.away);
+    if (!home?.split || !away?.split) return null;
+    y += home.y + away.y;
+    r += home.r + away.r;
+    const total = home.total + away.total;
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) continue;
+    if (!mostCards || total > mostCards.total) {
+      mostCards = { matchId: m.id, total, y: home.y + away.y, r: home.r + away.r, homeTeam: homeId, awayTeam: awayId };
+    }
+  }
+  return { y, r, mostCards };
+}
+
+// Players model (Layer 3, Stage H). The whole section is authoritative-or-absent
+// (§0.1): it renders only when the goal-event log REPRODUCES every finished
+// match's score exactly, per side — a partial log would silently understate the
+// scoring charts. Individual chips gate further: cards need the event log to
+// match the discipline totals; saves need keeper-stats rows.
+function computePlayers(finished, resultByMatchId, discipline) {
+  const { players, playerEvents, awards, keeperStats } = getData();
+  if (!players?.length || !playerEvents?.length || !finished.length) return null;
+  const playerById = new Map(players.map((p) => [p.id, p]));
+  const finishedIds = new Set(finished.map((m) => m.id));
+
+  // ---- coverage gate: per-side goal counts from events must equal the scores
+  const goalCount = new Map();
+  for (const e of playerEvents) {
+    if (!playerById.has(e.player) || !finishedIds.has(e.matchId)) return null;
+    if (e.type !== 'goal') continue;
+    const perTeam = goalCount.get(e.matchId) ?? new Map();
+    perTeam.set(e.team, (perTeam.get(e.team) ?? 0) + 1);
+    goalCount.set(e.matchId, perTeam);
+  }
+  for (const m of finished) {
+    const r = resultByMatchId.get(m.id);
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) return null;
+    const perTeam = goalCount.get(m.id);
+    if ((perTeam?.get(homeId) ?? 0) !== r.homeScore || (perTeam?.get(awayId) ?? 0) !== r.awayScore) return null;
+  }
+
+  // ---- per-player aggregation + goal-time records in one pass
+  const rows = new Map();
+  const row = (id) => {
+    if (!rows.has(id)) {
+      const p = playerById.get(id);
+      rows.set(id, { ...p, goals: 0, assists: 0, y: 0, r: 0, saves: 0, cleanSheets: 0 });
+    }
+    return rows.get(id);
+  };
+  let cardsY = 0;
+  let cardsR = 0;
+  let fastest = null;
+  let latest = null;
+  let youngest = null;
+  const matchDate = new Map(getData().matches.map((m) => [m.id, m.date]));
+  for (const e of playerEvents) {
+    if (e.type === 'goal') {
+      row(e.player).goals += 1;
+      if (e.assist && playerById.has(e.assist)) row(e.assist).assists += 1;
+      if (!fastest || e.minute < fastest.minute) fastest = e;
+      if (!latest || e.minute > latest.minute) latest = e;
+      const birth = playerById.get(e.player).birthDate;
+      if (birth && (!youngest || birth > playerById.get(youngest.player).birthDate)) youngest = e;
+    } else if (e.type === 'card') {
+      const target = row(e.player);
+      if (e.card === 'red') { target.r += 1; cardsR += 1; }
+      else { target.y += 1; cardsY += 1; }
+    }
+  }
+  for (const k of keeperStats ?? []) {
+    if (!playerById.has(k.player)) continue;
+    const target = row(k.player);
+    target.saves = k.saves ?? 0;
+    target.cleanSheets = k.cleanSheets ?? 0;
+  }
+
+  const list = [...rows.values()];
+  const scorers = list.filter((p) => p.goals > 0)
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name));
+
+  // ---- awards: each entry is valid only if its player resolves; squad needs all 11
+  const award = (id) => (id && playerById.has(id) ? playerById.get(id) : null);
+  const awardList = [
+    { key: 'goldenBall', labelKey: 'stats.goldenBall', player: award(awards?.goldenBall) },
+    { key: 'goldenBoot', labelKey: 'stats.goldenBoot', player: award(awards?.goldenBoot) },
+    { key: 'goldenGlove', labelKey: 'stats.goldenGlove', player: award(awards?.goldenGlove) },
+    { key: 'bestYoung', labelKey: 'stats.bestYoung', player: award(awards?.bestYoung) },
+  ].filter((a) => a.player);
+  const goalOfTournament = awards?.goalOfTournament && playerById.has(awards.goalOfTournament.player)
+    ? awards.goalOfTournament : null;
+  const squadIds = awards?.squadOfTournament ?? [];
+  const squad = squadIds.length === 11 && squadIds.every((id) => playerById.has(id))
+    ? squadIds.map((id) => playerById.get(id)) : null;
+
+  return {
+    scorers,
+    assisters: list.filter((p) => p.assists > 0)
+      .sort((a, b) => b.assists - a.assists || b.goals - a.goals || a.name.localeCompare(b.name)),
+    carded: list.filter((p) => p.y + p.r > 0)
+      .sort((a, b) => (b.y + b.r) - (a.y + a.r) || b.r - a.r || a.name.localeCompare(b.name)),
+    keepers: list.filter((p) => p.saves > 0 || p.cleanSheets > 0)
+      .sort((a, b) => b.saves - a.saves || b.cleanSheets - a.cleanSheets || a.name.localeCompare(b.name)),
+    podium: scorers.slice(0, 3),
+    cardsOk: Boolean(discipline) && cardsY === discipline.y && cardsR === discipline.r,
+    savesOk: (keeperStats ?? []).length > 0,
+    awards: awardList.length || goalOfTournament ? { list: awardList, goalOfTournament } : null,
+    squad,
+    fastestGoal: fastest,
+    latestGoal: latest,
+    youngestScorer: youngest ? { event: youngest, ageYears: ageAt(playerById.get(youngest.player).birthDate, matchDate.get(youngest.matchId)) } : null,
+    byId: playerById,
+    aggById: rows,
+  };
+}
+
+function ageAt(birthDate, onDate) {
+  if (!birthDate || !onDate) return null;
+  const b = new Date(birthDate);
+  const d = new Date(onDate);
+  let age = d.getFullYear() - b.getFullYear();
+  if (d.getMonth() < b.getMonth() || (d.getMonth() === b.getMonth() && d.getDate() < b.getDate())) age -= 1;
+  return age;
+}
+
+// Per-confederation performance (Layer 2) — requires `confederation` on all 48
+// teams. Ranked by points per game so a 6-team confederation isn't dwarfed by
+// UEFA's sheer match count.
+function computeConfederations(teamStats) {
+  const { teams, teamById } = getData();
+  if (!teams.every((team) => team.confederation)) return null;
+  const rows = new Map();
+  for (const row of teamStats) {
+    const conf = teamById.get(row.teamId).confederation;
+    const bucket = rows.get(conf) ?? { conf, teams: 0, played: 0, won: 0, points: 0 };
+    bucket.teams += 1;
+    bucket.played += row.played;
+    bucket.won += row.won;
+    bucket.points += row.points;
+    rows.set(conf, bucket);
+  }
+  const list = [...rows.values()].filter((row) => row.played > 0);
+  if (!list.length) return null;
+  for (const row of list) row.ppg = row.points / row.played;
+  return list.sort((a, b) => b.ppg - a.ppg || b.points - a.points);
 }
 
 // Matchday (1–3) for every group match, derived per group: a 4-team group plays
@@ -354,7 +595,77 @@ function computeRecords(finished, resultByMatchId, verdict) {
     highestScoringMatch,
     longestWinStreak: longestWinStreak && longestWinStreak.count >= 2 ? longestWinStreak : null,
     championPath: computeChampionPath(verdict),
+    biggestUpset: computeBiggestUpset(order),
+    longestRoad: computeLongestRoad(order),
   };
+}
+
+// Biggest upset (Layer 2) — the win with the largest FIFA-ranking gap in the
+// winner's disfavor. Needs `ranking` on all 48 teams; pen-shootout winners
+// count (advancing IS the upset). `order` is the chronological finished list.
+function computeBiggestUpset(order) {
+  const { teams, teamById, resultByMatchId } = getData();
+  if (!teams.every((team) => Number.isFinite(team.ranking))) return null;
+  let upset = null;
+  for (const m of order) {
+    const r = resultByMatchId.get(m.id);
+    const { homeId, awayId } = teamIdsOf(m);
+    if (!homeId || !awayId) continue;
+    let winnerId = null;
+    if (r.homeScore !== r.awayScore) winnerId = r.homeScore > r.awayScore ? homeId : awayId;
+    else if (r.penalties) winnerId = r.penalties.home > r.penalties.away ? homeId : awayId;
+    if (!winnerId) continue;
+    const loserId = winnerId === homeId ? awayId : homeId;
+    const gap = teamById.get(winnerId).ranking - teamById.get(loserId).ranking;
+    if (gap <= 0) continue;
+    if (!upset || gap > upset.gap) {
+      upset = {
+        matchId: m.id, gap, winnerId, loserId,
+        winnerRank: teamById.get(winnerId).ranking,
+        loserRank: teamById.get(loserId).ranking,
+        score: winnerId === homeId ? `${r.homeScore}-${r.awayScore}` : `${r.awayScore}-${r.homeScore}`,
+        pens: r.penalties ? (winnerId === homeId ? `${r.penalties.home}-${r.penalties.away}` : `${r.penalties.away}-${r.penalties.home}`) : null,
+      };
+    }
+  }
+  return upset;
+}
+
+// Longest road (Layer 2) — the team that covered the most km hopping between
+// its venues, great-circle legs over the chronological finished fixtures.
+// Needs lat/lng on all 16 stadiums.
+function computeLongestRoad(order) {
+  const { stadiums, stadiumByName } = getData();
+  if (!stadiums.every((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng))) return null;
+  const route = new Map(); // teamId → { last: stadium, km, stops }
+  for (const m of order) {
+    const stadium = stadiumByName.get(m.stadium);
+    if (!stadium) continue;
+    const { homeId, awayId } = teamIdsOf(m);
+    for (const teamId of [homeId, awayId]) {
+      if (!teamId) continue;
+      const leg = route.get(teamId) ?? { last: null, km: 0, stops: 0 };
+      if (leg.last && leg.last !== stadium) leg.km += haversineKm(leg.last, stadium);
+      leg.last = stadium;
+      leg.stops += 1;
+      route.set(teamId, leg);
+    }
+  }
+  let best = null;
+  for (const [teamId, leg] of route) {
+    if (!best || leg.km > best.km) best = { teamId, km: leg.km, matches: leg.stops };
+  }
+  return best && best.km > 0 ? best : null;
+}
+
+function haversineKm(a, b) {
+  const R = 6371;
+  const rad = (d) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
 }
 
 // The champion's knockout route (R32 → Final) with each result, for the path
@@ -392,16 +703,19 @@ const LEADER_CARDS = [
   { id: 'mostWins',        labelKey: 'stats.mostWins',        metric: 'won',         cmp: (a, b) => b.won - a.won || b.gd - a.gd || b.gf - a.gf },
   { id: 'mostConceded',    labelKey: 'stats.mostConceded',    metric: 'ga',          cmp: (a, b) => b.ga - a.ga || a.gd - b.gd },
   { id: 'bestGoalDiff',    labelKey: 'stats.bestGoalDiff',    metric: 'gd',          cmp: (a, b) => b.gd - a.gd || b.gf - a.gf },
+  // Layer 2 — only meaningful with the {y,r} split on every match (needsDiscipline)
+  { id: 'fairPlay',        labelKey: 'stats.fairPlay',        metric: 'cardsTotal',  cmp: (a, b) => a.cardsTotal - b.cardsTotal || a.cardsR - b.cardsR || b.points - a.points, needsDiscipline: true },
 ];
 
 // Each card carries the FULL tied group (same value on its headline metric),
 // ordered by the card's tiebreakers; the carousel rotates through it. Only teams
 // that have played count (a 0-game team's empty record never "leads"). Null
 // before any match finishes → the whole leaders strip degrades away.
-function computeLeaders(teamStats) {
+function computeLeaders(teamStats, disciplineOk) {
   const played = teamStats.filter((row) => row.played > 0);
   if (!played.length) return null;
-  return LEADER_CARDS.map(({ id, labelKey, metric, cmp }) => {
+  return LEADER_CARDS.filter((card) => !card.needsDiscipline || disciplineOk)
+    .map(({ id, labelKey, metric, cmp }) => {
     const sorted = [...played].sort(cmp);
     const best = sorted[0][metric];
     return { id, labelKey, metric, group: sorted.filter((row) => row[metric] === best) };
@@ -450,13 +764,38 @@ function render() {
       if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
     });
   }
-  // comparator selects → update the chosen side, re-render just the bars panel
-  const cmpAEl = root.querySelector('#cmp-a');
-  const cmpBEl = root.querySelector('#cmp-b');
-  if (cmpAEl && cmpBEl) {
-    cmpAEl.addEventListener('change', () => { cmpA = cmpAEl.value; refreshComparator(); });
-    cmpBEl.addEventListener('change', () => { cmpB = cmpBEl.value; refreshComparator(); });
+  // comparator: delegation on the section (it is recreated each render, so no
+  // duplicate listeners) — covers both modes AND the selects the mode swap
+  // recreates inside #cmp-body.
+  const cmpSection = root.querySelector('#stats-comparator');
+  if (cmpSection) {
+    cmpSection.addEventListener('change', (event) => {
+      const map = { 'cmp-a': (v) => { cmpA = v; }, 'cmp-b': (v) => { cmpB = v; },
+                    'cmp-pa': (v) => { cmpPA = v; }, 'cmp-pb': (v) => { cmpPB = v; } };
+      const apply = map[event.target.id];
+      if (apply) { apply(event.target.value); refreshComparator(); }
+    });
+    cmpSection.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-cmp-mode]');
+      if (!btn || btn.dataset.cmpMode === cmpMode) return;
+      cmpMode = btn.dataset.cmpMode;
+      for (const b of cmpSection.querySelectorAll('[data-cmp-mode]')) {
+        b.setAttribute('aria-pressed', String(b.dataset.cmpMode === cmpMode));
+      }
+      cmpSection.querySelector('#cmp-body').innerHTML = cmpBodyHTML();
+    });
   }
+  // players section: chip toggle re-renders only the table
+  const playersSection = root.querySelector('#stats-players');
+  playersSection?.addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-chip]');
+    if (!chip || chip.dataset.chip === playersChip) return;
+    playersChip = chip.dataset.chip;
+    for (const b of playersSection.querySelectorAll('[data-chip]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.chip === playersChip));
+    }
+    renderPlayersTable();
+  });
   setupCountUps(root);
   setupLeaderCarousels(root);
   setupSubNav(root, sections);
@@ -662,11 +1001,24 @@ function heroTilesHTML() {
 
 function overviewHTML() {
   const m = model;
+  const numberFmt = new Intl.NumberFormat(getLocale());
   const cards = [
     { value: String(m.finishedCount), sub: `/ ${m.totalMatches}`, label: t('stats.played') },
     { value: String(m.decisive), label: t('stats.decisive') },
     { value: String(m.draws), label: t('stats.draws') },
   ];
+  if (m.attendance) {
+    cards.push(
+      { value: numberFmt.format(m.attendance.total), label: t('stats.totalAttendance') },
+      { value: numberFmt.format(Math.round(m.attendance.avg)), label: t('stats.avgAttendance') },
+    );
+  }
+  if (m.discipline) {
+    cards.push(
+      { value: String(m.discipline.y), label: t('stats.cardsYellow') },
+      { value: String(m.discipline.r), label: t('stats.cardsRed') },
+    );
+  }
   return `
     <h2 class="section-title">${t('stats.overviewTitle')}</h2>
     <div class="stats-overview-grid">
@@ -736,9 +1088,31 @@ function teamsSectionHTML() {
   return `
     <h2 class="section-title">${t('stats.teamStatsTitle')}</h2>
     ${leadersHTML()}
+    ${confederationsHTML()}
     ${teamRecordsHTML()}
     <div id="stats-teams-table" class="stats-teams-table"></div>
     ${legendHTML(COLUMNS)}`;
+}
+
+// Confederation performance bars (Layer 2) — points per game, so small
+// confederations compare fairly against UEFA's match volume. Reuses the
+// goals-by-stage chart styling.
+function confederationsHTML() {
+  const rows = model.confederations;
+  if (!rows) return '';
+  const max = Math.max(...rows.map((row) => row.ppg));
+  const bars = rows.map((row) => {
+    const pct = max ? Math.round((row.ppg / max) * 100) : 0;
+    return `
+      <div class="chart-row">
+        <span class="chart-bar-label">${row.conf} <small>(${row.teams})</small></span>
+        <div class="chart-track"><div class="chart-bar" style="width:${pct}%"></div></div>
+        <span class="chart-bar-val">${row.ppg.toFixed(2)}</span>
+      </div>`;
+  }).join('');
+  return `
+    <h3 class="stats-subhead">${t('stats.confTitle')}</h3>
+    <div class="stats-chart glass">${bars}</div>`;
 }
 
 // Team-level cards in the Teams section: longest win streak + the champion's
@@ -803,6 +1177,145 @@ function championPathHTML(path) {
     </div>`;
 }
 
+// ----------------------------------------------------- players section
+
+// Table variants behind the chip toggle. A chip renders only when its data is
+// authoritative (cards/saves gate in computePlayers); scorers/assists always
+// exist once the section itself is available.
+const PLAYER_CHIPS = [
+  { id: 'scorers', labelKey: 'stats.chipScorers', cols: [['goals', 'stats.colGoals'], ['assists', 'stats.colAssists']], rows: (pl) => pl.scorers, gate: () => true },
+  { id: 'assists', labelKey: 'stats.chipAssists', cols: [['assists', 'stats.colAssists'], ['goals', 'stats.colGoals']], rows: (pl) => pl.assisters, gate: () => true },
+  { id: 'cards', labelKey: 'stats.chipCards', cols: [['y', 'stats.cardsYellow'], ['r', 'stats.cardsRed']], rows: (pl) => pl.carded, gate: (pl) => pl.cardsOk },
+  { id: 'saves', labelKey: 'stats.chipSaves', cols: [['saves', 'stats.chipSaves'], ['cleanSheets', 'stats.colCS']], rows: (pl) => pl.keepers, gate: (pl) => pl.savesOk },
+];
+const PLAYER_TABLE_MAX = 10;
+
+function playerFlag(p, w = 22, h = 15) {
+  return flagImg(getData().teamById.get(p.team), w, h);
+}
+
+function playersSectionHTML() {
+  const pl = model.players;
+  return `
+    <h2 class="section-title">${t('stats.playersTitle')}</h2>
+    ${podiumHTML(pl)}
+    ${playerChipsHTML(pl)}
+    <div id="stats-players-table" class="stats-teams-table">${playersTableHTML(pl)}</div>
+    ${awardsHTML(pl)}
+    ${squadHTML(pl)}`;
+}
+
+// Golden-Boot podium — top-3 scorers, runner-ups flanking the leader.
+function podiumHTML(pl) {
+  if (!pl.podium.length) return '';
+  const order = [pl.podium[1], pl.podium[0], pl.podium[2]].filter(Boolean);
+  const steps = order.map((p) => {
+    const rank = pl.podium.indexOf(p) + 1;
+    return `
+      <div class="podium-step podium-${rank}">
+        <span class="podium-rank" aria-hidden="true">${rank}</span>
+        ${playerFlag(p, 30, 20)}
+        <span class="podium-name">${p.name}</span>
+        <span class="podium-value" data-countup="${p.goals}" data-decimals="0">0</span>
+        <span class="podium-label">${t('stats.colGoalsLong')}</span>
+      </div>`;
+  }).join('');
+  return `
+    <h3 class="stats-subhead">${t('stats.topScorers')}</h3>
+    <div class="podium glass">${steps}</div>`;
+}
+
+function availableChips(pl) {
+  return PLAYER_CHIPS.filter((chip) => chip.gate(pl) && chip.rows(pl).length);
+}
+
+function playerChipsHTML(pl) {
+  const chips = availableChips(pl);
+  if (chips.length < 2) return '';
+  if (!chips.some((chip) => chip.id === playersChip)) playersChip = chips[0].id;
+  return `
+    <div class="player-chips" role="group" aria-label="${t('stats.playersTitle')}">
+      ${chips.map((chip) => `
+        <button type="button" class="player-chip" data-chip="${chip.id}"
+                aria-pressed="${chip.id === playersChip}">${t(chip.labelKey)}</button>`).join('')}
+    </div>`;
+}
+
+function playersTableHTML(pl) {
+  const chip = PLAYER_CHIPS.find((c) => c.id === playersChip && c.gate(pl)) ?? PLAYER_CHIPS[0];
+  const rows = chip.rows(pl).slice(0, PLAYER_TABLE_MAX);
+  if (!rows.length) return '';
+  const head = chip.cols.map(([, labelKey]) => `<th scope="col" class="col-num">${t(labelKey)}</th>`).join('');
+  const body = rows.map((p, i) => `
+    <tr>
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-team">${playerFlag(p)} <span>${p.name}</span></td>
+      ${chip.cols.map(([key], ci) => `<td class="col-num${ci === 0 ? ' sorted' : ''}">${p[key]}</td>`).join('')}
+    </tr>`).join('');
+  return `
+    <div class="stats-table-wrap" role="region" aria-label="${t(chip.labelKey)}" tabindex="0">
+      <table class="stats-table">
+        <caption class="sr-only">${t(chip.labelKey)}</caption>
+        <thead><tr>
+          <th scope="col" class="col-rank">#</th>
+          <th scope="col" class="col-team">${t('stats.colPlayer')}</th>
+          ${head}
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderPlayersTable() {
+  const host = document.getElementById('stats-players-table');
+  if (host) host.innerHTML = playersTableHTML(model.players);
+}
+
+// FIFA awards block — each card gates on its winner resolving; the goal of the
+// tournament links to its match.
+function awardsHTML(pl) {
+  if (!pl.awards) return '';
+  const cards = pl.awards.list.map((a) => `
+    <div class="record-card glass">
+      <span class="record-label">${t(a.labelKey)}</span>
+      <span class="record-main">${playerFlag(a.player, 26, 17)} <span class="award-name">${a.player.name}</span></span>
+      <span class="record-teams">${getData().teamById.get(a.player.team).name}</span>
+    </div>`);
+  const got = pl.awards.goalOfTournament;
+  if (got) {
+    const p = pl.byId.get(got.player);
+    cards.push(`
+      <button type="button" class="record-card glass" data-record-match="${got.matchId}"
+              aria-label="${t('stats.goalOfTournament')}: ${p.name}">
+        <span class="record-label">${t('stats.goalOfTournament')}</span>
+        <span class="record-main">${playerFlag(p, 26, 17)} <span class="award-name">${p.name}</span> <span class="record-score">${got.minute}'</span></span>
+        <span class="record-teams">${getData().teamById.get(p.team).name}</span>
+      </button>`);
+  }
+  return `
+    <h3 class="stats-subhead">${t('stats.awardsTitle')}</h3>
+    <div class="stats-records-grid">${cards.join('')}</div>`;
+}
+
+// Squad of the Tournament — simple formation rows (GK / DF / MF / FW).
+function squadHTML(pl) {
+  if (!pl.squad) return '';
+  const byPos = { GK: [], DF: [], MF: [], FW: [] };
+  for (const p of pl.squad) (byPos[p.position] ?? byPos.MF).push(p);
+  const rows = ['FW', 'MF', 'DF', 'GK'].filter((pos) => byPos[pos].length).map((pos) => `
+    <div class="squad-row">
+      ${byPos[pos].map((p) => `
+        <div class="squad-player">
+          ${playerFlag(p, 24, 16)}
+          <span class="squad-name">${p.name}</span>
+          <span class="squad-pos">${pos} · ${p.shirt}</span>
+        </div>`).join('')}
+    </div>`).join('');
+  return `
+    <h3 class="stats-subhead">${t('stats.squadTitle')}</h3>
+    <div class="squad-pitch glass">${rows}</div>`;
+}
+
 // ----------------------------------------------------- records section
 
 // Match/tournament records + the "format-48 debuts" band. Match record cards
@@ -817,11 +1330,164 @@ function recordsSectionHTML() {
   if (rec.highestScoringMatch && rec.highestScoringMatch.matchId !== rec.biggestWin?.matchId) {
     cards.push(highScoreCardHTML(rec.highestScoringMatch));
   }
+  if (rec.biggestUpset) cards.push(upsetCardHTML(rec.biggestUpset));
+  if (model.discipline?.mostCards) cards.push(mostCardsCardHTML(model.discipline.mostCards));
+  if (model.attendance?.biggest) cards.push(crowdCardHTML(model.attendance.biggest));
+  if (rec.longestRoad) cards.push(longestRoadCardHTML(rec.longestRoad));
+  const pl = model.players;
+  if (pl?.fastestGoal) cards.push(goalTimeCardHTML('stats.fastestGoal', pl.fastestGoal));
+  if (pl?.latestGoal && pl.latestGoal !== pl.fastestGoal) cards.push(goalTimeCardHTML('stats.latestGoal', pl.latestGoal));
+  if (pl?.youngestScorer?.ageYears != null) cards.push(youngestScorerCardHTML(pl.youngestScorer));
   const grid = cards.length ? `<div class="stats-records-grid">${cards.join('')}</div>` : '';
   return `
     <h2 class="section-title">${t('stats.recordsTitle')}</h2>
     ${grid}
+    ${curiositiesHTML()}
+    ${vsHistoryHTML()}
     ${formatDebutsHTML()}`;
+}
+
+// ---------------------------------------------------- editorial (Stage I)
+
+// Bilingual field with fallback: current language first, the other when the
+// translation is missing (never a blank card — plan §6.7).
+function editorialText(card, field) {
+  const preferred = getLang() === 'pt' ? `${field}PT` : `${field}EN`;
+  const fallback = getLang() === 'pt' ? `${field}EN` : `${field}PT`;
+  return card[preferred] || card[fallback] || '';
+}
+
+function curiositiesHTML() {
+  const list = model.curiosities;
+  if (!list) return '';
+  const cards = list.map((c) => {
+    const team = c.teamId ? getData().teamById.get(c.teamId) : null;
+    const link = c.matchId != null
+      ? `<button type="button" class="stats-link editorial-link" data-record-match="${c.matchId}">${t('stats.seeMatch')} →</button>`
+      : '';
+    return `
+      <article class="editorial-card glass">
+        <h4 class="editorial-title">${team ? flagImg(team, 22, 15) : ''} ${editorialText(c, 'title')}</h4>
+        <p class="editorial-body">${editorialText(c, 'body')}</p>
+        ${link}
+      </article>`;
+  }).join('');
+  return `
+    <h3 class="stats-subhead">${t('stats.curiositiesTitle')}</h3>
+    <div class="editorial-grid">${cards}</div>`;
+}
+
+function vsHistoryHTML() {
+  const rows = model.vsHistory;
+  if (!rows) return '';
+  const numberFmt = new Intl.NumberFormat(getLocale());
+  const fmt = (value, kind) =>
+    kind === 'dec' ? value.toFixed(2) : kind === 'num' ? numberFmt.format(value) : String(value);
+  const body = rows.map((row) => `
+    <div class="history-row${row.beaten ? ' beaten' : ''}">
+      <span class="history-label">${t(row.labelKey)}</span>
+      <span class="history-current">${fmt(row.current, row.fmt)}
+        ${row.beaten ? `<span class="history-badge">${t('stats.newRecord')}</span>` : ''}</span>
+      <span class="history-record">${fmt(row.record, row.fmt)} <small class="history-holder">${row.holder}</small></span>
+    </div>`).join('');
+  return `
+    <h3 class="stats-subhead">${t('stats.vsHistoryTitle')}</h3>
+    <div class="history-panel glass">
+      <div class="history-row history-head">
+        <span class="history-label"></span>
+        <span class="history-current">${t('stats.thisCup')}</span>
+        <span class="history-record">${t('stats.allTime')}</span>
+      </div>
+      ${body}
+    </div>`;
+}
+
+// ------- Layer-2 record cards (each renders only when its datum is present)
+
+function upsetCardHTML(upset) {
+  const winner = getData().teamById.get(upset.winnerId);
+  const loser = getData().teamById.get(upset.loserId);
+  const pens = upset.pens ? ` <small>(${t('status.pens')} ${upset.pens})</small>` : '';
+  return `
+    <button type="button" class="record-card glass" data-record-match="${upset.matchId}"
+            aria-label="${t('stats.biggestUpset')}: ${winner.name} ${upset.score} ${loser.name}">
+      <span class="record-label">${t('stats.biggestUpset')}</span>
+      <span class="record-main">
+        ${flagImg(winner, 26, 17)}
+        <span class="record-score">${upset.score}${pens}</span>
+        ${flagImg(loser, 26, 17)}
+      </span>
+      <span class="record-teams">${winner.name} (#${upset.winnerRank}) <span class="record-vs">${t('hero.vs')}</span> ${loser.name} (#${upset.loserRank})</span>
+    </button>`;
+}
+
+function mostCardsCardHTML(rec) {
+  const home = getData().teamById.get(rec.homeTeam);
+  const away = getData().teamById.get(rec.awayTeam);
+  return `
+    <button type="button" class="record-card glass" data-record-match="${rec.matchId}"
+            aria-label="${t('stats.mostCardsMatch')}: ${home.name} ${t('hero.vs')} ${away.name}">
+      <span class="record-label">${t('stats.mostCardsMatch')}</span>
+      <span class="record-main">
+        ${flagImg(home, 26, 17)}
+        <span class="record-score">${rec.y} 🟨${rec.r ? ` ${rec.r} 🟥` : ''}</span>
+        ${flagImg(away, 26, 17)}
+      </span>
+      <span class="record-teams">${home.name} <span class="record-vs">${t('hero.vs')}</span> ${away.name}</span>
+    </button>`;
+}
+
+function crowdCardHTML(rec) {
+  const numberFmt = new Intl.NumberFormat(getLocale());
+  const match = getData().matches.find((m) => m.id === rec.matchId);
+  const slots = match ? resolveBracketTeams(match) : null;
+  const matchup = slots?.home.team && slots?.away.team
+    ? `${slots.home.team.name} <span class="record-vs">${t('hero.vs')}</span> ${slots.away.team.name} · ${rec.stadium}`
+    : rec.stadium;
+  return `
+    <button type="button" class="record-card glass" data-record-match="${rec.matchId}"
+            aria-label="${t('stats.biggestCrowd')}: ${numberFmt.format(rec.attendance)} — ${rec.stadium}">
+      <span class="record-label">${t('stats.biggestCrowd')}</span>
+      <span class="record-main"><span class="record-score">${numberFmt.format(rec.attendance)}</span></span>
+      <span class="record-teams">${matchup}</span>
+    </button>`;
+}
+
+// Goal-time record cards (Stage H) — minute + scorer, clickable to the match.
+function goalTimeCardHTML(labelKey, event) {
+  const p = model.players.byId.get(event.player);
+  return `
+    <button type="button" class="record-card glass" data-record-match="${event.matchId}"
+            aria-label="${t(labelKey)}: ${p.name}, ${event.minute}'">
+      <span class="record-label">${t(labelKey)}</span>
+      <span class="record-main">${playerFlag(p, 26, 17)} <span class="record-score">${event.minute}'</span></span>
+      <span class="record-teams">${p.name}</span>
+    </button>`;
+}
+
+function youngestScorerCardHTML({ event, ageYears }) {
+  const p = model.players.byId.get(event.player);
+  return `
+    <button type="button" class="record-card glass" data-record-match="${event.matchId}"
+            aria-label="${t('stats.youngestScorer')}: ${p.name}">
+      <span class="record-label">${t('stats.youngestScorer')}</span>
+      <span class="record-main">${playerFlag(p, 26, 17)} <span class="record-score">${t('stats.yearsOld').replace('{n}', String(ageYears))}</span></span>
+      <span class="record-teams">${p.name}</span>
+    </button>`;
+}
+
+function longestRoadCardHTML(rec) {
+  const team = getData().teamById.get(rec.teamId);
+  const numberFmt = new Intl.NumberFormat(getLocale());
+  return `
+    <div class="record-card glass">
+      <span class="record-label">${t('stats.longestRoad')}</span>
+      <span class="record-main">
+        ${flagImg(team, 26, 17)}
+        <span class="record-score">${numberFmt.format(Math.round(rec.km))} km</span>
+      </span>
+      <span class="record-teams">${team.name} · ${rec.matches} ${t('stats.roadMatches')}</span>
+    </div>`;
 }
 
 function highScoreCardHTML(rec) {
@@ -876,19 +1542,94 @@ function ensureComparatorDefaults() {
   cmpB = cmpB ?? byRank[1]?.teamId;
 }
 
+// The Stage-F deferral resolved: with the players model available the comparator
+// gains a Teams|Players mode toggle (aria-pressed buttons, not a tablist). All
+// selections + mode survive langchange via module state.
 function comparatorSectionHTML() {
+  const toggle = model.players ? `
+    <div class="player-chips cmp-mode" role="group" aria-label="${t('stats.comparatorTitle')}">
+      <button type="button" class="player-chip" data-cmp-mode="teams" aria-pressed="${cmpMode === 'teams'}">${t('stats.cmpModeTeams')}</button>
+      <button type="button" class="player-chip" data-cmp-mode="players" aria-pressed="${cmpMode === 'players'}">${t('stats.cmpModePlayers')}</button>
+    </div>` : '';
+  if (!model.players) cmpMode = 'teams';
+  return `
+    <h2 class="section-title">${t('stats.comparatorTitle')}</h2>
+    ${toggle}
+    <div id="cmp-body">${cmpBodyHTML()}</div>`;
+}
+
+function cmpBodyHTML() {
+  if (cmpMode === 'players') {
+    ensurePlayerCmpDefaults();
+    const pool = [...model.players.aggById.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const options = (selected) => pool
+      .map((p) => `<option value="${p.id}"${p.id === selected ? ' selected' : ''}>${p.name} (${p.team})</option>`).join('');
+    return `
+      <div class="cmp-controls">
+        <select class="filter-control cmp-select" id="cmp-pa" aria-label="${t('stats.cmpPlayerA')}">${options(cmpPA)}</select>
+        <span class="cmp-vs">${t('hero.vs')}</span>
+        <select class="filter-control cmp-select" id="cmp-pb" aria-label="${t('stats.cmpPlayerB')}">${options(cmpPB)}</select>
+      </div>
+      <div class="cmp-panel glass" id="cmp-panel">${playerBarsHTML()}</div>`;
+  }
   ensureComparatorDefaults();
   const teams = [...getData().teams].sort((a, b) => a.name.localeCompare(b.name));
   const options = (selected) => teams
     .map((team) => `<option value="${team.id}"${team.id === selected ? ' selected' : ''}>${team.name}</option>`).join('');
   return `
-    <h2 class="section-title">${t('stats.comparatorTitle')}</h2>
     <div class="cmp-controls">
       <select class="filter-control cmp-select" id="cmp-a" aria-label="${t('stats.cmpTeamA')}">${options(cmpA)}</select>
       <span class="cmp-vs">${t('hero.vs')}</span>
       <select class="filter-control cmp-select" id="cmp-b" aria-label="${t('stats.cmpTeamB')}">${options(cmpB)}</select>
     </div>
     <div class="cmp-panel glass" id="cmp-panel">${comparatorBarsHTML()}</div>`;
+}
+
+function ensurePlayerCmpDefaults() {
+  const valid = (id) => id && model.players.aggById.has(id);
+  if (valid(cmpPA) && valid(cmpPB)) return;
+  cmpPA = valid(cmpPA) ? cmpPA : model.players.scorers[0]?.id;
+  cmpPB = valid(cmpPB) ? cmpPB : model.players.scorers[1]?.id ?? model.players.scorers[0]?.id;
+}
+
+// Player metrics — saves/CS rows appear only when either side is a keeper with
+// data (an all-zero row for two outfielders is noise, not comparison).
+function playerCmpMetrics(a, b) {
+  const metrics = [
+    { key: 'goals', label: 'stats.colGoalsLong' },
+    { key: 'assists', label: 'stats.chipAssists' },
+    { key: 'y', label: 'stats.cardsYellow' },
+    { key: 'r', label: 'stats.cardsRed' },
+  ];
+  if ((a.saves || a.cleanSheets || b.saves || b.cleanSheets) && model.players.savesOk) {
+    metrics.push({ key: 'saves', label: 'stats.chipSaves' }, { key: 'cleanSheets', label: 'stats.colCS' });
+  }
+  return metrics;
+}
+
+function playerBarsHTML() {
+  const blank = { goals: 0, assists: 0, y: 0, r: 0, saves: 0, cleanSheets: 0 };
+  const ra = model.players.aggById.get(cmpPA) ?? { ...blank, ...model.players.byId.get(cmpPA) };
+  const rb = model.players.aggById.get(cmpPB) ?? { ...blank, ...model.players.byId.get(cmpPB) };
+  const header = `
+    <div class="cmp-head">
+      <div class="cmp-team">${playerFlag(ra, 28, 19)} <span>${ra.name}</span></div>
+      <div class="cmp-team cmp-team-b"><span>${rb.name}</span> ${playerFlag(rb, 28, 19)}</div>
+    </div>`;
+  const rows = playerCmpMetrics(ra, rb).map((metric) => {
+    const av = ra[metric.key] ?? 0;
+    const bv = rb[metric.key] ?? 0;
+    const max = Math.max(av, bv, 1);
+    return `
+      <div class="cmp-row">
+        <span class="cmp-val a${av >= bv ? ' lead' : ''}">${av}</span>
+        <div class="cmp-track a"><div class="cmp-bar a" style="width:${Math.round((av / max) * 100)}%"></div></div>
+        <span class="cmp-label">${t(metric.label)}</span>
+        <div class="cmp-track b"><div class="cmp-bar b" style="width:${Math.round((bv / max) * 100)}%"></div></div>
+        <span class="cmp-val b${bv >= av ? ' lead' : ''}">${bv}</span>
+      </div>`;
+  }).join('');
+  return header + rows;
 }
 
 // Diverging mirrored bars: A grows leftward from the center label, B rightward.
@@ -924,7 +1665,7 @@ function comparatorBarsHTML() {
 // focus/scroll and replays the grow animation on the new bars).
 function refreshComparator() {
   const panel = document.getElementById('cmp-panel');
-  if (panel) panel.innerHTML = comparatorBarsHTML();
+  if (panel) panel.innerHTML = cmpMode === 'players' ? playerBarsHTML() : comparatorBarsHTML();
 }
 
 // Compact abbreviation key — hidden on desktop (the hover tooltip covers it

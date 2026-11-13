@@ -162,6 +162,17 @@ export function flagSrc(team) {
   return `assets/images/${team.flag}`;
 }
 
+// Backward-compatible reader for a result's per-side `stats.cards` value: the
+// legacy shape is a plain number (yellows only), the Stage-G shape is {y, r}.
+// Aggregations must go through this — never read `.y` raw (legacy data throws).
+export function cardCounts(side) {
+  if (side == null) return null;
+  if (typeof side === 'number') return { y: side, r: 0, total: side, split: false };
+  const y = side.y ?? 0;
+  const r = side.r ?? 0;
+  return { y, r, total: y + r, split: true };
+}
+
 // ---------------------------------------------------------------- tabs
 
 const TABS = ['home', 'matches', 'groups', 'bracket', 'stadiums', 'stats'];
